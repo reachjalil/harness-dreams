@@ -3,11 +3,24 @@
   "name": "harnessdreams",
   "compatibility_date": "2026-06-27",
   "workers_dev": true,
+  "main": "./worker/index.ts",
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page"
   },
+  // Waitlist storage. Create the namespace once, then paste its id here:
+  //   pnpm --filter @harness-dreams/site exec wrangler kv namespace create WAITLIST
+  //   pnpm --filter @harness-dreams/site exec wrangler kv namespace create WAITLIST --preview
+  // Local `wrangler dev` simulates KV and ignores these ids.
+  "kv_namespaces": [
+    {
+      "binding": "WAITLIST",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID",
+      "preview_id": "REPLACE_WITH_KV_PREVIEW_ID"
+    }
+  ],
   "observability": {
     "enabled": true
   },

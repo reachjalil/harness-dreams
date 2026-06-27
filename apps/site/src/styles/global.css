@@ -64,6 +64,35 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── CANELA ACTIVATION ───────────────────────────────────────────────────
+   The brand display font is Canela (licensed). The site ships Fraunces as a
+   free stand-in. To switch: drop the .woff2 files in public/fonts/ (see that
+   folder's README), UNCOMMENT this block, and move "Canela" to the front of
+   --font-display above.
+
+@font-face {
+  font-family: "Canela";
+  src: url("/fonts/canela-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Canela";
+  src: url("/fonts/canela-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Canela";
+  src: url("/fonts/canela-italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+──────────────────────────────────────────────────────────────────────── */
+
 * {
   box-sizing: border-box;
 }

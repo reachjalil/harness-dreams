@@ -32,6 +32,17 @@ const repoUrl = "https://github.com/reachjalil/harness-dreams";
           placeholder="you@yourdomain.com"
           required
         />
+        <!-- Honeypot: hidden from people, tempting to bots. Leave it empty. -->
+        <div class="hp" aria-hidden="true">
+          <label for="company">Company</label>
+          <input
+            id="company"
+            name="company"
+            type="text"
+            tabindex="-1"
+            autocomplete="off"
+          />
+        </div>
         <button class="btn btn-primary" type="submit">Join the waitlist</button>
       </form>
       <p class="form-note" id="form-note" role="status" aria-live="polite">
@@ -140,6 +151,13 @@ const repoUrl = "https://github.com/reachjalil/harness-dreams";
   .waitlist button {
     flex: 0 0 auto;
   }
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
   .form-note {
     position: relative;
     color: rgba(247, 246, 242, 0.5);
@@ -160,11 +178,12 @@ const repoUrl = "https://github.com/reachjalil/harness-dreams";
   // Waitlist capture. If a backend endpoint is configured, POST there.
   // Otherwise fall back to noting interest on-device and pointing to GitHub —
   // honest about the fact that no server received it yet.
-  const FORM_ENDPOINT = ""; // e.g. a Formspree / Cloudflare Worker URL
+  const FORM_ENDPOINT = "/api/waitlist"; // Cloudflare Worker (worker/index.ts)
 
   const form = document.getElementById("waitlist-form") as HTMLFormElement | null;
   const note = document.getElementById("form-note");
   const input = document.getElementById("email") as HTMLInputElement | null;
+  const honeypot = document.getElementById("company") as HTMLInputElement | null;
 
   function setNote(msg: string, kind: "" | "ok" | "err") {
     if (!note) return;
@@ -189,11 +208,23 @@ const repoUrl = "https://github.com/reachjalil/harness-dreams";
         const res = await fetch(FORM_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({
+            email,
+            company: honeypot?.value ?? "",
+            src: "site",
+          }),
         });
         if (!res.ok) throw new Error("bad status");
+        const data = (await res.json().catch(() => ({}))) as {
+          already?: boolean;
+        };
         form.reset();
-        setNote("You're on the list — talk soon. ✦", "ok");
+        setNote(
+          data.already
+            ? "You're already on the list — talk soon. ✦"
+            : "You're on the list — talk soon. ✦",
+          "ok"
+        );
       } catch {
         setNote("Something went wrong. Please try again or use GitHub.", "err");
       }
