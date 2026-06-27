@@ -1,0 +1,8 @@
+# Vite
+.vite/
+
+# Electron Forge
+out/
+
+# TypeScript cache
+*.tsbuildinfo

@@ -1,0 +1,42 @@
+{
+  "name": "@harness-dreams/desktop",
+  "productName": "Harness Dreams",
+  "version": "0.1.0",
+  "description": "Your harness health app. While your coding harness sleeps, Harness Dreams reflects on the day and wakes you with a health report.",
+  "main": ".vite/build/main.js",
+  "private": true,
+  "author": {
+    "name": "Jalil",
+    "email": "reachjalil@gmail.com"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-squirrel": "^7.11.2",
+    "@electron-forge/maker-zip": "^7.11.2",
+    "@electron-forge/plugin-fuses": "^7.11.2",
+    "@electron-forge/plugin-vite": "^7.11.2",
+    "@electron-forge/shared-types": "^7.11.2",
+    "@electron/fuses": "^1.8.0",
+    "@types/electron-squirrel-startup": "^1.0.2",
+    "@types/node": "catalog:",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "42.3.3",
+    "typescript": "catalog:",
+    "vite": "^5.4.21"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "catalog:"
+  }
+}
