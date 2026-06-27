@@ -539,3 +539,548 @@ Dream answers with the specific CLAUDE.md edit, grounded in the actual sessions.
 - **Personal data** — demo uses your real CLAUDE.md and real sessions. The friction points will be real. That lands.
 - **Full stack** — MongoDB vectors + agent config storage + Gemini synthesis + Live API voice + LiveKit. Every sponsor tech used meaningfully.
 - **Voice is the payoff** — dashboard explains, voice proves it. The live Q&A is the demo moment judges remember.
+
+---
+
+---
+
+# Implementation Plan — Ingestion → Dream Synthesis
+
+> Scope: Python backend only. Frontend/dashboard handled separately.
+> Timeline: 2–3 days.
+
+---
+
+## What We're Building
+
+```
+Connectors (read raw data)
+    │
+    ▼
+Normalizer (unified session format)
+    │
+    ▼
+MongoDB (sessions + agent_configs + learnings)
+    │
+    ▼
+Pydantic AI Agent + Gemini 2.5 Flash (dream synthesis)
+    │
+    ▼
+MongoDB dream_logs (read by frontend via FastAPI)
+```
+
+FastAPI serves both the ingestion triggers and the dream log results. The frontend calls it.
+
+---
+
+## Folder Structure
+
+```
+apps/api/
+├── main.py                    # FastAPI app + routes
+├── db.py                      # MongoDB client + collection helpers
+├── requirements.txt
+├── .env.example
+│
+├── connectors/
+│   ├── __init__.py
+│   ├── base.py                # Connector ABC
+│   ├── claude_code.py         # ~/.claude/projects/ JSONL
+│   ├── cursor.py              # Cursor state.vscdb (SQLite)
+│   ├── opencode.py            # opencode.db (SQLite)
+│   ├── learnings_folder.py    # markdown notes folder
+│   ├── agent_configs.py       # CLAUDE.md + .cursorrules reader
+│   └── generic_export.py      # ~/.dream/exports/ drop folder
+│
+├── ingestion/
+│   ├── __init__.py
+│   ├── normalizer.py          # raw → NormalizedSession
+│   ├── pipeline.py            # orchestrates all connectors
+│   └── embedder.py            # Gemini embeddings for vector search
+│
+└── synthesis/
+    ├── __init__.py
+    ├── schema.py              # Pydantic DreamLog + all sub-models
+    ├── agent.py               # Pydantic AI agent definition + tools
+    └── prompt.py              # SYNTHESIS_PROMPT constant
+```
+
+---
+
+## Connector Source Map
+
+| Source | Path | Format | Priority |
+|--------|------|---------|----------|
+| Claude Code | `~/.claude/projects/[encoded-cwd]/[session-uuid].jsonl` | JSONL (one event per line) | P1 — build first |
+| Agent configs | `~/.claude/CLAUDE.md`, `[project]/CLAUDE.md`, `~/.claude/settings.json`, `~/.claude/skills/` | Markdown + JSON | P1 — needed for alignment |
+| Learnings folder | `/Users/vela/Developer/learnings/**/*.md` + any configured notes path | Markdown | P1 — rich demo data |
+| opencode | `~/Library/Application Support/opencode/opencode.db` | SQLite | P2 |
+| Cursor | `~/Library/Application Support/Cursor/User/workspaceStorage/[id]/state.vscdb` | SQLite | P2 |
+| Generic export | `~/.dream/exports/` | JSON or Markdown drop folder | P3 — fallback for Pi, ChatGPT, etc. |
+
+---
+
+## Normalized Session Format
+
+Every connector outputs this shape. Downstream code (MongoDB, synthesis) only sees this.
+
+```python
+# ingestion/normalizer.py
+
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Literal
+
+class Turn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str                    # text content only (strip tool call XML)
+    timestamp: datetime
+    has_tool_call: bool = False
+    tool_names: list[str] = []      # which tools the agent called
+
+class SessionMetadata(BaseModel):
+    total_turns: int
+    user_turns: int
+    assistant_turns: int
+    session_length_minutes: float
+    context_switches: int           # topic shifts (computed post-normalization)
+    user_rephrases: int             # user sent similar prompt within 3 turns
+    agent_clarifications: int       # assistant asked "what do you mean?" / "could you clarify?"
+    agent_hedges: int               # "I think", "I'm not sure", "you might want to"
+    agent_contradictions: int       # assistant reversed its own answer in same session
+
+class NormalizedSession(BaseModel):
+    session_id: str                 # stable ID (source:project:uuid)
+    source: Literal["claude-code", "cursor", "opencode", "notes", "export"]
+    project_path: str               # decoded project directory
+    project_name: str               # last segment of path
+    date: str                       # YYYY-MM-DD
+    started_at: datetime
+    ended_at: datetime
+    turns: list[Turn]
+    metadata: SessionMetadata
+    raw_source_path: str            # original file path (for debugging)
+```
+
+---
+
+## MongoDB Schema
+
+### `sessions` collection
+
+```javascript
+{
+  _id: ObjectId,
+  session_id: String,          // "claude-code:/Users/vela/Dev/learnings:abc123"
+  source: String,              // "claude-code" | "cursor" | "opencode" | "notes" | "export"
+  project_path: String,
+  project_name: String,
+  date: String,                // "2026-06-27"
+  started_at: Date,
+  ended_at: Date,
+  turns: [{ role, content, timestamp, has_tool_call, tool_names }],
+  metadata: { total_turns, session_length_minutes, context_switches,
+               user_rephrases, agent_clarifications, agent_hedges,
+               agent_contradictions },
+  embedding: [Float],          // 768-dim from Gemini text-embedding-004
+  topics: [String],            // extracted by Gemini at ingest time
+  ingested_at: Date,
+}
+```
+
+Index: `{ date: 1, source: 1 }`, `{ session_id: 1 }` (unique), vector index on `embedding`.
+
+### `agent_configs` collection
+
+```javascript
+{
+  _id: ObjectId,
+  source: String,              // "claude-code-global" | "claude-code-project" | "cursor"
+  path: String,                // file path
+  date: String,                // date snapshot was taken
+  content: String,             // raw file content
+  instructions: [String],      // key directives extracted by Gemini
+  skills: [String],            // skill/domain labels extracted
+  embedding: [Float],
+  snapshot_at: Date,
+}
+```
+
+### `learnings` collection
+
+```javascript
+{
+  _id: ObjectId,
+  file_path: String,
+  topic_folder: String,        // "llm" | "backend" | "auth" etc.
+  filename: String,
+  date_modified: Date,
+  content: String,
+  embedding: [Float],
+  topics: [String],
+  ingested_at: Date,
+}
+```
+
+### `dream_logs` collection
+
+```javascript
+{
+  _id: ObjectId,
+  date: String,                // "2026-06-27"
+  
+  mind_map: {
+    nodes: [{ topic, weight, is_new }],
+    edges: [[String, String]]
+  },
+
+  your_mood: { label, summary, signal },
+  your_question: { question, evidence },
+
+  agent_mood: { label, summary, signal },
+  agent_question: { question, evidence },
+
+  alignment_score: Float,      // 0.0–1.0
+  alignment_label: String,     // "collaborating" | "friction" | "fighting"
+
+  friction_points: [{
+    type: String,              // "config-conflict" | "missing-skill" | "wrong-domain" | "unclear-prompt"
+    description: String,
+    evidence: String,
+  }],
+
+  recommendations: [{
+    target: String,            // "claude-md" | "agent-skill" | "context-doc" | "prompt-habit"
+    action: String,
+    reason: String,
+  }],
+
+  seven_day_pattern: [{ date, alignment_score, alignment_label }],
+  synthesis_context: String,   // injected into voice session
+  created_at: Date,
+}
+```
+
+---
+
+## Connector Implementation Details
+
+### Claude Code (`connectors/claude_code.py`)
+
+```
+Discovery:
+  base = Path("~/.claude/projects").expanduser()
+  for encoded_dir in base.iterdir():
+    project_path = encoded_dir.name.replace("-", "/").lstrip("/")
+    for jsonl_file in encoded_dir.glob("*.jsonl"):
+      yield SessionRef(project_path=project_path, file=jsonl_file)
+
+Parsing (stream line by line, never load full file):
+  Skip types: "permission-mode", "file-history-snapshot", "attachment"
+  Keep types: "user", "assistant"
+  
+  user event → Turn(role="user", content=message.content[text], timestamp)
+  assistant event → Turn(role="assistant", content=extract_text(message.content),
+                         has_tool_call=any(c.type=="tool_use"),
+                         tool_names=[c.name for c in content if tool_use])
+  
+  Session boundary: group by sessionId field
+  Session date: first event's timestamp
+```
+
+### Agent Configs (`connectors/agent_configs.py`)
+
+```
+Files to read:
+  ~/.claude/CLAUDE.md                        # global instructions
+  ~/.claude/settings.json                    # permission mode, model prefs
+  ~/.claude/skills/**/*.md                   # installed skills
+  [each project cwd]/CLAUDE.md              # project-specific instructions
+  [each project cwd]/.cursorrules           # Cursor rules
+  
+For each CLAUDE.md: read raw content → store as agent_config document
+Extract instructions and skills via a lightweight Gemini call at ingest time.
+```
+
+### opencode (`connectors/opencode.py`)
+
+```
+DB path: ~/Library/Application Support/opencode/opencode.db
+Schema (to be confirmed with sqlite3):
+  sqlite3 ~/Library/Application\ Support/opencode/opencode.db .tables
+  
+Expected tables: sessions, messages (or similar)
+Read with: sqlite3 connection, SELECT * FROM messages ORDER BY created_at
+Map: message.role → Turn.role, message.content → Turn.content
+```
+
+### Cursor (`connectors/cursor.py`)
+
+```
+DB path: ~/Library/Application Support/Cursor/User/workspaceStorage/[id]/state.vscdb
+Each workspace has its own SQLite db.
+Discovery: glob all workspaceStorage/*/state.vscdb
+
+Schema inspection needed: sqlite3 state.vscdb .tables
+Cursor stores chat in an ItemTable with JSON values.
+Key to look for: "aichat.workspaceState.chat" or similar JSON blob.
+```
+
+### Generic Export (`connectors/generic_export.py`)
+
+```
+Watch folder: ~/.dream/exports/
+Supported formats:
+  - *.md files → treat as a single-turn note
+  - *.json files → expect { source, turns: [{role, content, timestamp}] }
+  - *.txt files → treat as notes
+
+This covers Pi, ChatGPT exports, any manual paste.
+```
+
+---
+
+## FastAPI Endpoints
+
+```python
+# main.py
+
+POST /ingest
+  body: { date?: str, sources?: list[str] }  # defaults to today, all sources
+  response: { job_id, status: "queued" }
+  → runs pipeline.ingest_all(date) in background
+
+GET /ingest/status/{job_id}
+  response: { status, sources_done, sessions_found, errors }
+
+POST /synthesize  
+  body: { date?: str }                        # defaults to today
+  response: { job_id, status: "queued" }
+  → runs synthesis agent in background
+
+GET /dreams
+  response: [{ date, alignment_score, alignment_label, created_at }]
+
+GET /dreams/{date}
+  response: DreamLog (full document)
+
+GET /sessions
+  query: date?, source?, project?
+  response: [NormalizedSession (without turns for list view)]
+
+GET /sessions/{session_id}
+  response: NormalizedSession (full with turns)
+
+GET /health
+  response: { status, mongodb: bool, gemini: bool }
+```
+
+---
+
+## Pydantic AI Synthesis Agent
+
+### Schema (`synthesis/schema.py`)
+
+```python
+from pydantic import BaseModel, Field
+from typing import Literal
+
+class MoodSignal(BaseModel):
+    label: Literal["deep-focus", "scattered", "exploratory", "frustrated",
+                   "confident", "uncertain", "confused", "overloaded"]
+    summary: str
+    signal: str                 # what in the data revealed this
+
+class ImplicitQuestion(BaseModel):
+    question: str
+    evidence: str               # where in sessions it appeared
+
+class MindMapNode(BaseModel):
+    topic: str
+    weight: float               # 0–1, relative depth of engagement
+    is_new: bool                # not seen in historical sessions
+
+class FrictionPoint(BaseModel):
+    type: Literal["config-conflict", "missing-skill", "wrong-domain", "unclear-prompt"]
+    description: str
+    evidence: str
+
+class Recommendation(BaseModel):
+    target: Literal["claude-md", "agent-skill", "context-doc", "prompt-habit"]
+    action: str
+    reason: str
+
+class DayPattern(BaseModel):
+    date: str
+    alignment_score: float
+    alignment_label: str
+
+class DreamLog(BaseModel):
+    mind_map_nodes: list[MindMapNode]
+    mind_map_edges: list[tuple[str, str]]
+
+    your_mood: MoodSignal
+    your_question: ImplicitQuestion
+
+    agent_mood: MoodSignal
+    agent_question: ImplicitQuestion
+
+    alignment_score: float = Field(ge=0.0, le=1.0)
+    alignment_label: Literal["collaborating", "friction", "fighting"]
+    friction_points: list[FrictionPoint]
+    recommendations: list[Recommendation]
+
+    seven_day_pattern: list[DayPattern]
+    synthesis_context: str      # 2–3 paragraphs, loaded into voice session
+```
+
+### Agent (`synthesis/agent.py`)
+
+```python
+from pydantic_ai import Agent, RunContext
+from dataclasses import dataclass
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
+@dataclass
+class SynthesisDeps:
+    db: AsyncIOMotorDatabase
+    date: str
+
+dream_agent = Agent(
+    "google-gla:gemini-2.5-flash",
+    output_type=DreamLog,
+    deps_type=SynthesisDeps,
+    instructions=SYNTHESIS_PROMPT,
+    retries=2,
+)
+
+@dream_agent.tool
+async def get_today_sessions(ctx: RunContext[SynthesisDeps]) -> list[dict]:
+    """Fetch all normalized sessions from today across all sources."""
+    docs = await ctx.deps.db.sessions.find({"date": ctx.deps.date}).to_list(None)
+    # Return turns + metadata only, not embeddings
+    return [{ "source": d["source"], "project": d["project_name"],
+               "turns": d["turns"], "metadata": d["metadata"] } for d in docs]
+
+@dream_agent.tool
+async def get_agent_configs(ctx: RunContext[SynthesisDeps]) -> list[dict]:
+    """Fetch all agent config files — CLAUDE.md, skills, settings."""
+    docs = await ctx.deps.db.agent_configs.find({"date": ctx.deps.date}).to_list(None)
+    return [{ "source": d["source"], "path": d["path"], "content": d["content"] } for d in docs]
+
+@dream_agent.tool
+async def search_past_sessions(ctx: RunContext[SynthesisDeps], topic: str) -> list[dict]:
+    """Vector search past sessions to check if a topic is new."""
+    # MongoDB Atlas vector search
+    results = await ctx.deps.db.sessions.aggregate([{
+        "$vectorSearch": {
+            "index": "sessions_vector_index",
+            "queryVector": await embed_text(topic),
+            "path": "embedding",
+            "numCandidates": 50,
+            "limit": 5,
+        }
+    }]).to_list(None)
+    return [{ "date": r["date"], "source": r["source"], "topics": r["topics"] } for r in results]
+
+@dream_agent.tool
+async def get_seven_day_pattern(ctx: RunContext[SynthesisDeps]) -> list[dict]:
+    """Fetch alignment scores from the past 7 dream logs."""
+    logs = await ctx.deps.db.dream_logs.find(
+        {}, sort=[("date", -1)], limit=7
+    ).to_list(None)
+    return [{ "date": l["date"], "alignment_score": l["alignment_score"],
+               "alignment_label": l["alignment_label"] } for l in logs]
+
+@dream_agent.tool  
+async def save_dream_log(ctx: RunContext[SynthesisDeps], log: dict) -> str:
+    """Persist the completed dream log to MongoDB."""
+    log["date"] = ctx.deps.date
+    log["created_at"] = datetime.utcnow()
+    await ctx.deps.db.dream_logs.replace_one(
+        {"date": ctx.deps.date}, log, upsert=True
+    )
+    return "saved"
+```
+
+---
+
+## Build Order (Day by Day)
+
+### Day 1 — Ingestion Foundation
+
+**Goal: MongoDB has real session data from Claude Code + CLAUDE.md + learnings.**
+
+```
+[ ] Set up apps/api/ — requirements.txt, .env, main.py skeleton
+[ ] db.py — MongoDB Atlas connection, collection helpers, vector index
+[ ] connectors/claude_code.py — JSONL parser + normalization
+[ ] connectors/agent_configs.py — CLAUDE.md + settings.json reader
+[ ] connectors/learnings_folder.py — markdown file reader
+[ ] ingestion/normalizer.py — NormalizedSession + signal extraction
+[ ] ingestion/pipeline.py — orchestrate all P1 connectors
+[ ] POST /ingest + GET /ingest/status endpoints
+[ ] Test: run ingestion on your real ~/.claude/projects/ data
+[ ] Verify: sessions appear in MongoDB with correct shape
+```
+
+### Day 2 — Dream Synthesis
+
+**Goal: POST /synthesize returns a valid DreamLog from real session data.**
+
+```
+[ ] synthesis/schema.py — full DreamLog Pydantic models
+[ ] synthesis/prompt.py — SYNTHESIS_PROMPT (from proposal)
+[ ] synthesis/agent.py — Pydantic AI agent + 5 tools
+[ ] embedder.py — Gemini text-embedding-004 helper
+[ ] MongoDB vector index — create on sessions.embedding
+[ ] POST /synthesize + GET /dreams/{date} endpoints
+[ ] Test: run synthesis on Day 1 data, check DreamLog shape
+[ ] Iterate prompt until alignment_score + friction_points feel real
+[ ] connectors/opencode.py — SQLite reader (opencode.db)
+[ ] connectors/cursor.py — SQLite reader (state.vscdb)
+```
+
+### Day 3 — Polish + Demo Prep
+
+**Goal: API is stable, demo data is pre-loaded, frontend team can integrate.**
+
+```
+[ ] connectors/generic_export.py — ~/.dream/exports/ drop folder
+[ ] GET /sessions + GET /sessions/{id} endpoints
+[ ] GET /health endpoint  
+[ ] Pre-load your full learnings folder + recent Claude Code sessions
+[ ] Run synthesis on demo data — iterate until DreamLog reads well
+[ ] Write README for frontend team (endpoint contracts, DreamLog shape)
+[ ] .env.example with all required keys
+[ ] Test full pipeline end-to-end: ingest → synthesize → GET /dreams/today
+```
+
+---
+
+## Environment Variables
+
+```bash
+# .env.example
+MONGODB_URI=mongodb+srv://...
+MONGODB_DB=dream
+
+GEMINI_API_KEY=...
+
+# Optional: notes folder (defaults to ~/Developer/learnings)
+NOTES_FOLDER=/Users/vela/Developer/learnings
+
+# Optional: generic export drop folder (defaults to ~/.dream/exports)
+EXPORT_FOLDER=~/.dream/exports
+```
+
+---
+
+## Open Questions Before Coding
+
+1. **Cursor SQLite schema** — need to run `.tables` and inspect `state.vscdb` to confirm the chat history key
+2. **opencode SQLite schema** — same: need `.tables` on `opencode.db`
+3. **MongoDB Atlas cluster** — do you have connection string ready? Or use local MongoDB for day 1?
+4. **Gemini API key** — needed for day 2 synthesis + embeddings
+5. **Context window budget** — a full day of Claude Code sessions can be 5–10MB of JSONL. Will summarize turns > 500 tokens before synthesis rather than send raw text.
+
