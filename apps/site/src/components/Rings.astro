@@ -2,12 +2,15 @@
 /**
  * Apple-Health-style concentric activity rings.
  * Three composite scores: Efficiency, Effectiveness, Alignment (0–100).
+ * `track` + `colors` let the same component sit on light or dark surfaces.
  */
 interface Props {
   efficiency: number;
   effectiveness: number;
   alignment: number;
   size?: number;
+  track?: string;
+  colors?: [string, string, string];
 }
 
 const {
@@ -15,17 +18,14 @@ const {
   effectiveness,
   alignment,
   size = 132,
+  track = "rgba(13,27,42,0.07)",
+  colors = ["var(--dusk)", "var(--teal-deep)", "var(--apricot)"],
 } = Astro.props as Props;
 
 const rings = [
-  { pct: efficiency, r: 52, color: "var(--dusk)", label: "Efficiency" },
-  {
-    pct: effectiveness,
-    r: 39,
-    color: "var(--teal-deep)",
-    label: "Effectiveness",
-  },
-  { pct: alignment, r: 26, color: "var(--apricot)", label: "Alignment" },
+  { pct: efficiency, r: 52, color: colors[0], label: "Efficiency" },
+  { pct: effectiveness, r: 39, color: colors[1], label: "Effectiveness" },
+  { pct: alignment, r: 26, color: colors[2], label: "Alignment" },
 ];
 
 const circ = (r: number) => 2 * Math.PI * r;
@@ -48,7 +48,7 @@ const circ = (r: number) => 2 * Math.PI * r;
             cy="60"
             r={ring.r}
             fill="none"
-            stroke="rgba(13,27,42,0.07)"
+            stroke={track}
             stroke-width="9"
           />
           <circle
