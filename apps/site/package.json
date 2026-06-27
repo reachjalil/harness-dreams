@@ -1,0 +1,26 @@
+{
+  "name": "@harness-dreams/site",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Marketing site for harnessdreams.com.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://harnessdreams.com",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "check": "astro check",
+    "preview": "astro preview",
+    "deploy": "pnpm run build && wrangler deploy",
+    "deploy:dry-run": "pnpm run build && wrangler deploy --dry-run"
+  },
+  "dependencies": {
+    "@astrojs/check": "catalog:",
+    "astro": "catalog:",
+    "typescript": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

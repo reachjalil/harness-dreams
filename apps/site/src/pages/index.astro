@@ -1,0 +1,48 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+
+const title = "Harness Dreams — Your Harness Health App";
+const description =
+  "Harness Dreams goes to work while your coding harness rests: reviewing the day, replaying scenarios, and waking you with a health report and experiments to make tomorrow better. Site under construction.";
+
+const repoUrl = "https://github.com/reachjalil/harness-dreams";
+---
+
+<SiteLayout title={title} description={description}>
+  <main class="wrap" id="main">
+    <div class="card">
+      <span class="pill">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="mono">Under construction</span>
+      </span>
+
+      <h1>Harness&nbsp;Dreams</h1>
+
+      <p class="tagline">
+        What does your coding harness do when it goes to sleep? Right now,
+        nothing. <span class="grad">Soon, it dreams.</span>
+      </p>
+
+      <p class="sub">
+        A health &amp; reflection layer for AI coding harnesses. While your
+        harness rests, it reviews the day, replays scenarios, and wakes you with
+        a health report and experiments to make tomorrow better.
+      </p>
+
+      <div class="links">
+        <a
+          class="btn"
+          href={repoUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          Follow along on GitHub <span aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+    </div>
+
+    <footer class="foot">
+      <span class="mono">harnessdreams.com</span>
+    </footer>
+  </main>
+</SiteLayout>

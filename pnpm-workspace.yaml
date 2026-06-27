@@ -4,12 +4,15 @@ packages:
 
 catalogs:
   default:
+    "@astrojs/check": ^0.9.8
     "@types/node": ^25.5.0
+    astro: ^6.3.1
     immer: ^11.1.4
     smol-toml: ^1.6.1
     tsx: 4.21.0
     typescript: ^5.9.3
     vitest: 4.1.6
+    wrangler: ^4.92.0
     zod: ^4.3.6
 
 onlyBuiltDependencies:
