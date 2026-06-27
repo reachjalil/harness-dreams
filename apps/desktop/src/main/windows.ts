@@ -54,7 +54,10 @@ export function getOrCreateMain(): BrowserWindow {
     fullscreenable: false,
     title: "Harness Dreams",
     titleBarStyle: "hiddenInset",
-    backgroundColor: "#0a0e1f",
+    // Native macOS translucency behind the (semi-transparent) UI.
+    vibrancy: "under-window",
+    visualEffectState: "active",
+    backgroundColor: "#00000000",
     webPreferences: {
       preload: PRELOAD,
       contextIsolation: true,

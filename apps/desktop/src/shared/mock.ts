@@ -9,6 +9,7 @@ import type { DreamReport } from "./types";
  */
 export const MOCK_REPORT: DreamReport = {
   id: "dream_mock_001",
+  timestamp: Date.now(),
   rangeLabel: "Last night · 14 sessions",
   sessions: 14,
   projects: 5,

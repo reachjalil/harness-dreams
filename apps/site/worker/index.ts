@@ -79,7 +79,7 @@ async function handleWaitlist(request: Request, env: Env): Promise<Response> {
       };
       await env.WAITLIST.put(key, JSON.stringify(record));
     }
-  } catch (err) {
+  } catch (_err) {
     return json({ error: "storage_unavailable" }, 503);
   }
 

@@ -25,6 +25,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   notifications: true,
   analysisDepth: "standard",
   launchAtLogin: false,
+  reduceMotion: false,
   connectors: { claudeCode: true, codex: false, cursor: false },
 };
 
@@ -81,6 +82,19 @@ export function initStore(): AppConfig {
 }
 
 export function getConfig(): AppConfig {
+  return config;
+}
+
+/** Absolute path to the on-disk config file (for "reveal in Finder"). */
+export function getConfigPath(): string {
+  return filePath;
+}
+
+/** Reset everything to defaults (used by "Reset all data"). */
+export function resetConfig(): AppConfig {
+  config = DEFAULT_CONFIG;
+  persist();
+  for (const listener of listeners) listener(config);
   return config;
 }
 

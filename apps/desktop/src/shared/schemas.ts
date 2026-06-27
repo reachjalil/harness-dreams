@@ -21,6 +21,7 @@ export const AppConfigSchema = z.object({
   notifications: z.boolean(),
   analysisDepth: AnalysisDepthSchema,
   launchAtLogin: z.boolean(),
+  reduceMotion: z.boolean(),
   connectors: z.object({
     claudeCode: z.boolean(),
     codex: z.boolean(),
@@ -42,6 +43,7 @@ export const ConfigPatchSchema = z
     notifications: z.boolean(),
     analysisDepth: AnalysisDepthSchema,
     launchAtLogin: z.boolean(),
+    reduceMotion: z.boolean(),
     connectors: z
       .object({
         claudeCode: z.boolean(),

@@ -2,6 +2,36 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { Metric, Ring } from "../shared/types";
 
+/** The "Quiet Orbit" mark: a dusk crescent inside a tilted orbit with a teal moon. */
+export function BrandMark({ size = 30 }: { size?: number }): ReactElement {
+  return (
+    <svg
+      className="brandmark"
+      width={size}
+      height={size}
+      viewBox="0 0 30 30"
+      role="img"
+      aria-label="Harness Dreams"
+    >
+      <ellipse
+        cx="15"
+        cy="15"
+        rx="13.5"
+        ry="5.4"
+        fill="none"
+        stroke="var(--accent-line)"
+        strokeWidth="1.1"
+        transform="rotate(-24 15 15)"
+      />
+      <path
+        d="M19 6.6a8.6 8.6 0 1 0 0 16.8 7 7 0 0 1 0-16.8z"
+        fill="var(--accent)"
+      />
+      <circle cx="27.5" cy="9.2" r="1.9" fill="var(--ring-effectiveness)" />
+    </svg>
+  );
+}
+
 // ── Layout / form atoms (shared with the SpeechGlow design system) ───────────
 
 export function Section({
@@ -117,6 +147,21 @@ export function Button({
     >
       {children}
     </button>
+  );
+}
+
+export function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}): ReactElement {
+  return (
+    <div className="field">
+      <div className="field-label">{label}</div>
+      {children}
+    </div>
   );
 }
 

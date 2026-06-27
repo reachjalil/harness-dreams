@@ -17,6 +17,13 @@ const CONFIDENCE_TONE: Record<Confidence, "good" | "accent" | "neutral"> = {
   low: "neutral",
 };
 
+function formatTime(ts: number): string {
+  return new Date(ts).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 function FindingCard({ finding }: { finding: Finding }): ReactElement {
   const [accepted, setAccepted] = useState(false);
   const [snoozed, setSnoozed] = useState(false);
@@ -76,6 +83,9 @@ export default function Today({ hd }: { hd: HarnessDreams }): ReactElement {
             <div className="hero-eyebrow">{report.rangeLabel}</div>
             <div className="hero-meta">
               {report.harness} · {report.projects} projects
+              {state.lastDreamAt
+                ? ` · dreamt ${formatTime(state.lastDreamAt)}`
+                : ""}
             </div>
           </div>
           <Button

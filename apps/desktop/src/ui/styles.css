@@ -1,23 +1,25 @@
 :root {
-  --bg: #0a0e1f;
-  --panel: #141c34;
-  --panel-2: #0f1630;
-  --text: #e8edf7;
-  --muted: #9aa7c2;
-  --faint: #6b78a0;
-  --accent: #a78bfa;
-  --accent-weak: rgba(167, 139, 250, 0.14);
-  --accent-line: rgba(167, 139, 250, 0.5);
+  /* "Quiet Orbit" brand — night treatment. */
+  --bg: #0d1b2a; /* Ink Navy */
+  --panel: #16273a;
+  --panel-2: #102032;
+  --text: #f4f6f8; /* Cloud */
+  --muted: #9fb0c4;
+  --faint: #6b7888; /* Slate */
+  --accent: #4a6cf7; /* Dusk Blue */
+  --accent-weak: rgba(74, 108, 247, 0.16);
+  --accent-line: rgba(74, 108, 247, 0.5);
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.16);
-  --good: #34d399;
-  --warn: #fbbf24;
-  --danger: #f87171;
-  --ring-efficiency: #22d3ee;
-  --ring-effectiveness: #34d399;
-  --ring-alignment: #a78bfa;
+  --good: #5bb5a6; /* teal */
+  --warn: #f0b07a; /* apricot */
+  --danger: #ec7a72;
+  --ring-efficiency: #4a6cf7; /* dusk */
+  --ring-effectiveness: #a7dad3; /* pale teal */
+  --ring-alignment: #f0b07a; /* apricot */
   --radius: 12px;
   --radius-sm: 8px;
+  color-scheme: dark;
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui,
     sans-serif;
@@ -35,11 +37,14 @@ body,
 }
 
 body {
-  background: radial-gradient(
-    1200px 700px at 50% -15%,
-    #1a1840 0%,
-    var(--bg) 55%
-  );
+  /* Translucent so the native macOS window vibrancy shows through subtly. */
+  background:
+    radial-gradient(
+      1200px 700px at 50% -15%,
+      rgba(74, 108, 247, 0.22) 0%,
+      rgba(13, 27, 42, 0.82) 55%
+    ),
+    rgba(13, 27, 42, 0.7);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   user-select: none;
@@ -98,6 +103,14 @@ body {
   );
   border: 2px solid var(--accent);
   box-shadow: 0 0 18px var(--accent-weak);
+}
+.brandmark {
+  flex: 0 0 auto;
+}
+.onb-mark-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2px;
 }
 .brand h1 {
   font-size: 16px;
@@ -223,7 +236,7 @@ body {
 }
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--ring-efficiency));
+  background: linear-gradient(90deg, var(--accent), var(--ring-effectiveness));
   border-radius: 99px;
   transition: width 0.14s linear;
 }
@@ -570,7 +583,7 @@ body {
 }
 .btn.accent {
   background: var(--accent);
-  color: #1a1033;
+  color: #ffffff;
   border-color: var(--accent);
   font-weight: 600;
 }
@@ -799,9 +812,43 @@ body {
   margin-top: 2px;
 }
 
+/* Labeled field wrapper. */
+.field {
+  margin-top: 10px;
+}
+.field-label {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+/* Native time picker (schedule). */
+.time-input {
+  -webkit-app-region: no-drag;
+  appearance: none;
+  background: var(--panel-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  padding: 8px 12px;
+  width: 100%;
+}
+.time-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* User-controlled reduce-motion (Settings toggle). */
+body.reduce-motion * {
+  transition: none !important;
+  animation: none !important;
 }

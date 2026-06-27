@@ -1,4 +1,4 @@
-import { app } from "electron";
+import { app, Menu } from "electron";
 import started from "electron-squirrel-startup";
 
 import { createController, initOrchestration } from "./controller";
@@ -34,10 +34,29 @@ if (!app.requestSingleInstanceLock()) {
   app.on("before-quit", () => setQuitting(true));
 }
 
+function setupMenu(): void {
+  app.setAboutPanelOptions({
+    applicationName: "Harness Dreams",
+    applicationVersion: "0.1.0",
+    credits: "Your harness health app — reflect while your harness sleeps.",
+    copyright: "© 2026 Jalil",
+  });
+  // A minimal native menu so standard shortcuts work (⌘Q/⌘W, and ⌘C/⌘V/⌘A
+  // inside text fields like the schedule time picker).
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      { role: "appMenu" },
+      { role: "editMenu" },
+      { role: "windowMenu" },
+    ])
+  );
+}
+
 function bootstrap(): void {
   // No Dock icon — Harness Dreams lives only in the menu bar.
   app.dock?.hide();
 
+  setupMenu();
   initStore();
 
   const controller = createController();
@@ -47,4 +66,8 @@ function bootstrap(): void {
 
   // First run → open onboarding. Otherwise stay quietly in the menu bar.
   if (!getConfig().onboarded) showMain();
+
+  console.log(
+    `[hd] ready — menu-bar tray initialized, phase=${getState().phase}, onboarded=${getConfig().onboarded}`
+  );
 }

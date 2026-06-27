@@ -31,6 +31,8 @@ export interface AppConfig {
   notifications: boolean;
   analysisDepth: AnalysisDepth;
   launchAtLogin: boolean;
+  /** Honor the OS reduced-motion preference, or force it on. */
+  reduceMotion: boolean;
   /** Which harnesses we (will) ingest. Claude Code ships first. */
   connectors: {
     claudeCode: boolean;
@@ -44,6 +46,10 @@ export interface RuntimeState {
   phase: DreamPhase;
   /** 0..1 while phase === "dreaming". */
   progress: number;
+  /** Current dream stage label while dreaming, else null. */
+  stage: string | null;
+  /** True when a running dream is paused. */
+  paused: boolean;
   /** Epoch ms of the last completed dream, or null. */
   lastDreamAt: number | null;
   /** True when a fresh dream hasn't been opened yet (drives the badge). */
@@ -113,6 +119,8 @@ export interface Experiment {
 /** The artifact a Dream Session produces — styled like the Apple Health app. */
 export interface DreamReport {
   id: string;
+  /** Epoch ms the dream completed — used for ordering and history labels. */
+  timestamp: number;
   /** Human label, e.g. "Last night · Jun 26". */
   rangeLabel: string;
   sessions: number;

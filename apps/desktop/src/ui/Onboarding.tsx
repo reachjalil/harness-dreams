@@ -1,7 +1,7 @@
 import { type ReactElement, useState } from "react";
 
 import type { PrivacyMode, ScheduleMode } from "../shared/types";
-import { Button } from "./components";
+import { BrandMark, Button } from "./components";
 import type { HarnessDreams } from "./useHarnessDreams";
 
 const PRIVACY_OPTIONS: { value: PrivacyMode; title: string; sub: string }[] = [
@@ -58,7 +58,9 @@ export default function Onboarding({
       <div className="onb-body">
         {step === 0 ? (
           <>
-            <div className="onb-mark" />
+            <div className="onb-mark-wrap">
+              <BrandMark size={66} />
+            </div>
             <h2>Harness Dreams</h2>
             <p>
               Your harness health app. While your coding tools sleep, Harness

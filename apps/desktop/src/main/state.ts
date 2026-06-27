@@ -10,6 +10,8 @@ type Listener = (state: RuntimeState) => void;
 let state: RuntimeState = {
   phase: "ready",
   progress: 0,
+  stage: null,
+  paused: false,
   lastDreamAt: Date.now(),
   hasUnreviewed: true,
 };

@@ -1,5 +1,6 @@
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useEffect, useState } from "react";
 
+import { BrandMark } from "./components";
 import Lab from "./Lab";
 import Onboarding from "./Onboarding";
 import Settings from "./Settings";
@@ -38,7 +39,7 @@ function MainShell({
       <div className="titlebar" />
       <header className="topbar">
         <div className="brand">
-          <div className="brand-mark" />
+          <BrandMark size={30} />
           <div>
             <h1>Harness Dreams</h1>
             <p>Your harness health app</p>
@@ -74,6 +75,11 @@ function MainShell({
 
 export default function App(): ReactElement {
   const hd = useHarnessDreams();
+  const reduceMotion = hd.config?.reduceMotion ?? false;
+
+  useEffect(() => {
+    document.body.classList.toggle("reduce-motion", reduceMotion);
+  }, [reduceMotion]);
 
   if (!hd.config) return <Loading />;
   if (!hd.config.onboarded) return <Onboarding hd={hd} />;

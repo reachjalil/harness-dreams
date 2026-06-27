@@ -33,6 +33,20 @@ export function registerIpc(controller: Controller): void {
     controller.setLaunchAtLogin(z.boolean().parse(value));
     return getConfig();
   });
+  ipcMain.handle(Invoke.TestNotification, () => {
+    controller.testNotification();
+  });
+  ipcMain.handle(Invoke.ResetOnboarding, () => {
+    controller.resetOnboarding();
+    return getConfig();
+  });
+  ipcMain.handle(Invoke.ResetAll, () => {
+    controller.resetAll();
+    return getConfig();
+  });
+  ipcMain.handle(Invoke.RevealData, () => {
+    controller.revealData();
+  });
   ipcMain.handle(Invoke.OpenMain, () => {
     controller.openMain();
   });

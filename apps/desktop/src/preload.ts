@@ -41,6 +41,12 @@ const api = {
       ipcRenderer.invoke(Invoke.MarkReviewed),
     setLaunchAtLogin: (value: boolean): Promise<AppConfig> =>
       ipcRenderer.invoke(Invoke.SetLaunchAtLogin, value),
+    testNotification: (): Promise<void> =>
+      ipcRenderer.invoke(Invoke.TestNotification),
+    resetOnboarding: (): Promise<AppConfig> =>
+      ipcRenderer.invoke(Invoke.ResetOnboarding),
+    resetAll: (): Promise<AppConfig> => ipcRenderer.invoke(Invoke.ResetAll),
+    revealData: (): Promise<void> => ipcRenderer.invoke(Invoke.RevealData),
     openMain: (): Promise<void> => ipcRenderer.invoke(Invoke.OpenMain),
     quit: (): Promise<void> => ipcRenderer.invoke(Invoke.Quit),
   },

@@ -77,3 +77,12 @@ const icons: Record<TrayKind, NativeImage> = {
 export function getTrayIcon(kind: TrayKind): NativeImage {
   return icons[kind];
 }
+
+// Pulse frames for the "dreaming" animation — the crescent breathes in and out.
+const DREAM_FRAMES: NativeImage[] = [1, 0.82, 0.6, 0.45, 0.6, 0.82].map((a) =>
+  build(crescent, a)
+);
+
+export function getDreamingFrame(i: number): NativeImage {
+  return DREAM_FRAMES[i % DREAM_FRAMES.length];
+}
