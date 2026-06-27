@@ -1,0 +1,126 @@
+---
+import BrandMark from "./BrandMark.astro";
+const repoUrl = "https://github.com/reachjalil/harness-dreams";
+const year = new Date().getFullYear();
+const nav = [
+  { href: "#how", label: "How it works" },
+  { href: "#features", label: "Features" },
+  { href: "#experiments", label: "Experiments" },
+  { href: "#privacy", label: "Privacy" },
+  { href: "#faq", label: "FAQ" },
+  { href: "#waitlist", label: "Waitlist" },
+];
+---
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="f-brand">
+      <div class="f-id">
+        <span class="f-logo" aria-hidden="true"><BrandMark size={22} /></span>
+        <span class="f-name">Harness Dreams</span>
+      </div>
+      <p class="f-tag">Quiet intelligence, working while you rest.</p>
+      <p class="f-sub">
+        The health app for your AI coding harnesses. While your harness sleeps,
+        it dreams — so you wake up better.
+      </p>
+      <span class="mono f-domain">harnessdreams.com</span>
+    </div>
+
+    <nav class="f-nav" aria-label="Footer">
+      {nav.map((n) => <a href={n.href}>{n.label}</a>)}
+      <a href={repoUrl} target="_blank" rel="noreferrer noopener">GitHub ↗</a>
+    </nav>
+  </div>
+
+  <div class="container footer-base">
+    <span>© {year} Harness Dreams</span>
+    <span class="mono">Built while the harness slept.</span>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--line);
+    padding-top: clamp(3rem, 6vw, 4.5rem);
+    padding-bottom: 2.5rem;
+    background: linear-gradient(180deg, transparent, rgba(167, 218, 211, 0.1));
+  }
+  .footer-inner {
+    display: grid;
+    gap: 2rem;
+    padding-bottom: 2.5rem;
+  }
+  .f-id {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 0.7rem;
+  }
+  .f-logo {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .f-name {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.12rem;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .f-tag {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--slate);
+    font-size: 1.02rem;
+    margin-bottom: 0.5rem;
+  }
+  .f-sub {
+    color: var(--muted);
+    max-width: 42ch;
+    font-size: 0.95rem;
+    margin-bottom: 0.8rem;
+  }
+  .f-domain {
+    color: var(--faint);
+  }
+  .f-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem 1.5rem;
+    align-content: start;
+  }
+  .f-nav a {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .f-nav a:hover {
+    color: var(--ink);
+  }
+  .footer-base {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.5rem;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--line);
+    color: var(--faint);
+    font-size: 0.85rem;
+  }
+
+  @media (min-width: 760px) {
+    .footer-inner {
+      grid-template-columns: 1.4fr 1fr;
+      gap: 3rem;
+    }
+    .f-nav {
+      justify-items: end;
+    }
+  }
+</style>

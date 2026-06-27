@@ -1,0 +1,143 @@
+---
+const moments = [
+  {
+    time: "11:40 PM",
+    tone: "cool",
+    label: "Sleep",
+    text: "You close the laptop after a long day across three repos. The menu-bar icon dims and slips into a dream.",
+  },
+  {
+    time: "Overnight",
+    tone: "cool",
+    label: "Dream",
+    text: "It computes your vitals and rolls them into your 30-day trend. Then it reads the day: you re-asked the model to run tests four times in one repo, your tokens dropped on days you used the verify skill, and two projects quietly reimplemented the same parser.",
+  },
+  {
+    time: "8:15 AM",
+    tone: "warm",
+    label: "Reflect",
+    text: "You open a Dream Report. A green Efficiency ring. Three findings — one win, one fix you accept as a one-line AGENTS.md diff, one you snooze. Two experiments — you enable both. Ninety seconds, then you start coding.",
+  },
+  {
+    time: "Tomorrow",
+    tone: "warm",
+    label: "Compound",
+    text: "The next dream tells you whether medium effort on UI made you ask for fewer follow-ups — or more. The loop tightens. Your harness is measurably better than it was yesterday.",
+  },
+];
+---
+
+<section class="section" id="day">
+  <div class="container">
+    <div class="head section-narrow reveal">
+      <span class="eyebrow">A day in the life</span>
+      <h2 class="h2">The ninety-second morning ritual.</h2>
+      <p class="lead">
+        This is the heartbeat of the product — a calm, daily moment that turns
+        yesterday's exhaust into tomorrow's edge.
+      </p>
+    </div>
+
+    <ol class="timeline">
+      {
+        moments.map((m, i) => (
+          <li class={`moment reveal ${m.tone}`} data-delay={((i % 3) + 1).toString()}>
+            <div class="marker" aria-hidden="true">
+              <span class="ring"></span>
+            </div>
+            <div class="content">
+              <div class="meta">
+                <span class="time">{m.time}</span>
+                <span class={`tag ${m.tone}`}>{m.label}</span>
+              </div>
+              <p>{m.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .head {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+  }
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 46rem;
+    margin-inline: auto;
+  }
+  .moment {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.1rem;
+    padding-bottom: 1.8rem;
+  }
+  .marker {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    width: 18px;
+  }
+  .marker::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    bottom: -1.8rem;
+    width: 2px;
+    background: linear-gradient(var(--line), transparent);
+  }
+  .moment:last-child .marker::before {
+    display: none;
+  }
+  .ring {
+    position: relative;
+    z-index: 1;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--bg);
+    margin-top: 4px;
+  }
+  .moment.warm .ring {
+    border-color: var(--warm);
+  }
+  .content {
+    padding-bottom: 0.2rem;
+  }
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.5rem;
+  }
+  .time {
+    font-weight: 660;
+    letter-spacing: -0.01em;
+  }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(74, 108, 247, 0.14);
+    color: var(--accent);
+  }
+  .tag.warm {
+    background: rgba(232, 154, 124, 0.14);
+    color: var(--warm);
+  }
+  .content p {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+</style>

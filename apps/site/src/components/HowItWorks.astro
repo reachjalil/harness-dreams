@@ -1,0 +1,151 @@
+---
+const steps = [
+  {
+    num: "01",
+    phase: "Sleep",
+    when: "When your harness goes idle",
+    title: "It notices the day is done.",
+    body: "No latency tax while you code. When the harness goes quiet — overnight, or on a schedule — Harness Dreams quietly wakes up and gets to work.",
+    tone: "cool",
+  },
+  {
+    num: "02",
+    phase: "Dream",
+    when: "Overnight, in the background",
+    title: "It replays the day and finds the patterns.",
+    body: "Deep Sleep computes your vitals — tokens, cost, re-asks, model mix. Then REM reads the transcripts: spotting wins, catching mistakes, and relating patterns across every project at once.",
+    tone: "cool",
+  },
+  {
+    num: "03",
+    phase: "Reflect",
+    when: "Every morning, ~90 seconds",
+    title: "You wake to a report worth opening.",
+    body: "Skim your health rings, accept or reject findings, and opt into experiments. What you approve flows back into your config — and the next dream grades whether it actually helped.",
+    tone: "warm",
+  },
+];
+---
+
+<section class="section how" id="how">
+  <div class="container">
+    <div class="head section-narrow reveal">
+      <span class="eyebrow">How it works</span>
+      <h2 class="h2">Sleep. Dream. Reflect.</h2>
+      <p class="lead">
+        One loop, repeated nightly. Each turn makes your harness a little
+        cheaper, a little sharper, and a little more aligned to how you actually
+        work.
+      </p>
+    </div>
+
+    <ol class="steps">
+      {
+        steps.map((s, i) => (
+          <li class={`step reveal ${s.tone}`} data-delay={(i + 1).toString()}>
+            <div class="rail" aria-hidden="true">
+              <span class="num mono">{s.num}</span>
+            </div>
+            <div class="step-body">
+              <div class="step-tag">
+                <span class={`phase ${s.tone}`}>{s.phase}</span>
+                <span class="when mono">{s.when}</span>
+              </div>
+              <h3>{s.title}</h3>
+              <p>{s.body}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .head {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+  }
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+  .rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .num {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: rgba(74, 108, 247, 0.1);
+    border: 1px solid var(--line);
+    color: var(--accent);
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+  .step.warm .num {
+    background: rgba(232, 154, 124, 0.1);
+    color: var(--warm);
+  }
+  .step-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  .phase {
+    font-weight: 650;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    padding: 0.18rem 0.55rem;
+    border-radius: 7px;
+    background: rgba(74, 108, 247, 0.14);
+    color: var(--accent);
+  }
+  .phase.warm {
+    background: rgba(232, 154, 124, 0.14);
+    color: var(--warm);
+  }
+  .when {
+    color: var(--faint);
+  }
+  .step-body h3 {
+    font-size: 1.2rem;
+    font-weight: 660;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.45rem;
+  }
+  .step-body p {
+    color: var(--muted);
+    font-size: 0.98rem;
+    max-width: 60ch;
+  }
+
+  @media (min-width: 880px) {
+    .steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .step {
+      align-content: start;
+    }
+  }
+</style>

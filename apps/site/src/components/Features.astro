@@ -1,0 +1,145 @@
+---
+const icon = (paths: string) =>
+  `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+
+const features = [
+  {
+    title: "Vitals at a glance",
+    body: "Apple-Health-style rings for Efficiency, Effectiveness, and Alignment — each scored against your own baseline, so progress means better than your recent self.",
+    icon: icon(
+      '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/>'
+    ),
+  },
+  {
+    title: "Findings you can act on",
+    body: "Wins, mistakes, risks, and opportunities — written in plain language, grounded in the exact sessions they came from. Accept, snooze, or reject in a tap.",
+    icon: icon('<path d="M5 13l4 4L19 7"/>'),
+  },
+  {
+    title: "Mistake protection",
+    body: "When the agent edits the wrong file or you re-ask three times, Harness Dreams catches the pattern and proposes a fix — as a reviewable diff, never a surprise.",
+    icon: icon(
+      '<path d="M12 3l8 3v6c0 4.5-3.2 7.5-8 9-4.8-1.5-8-4.5-8-9V6l8-3z"/>'
+    ),
+  },
+  {
+    title: "Experiments, graded",
+    body: '"Try medium effort for UI." Enable it, and the next dream measures the result on your real work — improved, inconclusive, or regressed — with the numbers behind it.',
+    icon: icon(
+      '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/>'
+    ),
+  },
+  {
+    title: "Cross-project intelligence",
+    body: "Because it sees every repo, it can relate the unrelated — flagging duplicated code, transferable fixes, and config that works in one project but is missing in another.",
+    icon: icon(
+      '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 6h7M18 8.5v7M8 8l8 8"/>'
+    ),
+  },
+  {
+    title: "Tune your config & memory",
+    body: "Guided cleanup of AGENTS.md, skills, MCP servers, and memory — correlated with outcomes, so you fix the durable sources of friction, not just today's symptom.",
+    icon: icon(
+      '<path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/>'
+    ),
+  },
+  {
+    title: "Compare your tools",
+    body: "Claude vs Codex, high vs medium effort — settled by your own data. See which is faster and cheaper for refactors, UI, or debugging, then route work accordingly.",
+    icon: icon(
+      '<path d="M12 4v16M6 8H4l2.5-4L9 8H7M19 16h-2l2.5 4 2.5-4h-2"/><path d="M5 8c0 6 0 6 0 6M19 16c0-6 0-6 0-6"/>'
+    ),
+  },
+  {
+    title: "Ask your own usage",
+    body: "Chat with a grounded view of your data. “Why is my re-ask rate up this week?” “What’s the highest-impact change I could make?” Answers with receipts.",
+    icon: icon('<path d="M4 6h16v10H9l-4 3v-3H4z"/><path d="M8 10h8M8 13h5"/>'),
+  },
+];
+---
+
+<section class="section" id="features">
+  <div class="container">
+    <div class="head section-narrow reveal">
+      <span class="eyebrow">What's inside</span>
+      <h2 class="h2">A health app for the way you build.</h2>
+      <p class="lead">
+        Everything measured, nothing applied without your say-so. Each feature
+        feeds the same loop — observe, measure, suggest, and verify.
+      </p>
+    </div>
+
+    <div class="grid">
+      {
+        features.map((f, i) => (
+          <article class="feature reveal" data-delay={((i % 3) + 1).toString()}>
+            <span class="ficon" aria-hidden="true" set:html={f.icon} />
+            <h3>{f.title}</h3>
+            <p>{f.body}</p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .head {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+  }
+  .grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+  .feature {
+    padding: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    display: grid;
+    gap: 0.6rem;
+    align-content: start;
+    transition:
+      border-color 0.18s ease,
+      transform 0.18s ease,
+      background 0.18s ease;
+  }
+  .feature:hover {
+    border-color: var(--line-soft);
+    background: var(--surface-2);
+    transform: translateY(-2px);
+  }
+  .ficon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: rgba(74, 108, 247, 0.1);
+    border: 1px solid var(--line);
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+  .feature h3 {
+    font-size: 1.1rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  .feature p {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  @media (min-width: 640px) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 960px) {
+    .grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+</style>

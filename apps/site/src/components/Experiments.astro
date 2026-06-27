@@ -1,0 +1,124 @@
+---
+const stages = [
+  {
+    k: "Hypothesis",
+    t: "Medium effort is enough for UI work — and cheaper.",
+    tone: "cool",
+  },
+  {
+    k: "Enable",
+    t: "One tap. A reversible, clearly-marked nudge goes live for your next few UI sessions.",
+    tone: "cool",
+  },
+  {
+    k: "Measure",
+    t: "The next dream compares treated work against the rest — re-asks, accept rate, tokens.",
+    tone: "warm",
+  },
+  {
+    k: "Verdict",
+    t: "Improved, inconclusive, or regressed — with the numbers. Adopt it or revert it in one click.",
+    tone: "warm",
+  },
+];
+---
+
+<section class="section exp-section" id="experiments">
+  <div class="container">
+    <div class="exp-grid">
+      <div class="exp-copy reveal">
+        <span class="eyebrow">Experiments</span>
+        <h2 class="h2">Don't guess. <span class="grad-warm">Run an experiment.</span></h2>
+        <p class="lead">
+          Most "tips" for working with AI agents are folklore. Harness Dreams
+          turns them into tests on your own real work — with a hypothesis, a
+          measurement, and an honest verdict next morning.
+        </p>
+        <p class="kicker">
+          And it's honest about uncertainty: most personal experiments come back
+          <b>inconclusive</b>, and we say so, instead of manufacturing false
+          confidence. The ones that win get baked into your config for good.
+        </p>
+      </div>
+
+      <ol class="flow reveal" data-delay="1">
+        {
+          stages.map((s, i) => (
+            <li class={`stage ${s.tone}`}>
+              <span class="step-n mono">{`0${i + 1}`}</span>
+              <div>
+                <div class={`k ${s.tone}`}>{s.k}</div>
+                <p>{s.t}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .exp-section {
+    border-block: 1px solid var(--line);
+    background: radial-gradient(
+      80% 90% at 80% 10%,
+      rgba(232, 154, 124, 0.07),
+      transparent 60%
+    );
+  }
+  .exp-grid {
+    display: grid;
+    gap: clamp(2rem, 5vw, 3.5rem);
+    align-items: center;
+  }
+  .exp-copy {
+    display: grid;
+    gap: 1.1rem;
+  }
+  .exp-copy .kicker {
+    font-size: 0.98rem;
+  }
+  .exp-copy b {
+    color: var(--text);
+  }
+  .flow {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.7rem;
+  }
+  .stage {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.9rem;
+    align-items: start;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .step-n {
+    color: var(--faint);
+    padding-top: 0.15rem;
+  }
+  .k {
+    font-weight: 650;
+    font-size: 0.92rem;
+    margin-bottom: 0.25rem;
+    color: var(--accent);
+  }
+  .k.warm {
+    color: var(--warm);
+  }
+  .stage p {
+    color: var(--muted);
+    font-size: 0.93rem;
+  }
+  @media (min-width: 920px) {
+    .exp-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

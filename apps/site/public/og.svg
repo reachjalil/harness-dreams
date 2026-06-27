@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <radialGradient id="wash" cx="0" cy="0" r="1" gradientTransform="translate(1080 60) rotate(140) scale(640)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a7dad3" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#a7dad3" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="wash2" cx="0" cy="0" r="1" gradientTransform="translate(60 600) rotate(-40) scale(520)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4a6cf7" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#4a6cf7" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="grad" x1="80" y1="400" x2="640" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4a6cf7"/>
+      <stop offset="1" stop-color="#7a5af0"/>
+    </linearGradient>
+    <mask id="moon">
+      <rect width="64" height="64" fill="white"/>
+      <circle cx="42" cy="27" r="21" fill="black"/>
+    </mask>
+  </defs>
+
+  <rect width="1200" height="630" fill="#f7f6f2"/>
+  <rect width="1200" height="630" fill="url(#wash)"/>
+  <rect width="1200" height="630" fill="url(#wash2)"/>
+
+  <!-- logo lockup -->
+  <g transform="translate(80 74)">
+    <rect width="64" height="64" rx="16" fill="#ffffff" stroke="#e5e8ee"/>
+    <g transform="translate(8 8)">
+      <ellipse cx="24" cy="27" rx="24" ry="9" transform="rotate(-20 24 27)" fill="none" stroke="#3aab9c" stroke-width="2.4"/>
+      <circle cx="22" cy="24" r="18.5" fill="#0d1b2a" mask="url(#moon)"/>
+      <circle cx="47" cy="18" r="3.4" fill="#3aab9c"/>
+    </g>
+  </g>
+  <text x="164" y="118" font-family="Fraunces, Georgia, serif" font-size="32" font-weight="500" fill="#0d1b2a">Harness Dreams</text>
+
+  <!-- headline -->
+  <text x="80" y="318" font-family="Fraunces, Georgia, serif" font-size="76" font-weight="460" letter-spacing="-1.5" fill="#0d1b2a">Your coding harness</text>
+  <text x="80" y="404" font-family="Fraunces, Georgia, serif" font-size="76" font-weight="460" letter-spacing="-1.5"><tspan fill="#0d1b2a">gets better </tspan><tspan fill="url(#grad)">overnight.</tspan></text>
+
+  <!-- tagline -->
+  <text x="82" y="470" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="30" fill="#39424e">Quiet intelligence, working while you rest.</text>
+
+  <!-- rings motif -->
+  <g transform="translate(980 430)">
+    <circle r="86" fill="none" stroke="rgba(13,27,42,0.07)" stroke-width="14"/>
+    <circle r="86" fill="none" stroke="#4a6cf7" stroke-width="14" stroke-linecap="round" stroke-dasharray="540.4" stroke-dashoffset="97.3" transform="rotate(-90)"/>
+    <circle r="64" fill="none" stroke="rgba(13,27,42,0.07)" stroke-width="14"/>
+    <circle r="64" fill="none" stroke="#3aab9c" stroke-width="14" stroke-linecap="round" stroke-dasharray="402.1" stroke-dashoffset="104.5" transform="rotate(-90)"/>
+    <circle r="42" fill="none" stroke="rgba(13,27,42,0.07)" stroke-width="14"/>
+    <circle r="42" fill="none" stroke="#e89a7c" stroke-width="14" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="23.8" transform="rotate(-90)"/>
+  </g>
+
+  <text x="80" y="566" font-family="ui-monospace, monospace" font-size="22" letter-spacing="3" fill="#98a1ad">HARNESSDREAMS.COM</text>
+</svg>

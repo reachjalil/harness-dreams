@@ -1,0 +1,115 @@
+---
+import BrandMark from "./BrandMark.astro";
+const repoUrl = "https://github.com/reachjalil/harness-dreams";
+const links = [
+  { href: "#how", label: "How it works" },
+  { href: "#features", label: "Features" },
+  { href: "#experiments", label: "Experiments" },
+  { href: "#privacy", label: "Privacy" },
+  { href: "#faq", label: "FAQ" },
+];
+---
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="#top" aria-label="Harness Dreams home">
+      <span class="logo" aria-hidden="true">
+        <BrandMark size={22} />
+      </span>
+      <span class="brand-name">Harness Dreams</span>
+    </a>
+
+    <nav class="nav-links" aria-label="Primary">
+      {links.map((l) => <a href={l.href}>{l.label}</a>)}
+    </nav>
+
+    <div class="nav-cta">
+      <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer noopener"
+        >GitHub</a
+      >
+      <a class="btn btn-primary nav-btn" href="#waitlist">Join the waitlist</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+    background: rgba(247, 246, 242, 0.72);
+  }
+  .nav-inner {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.12rem;
+    letter-spacing: -0.01em;
+  }
+  .logo {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .nav-links {
+    display: none;
+    gap: 1.4rem;
+    margin-inline: auto;
+  }
+  .nav-links a {
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 500;
+    transition: color 0.15s ease;
+  }
+  .nav-links a:hover {
+    color: var(--ink);
+  }
+  .nav-cta {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-left: auto;
+  }
+  .ghost {
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 550;
+  }
+  .ghost:hover {
+    color: var(--ink);
+  }
+  .nav-btn {
+    padding: 0.5rem 0.95rem;
+    font-size: 0.9rem;
+  }
+
+  @media (min-width: 880px) {
+    .nav-links {
+      display: flex;
+    }
+    .nav-cta {
+      margin-left: 0;
+    }
+  }
+  @media (max-width: 520px) {
+    .ghost {
+      display: none;
+    }
+  }
+</style>

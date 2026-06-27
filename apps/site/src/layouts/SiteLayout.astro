@@ -7,10 +7,9 @@ interface Props {
 }
 
 const { title, description } = Astro.props as Props;
-const canonicalUrl = new URL(
-  Astro.url.pathname,
-  Astro.site ?? "https://harnessdreams.com"
-);
+const site = Astro.site ?? new URL("https://harnessdreams.com");
+const canonicalUrl = new URL(Astro.url.pathname, site);
+const ogImage = new URL("/og.svg", site);
 const siteName = "Harness Dreams";
 ---
 
@@ -23,19 +22,71 @@ const siteName = "Harness Dreams";
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl.toString()} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#0b0c10" />
-    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#f7f6f2" />
+    <meta name="color-scheme" content="light" />
     <meta name="author" content="Harness Dreams" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,380;9..144,460;9..144,540&family=Inter:wght@400;500;600;700;800&display=swap"
+    />
+
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={siteName} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl.toString()} />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content={ogImage.toString()} />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage.toString()} />
+
+    <script is:inline>
+      // Mark JS available before paint so reveal animations can hide initial
+      // state. Without JS (or with reduced motion) all content stays visible.
+      document.documentElement.setAttribute("data-js", "");
+    </script>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
     <slot />
+
+    <script>
+      const reduce = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+      const els = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
+      if (reduce || !("IntersectionObserver" in window)) {
+        for (const el of els) el.classList.add("in");
+      } else {
+        const io = new IntersectionObserver(
+          (entries, obs) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                e.target.classList.add("in");
+                obs.unobserve(e.target);
+              }
+            }
+          },
+          { rootMargin: "0px 0px -10% 0px", threshold: 0.12 }
+        );
+        for (const el of els) io.observe(el);
+
+        // Fail-open backstop: never leave content hidden if the observer is
+        // delayed, unsupported, or the page is captured before it fires.
+        window.addEventListener("load", () => {
+          setTimeout(() => {
+            for (const el of els) el.classList.add("in");
+          }, 1500);
+        });
+      }
+    </script>
   </body>
 </html>

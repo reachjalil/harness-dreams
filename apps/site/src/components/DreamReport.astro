@@ -1,0 +1,248 @@
+---
+import Rings from "./Rings.astro";
+/**
+ * Illustrative product mockup of a "Dream Report" — the Apple-Health-style
+ * morning surface. Sample data, clearly framed as a preview.
+ */
+---
+
+<div class="report card" aria-label="Example Dream Report">
+  <div class="report-head">
+    <div>
+      <span class="mono report-eyebrow">Good morning</span>
+      <div class="report-title">Last night's dream · 3 projects · 14 sessions</div>
+    </div>
+    <span class="preview-pill mono">Preview</span>
+  </div>
+
+  <div class="vitals">
+    <Rings efficiency={82} effectiveness={74} alignment={91} />
+    <ul class="legend">
+      <li>
+        <span class="swatch" style="background:var(--dusk)"></span>
+        Efficiency <b>82</b>
+        <span class="delta up">↓12% tokens/change</span>
+      </li>
+      <li>
+        <span class="swatch" style="background:var(--teal-deep)"></span>
+        Effectiveness <b>74</b>
+        <span class="delta up">fewer re-asks</span>
+      </li>
+      <li>
+        <span class="swatch" style="background:var(--apricot)"></span>
+        Alignment <b>91</b>
+        <span class="delta flat">steady</span>
+      </li>
+    </ul>
+  </div>
+
+  <p class="digest">
+    Solid night. Tokens-per-change dropped <b>12%</b> vs your 2-week median,
+    mostly in <span class="repo">agent-fleet</span>. One soft spot: re-asks
+    ticked up on UI work — there's an experiment for it below.
+  </p>
+
+  <div class="finding">
+    <span class="badge win">✓ Win</span>
+    <div class="finding-body">
+      <div class="finding-title">
+        The <code>verify</code> skill correlates with 18% fewer re-asks.
+      </div>
+      <div class="finding-actions">
+        <button class="mini primary" type="button">Accept</button>
+        <button class="mini" type="button">Snooze</button>
+        <span class="evidence mono">6 sessions</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="experiment">
+    <span class="badge exp">🧪 Experiment</span>
+    <div class="finding-body">
+      <div class="finding-title">
+        Try <b>medium</b> thinking effort for UI tasks — graded next dream.
+      </div>
+      <div class="finding-actions">
+        <button class="mini warm" type="button">Enable</button>
+        <span class="evidence mono">5-session test</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .report {
+    width: min(100%, 30rem);
+    padding: 1.25rem;
+    display: grid;
+    gap: 1rem;
+    background:
+      radial-gradient(
+        120% 80% at 100% 0%,
+        rgba(167, 218, 211, 0.22),
+        transparent 55%
+      ),
+      var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  .report-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .report-eyebrow {
+    color: var(--dusk);
+  }
+  .report-title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+    margin-top: 0.25rem;
+    color: var(--ink);
+  }
+  .preview-pill {
+    flex: none;
+    padding: 0.25rem 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--faint);
+  }
+
+  .vitals {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+  }
+  .legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.55rem;
+    font-size: 0.86rem;
+    color: var(--slate);
+  }
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .legend b {
+    color: var(--ink);
+  }
+  .swatch {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: none;
+  }
+  .delta {
+    font-size: 0.74rem;
+    margin-left: 0.1rem;
+  }
+  .delta.up {
+    color: var(--teal-deep);
+  }
+  .delta.flat {
+    color: var(--faint);
+  }
+
+  .digest {
+    color: var(--slate);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  .digest b {
+    color: var(--ink);
+  }
+  .repo {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--dusk);
+  }
+
+  .finding,
+  .experiment {
+    display: flex;
+    gap: 0.7rem;
+    padding: 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--cloud);
+  }
+  .finding-body {
+    display: grid;
+    gap: 0.55rem;
+  }
+  .finding-title {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: var(--ink);
+  }
+  .finding-title code {
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    padding: 0.05rem 0.3rem;
+    border-radius: 5px;
+    background: rgba(74, 108, 247, 0.12);
+    color: var(--dusk);
+  }
+  .badge {
+    flex: none;
+    height: fit-content;
+    padding: 0.2rem 0.5rem;
+    border-radius: 7px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge.win {
+    background: rgba(58, 171, 156, 0.16);
+    color: var(--teal-deep);
+  }
+  .badge.exp {
+    background: rgba(232, 154, 124, 0.18);
+    color: #c8693f;
+  }
+
+  .finding-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .mini {
+    padding: 0.32rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 550;
+    cursor: pointer;
+  }
+  .mini.primary {
+    background: var(--dusk);
+    border-color: transparent;
+    color: #fff;
+  }
+  .mini.warm {
+    background: var(--apricot);
+    border-color: transparent;
+    color: #3a1c0e;
+  }
+  .evidence {
+    color: var(--faint);
+    margin-left: auto;
+  }
+
+  @media (max-width: 420px) {
+    .vitals {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

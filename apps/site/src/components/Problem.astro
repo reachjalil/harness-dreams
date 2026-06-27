@@ -1,0 +1,92 @@
+---
+const points = [
+  {
+    title: "No memory of yesterday",
+    body: "Every session starts cold. The wins and mistakes from today evaporate the moment the agent stops.",
+  },
+  {
+    title: "No cross-project view",
+    body: "A pattern you solved in one repo never helps the next. Your agent re-learns the same lessons, project by project.",
+  },
+  {
+    title: "No measurement",
+    body: "Is your setup getting better or worse? Did that config change help? Nobody is keeping score — so nobody knows.",
+  },
+];
+---
+
+<section class="section" id="problem">
+  <div class="container">
+    <div class="head section-narrow reveal">
+      <span class="eyebrow">The missing layer</span>
+      <h2 class="h2">
+        Your harness has been awake too long.
+      </h2>
+      <p class="lead">
+        It runs all day and produces a complete, high-resolution diary of
+        everything it did — every prompt, token, tool call, edit, and
+        correction. And then it forgets all of it. That signal is never turned
+        into learning.
+      </p>
+    </div>
+
+    <div class="grid">
+      {
+        points.map((p, i) => (
+          <div class="point reveal" data-delay={(i + 1).toString()}>
+            <div class="x" aria-hidden="true">✕</div>
+            <h3>{p.title}</h3>
+            <p>{p.body}</p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .head {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+  }
+  .grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+  .point {
+    padding: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    display: grid;
+    gap: 0.6rem;
+    align-content: start;
+  }
+  .x {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(255, 139, 139, 0.12);
+    color: var(--bad);
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+  }
+  .point h3 {
+    font-size: 1.1rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  .point p {
+    color: var(--muted);
+    font-size: 0.96rem;
+  }
+  @media (min-width: 760px) {
+    .grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

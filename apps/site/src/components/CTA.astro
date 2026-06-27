@@ -1,0 +1,215 @@
+---
+import BrandMark from "./BrandMark.astro";
+const repoUrl = "https://github.com/reachjalil/harness-dreams";
+---
+
+<section class="section cta-section" id="waitlist">
+  <div class="container">
+    <div class="cta card reveal">
+      <div class="stars" aria-hidden="true"></div>
+      <div class="mark" aria-hidden="true">
+        <BrandMark size={40} moon="#f7f6f2" orbit="var(--teal)" planet="var(--teal)" />
+      </div>
+
+      <span class="eyebrow">Early access</span>
+      <h2 class="cta-title">
+        Your harness has dreams.<br />
+        <span class="grad-night">Give it a place to have them.</span>
+      </h2>
+      <p class="cta-lead">
+        Harness Dreams is in active development. Join the waitlist to get early
+        access and help shape what your harness reflects on each night.
+      </p>
+
+      <form class="waitlist" id="waitlist-form" novalidate>
+        <label class="visually-hidden" for="email">Email address</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
+          placeholder="you@yourdomain.com"
+          required
+        />
+        <button class="btn btn-primary" type="submit">Join the waitlist</button>
+      </form>
+      <p class="form-note" id="form-note" role="status" aria-live="polite">
+        No spam — just a note when it's ready. Or
+        <a href={repoUrl} target="_blank" rel="noreferrer noopener"
+          >follow along on GitHub</a
+        >.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta-section {
+    padding-block: clamp(3rem, 7vw, 6rem);
+  }
+  .cta {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(2.25rem, 5vw, 3.75rem);
+    display: grid;
+    gap: 1.1rem;
+    justify-items: center;
+    text-align: center;
+    border: 1px solid #1d2c3f;
+    background:
+      radial-gradient(60% 80% at 50% -10%, rgba(74, 108, 247, 0.35), transparent 60%),
+      radial-gradient(50% 60% at 85% 120%, rgba(58, 171, 156, 0.25), transparent 60%),
+      var(--ink);
+    box-shadow: var(--shadow);
+  }
+  .stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 18% 28%, rgba(255, 255, 255, 0.6), transparent),
+      radial-gradient(1.5px 1.5px at 82% 20%, rgba(255, 255, 255, 0.5), transparent),
+      radial-gradient(1px 1px at 64% 64%, rgba(255, 255, 255, 0.45), transparent),
+      radial-gradient(1px 1px at 33% 76%, rgba(255, 255, 255, 0.4), transparent),
+      radial-gradient(1.5px 1.5px at 90% 80%, rgba(255, 255, 255, 0.35), transparent);
+    mask-image: radial-gradient(80% 80% at 50% 30%, #000, transparent 85%);
+    pointer-events: none;
+  }
+  .mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 0.3rem;
+  }
+  .eyebrow {
+    position: relative;
+    color: var(--teal);
+  }
+  .cta-title {
+    position: relative;
+    font-size: clamp(1.9rem, 5vw, 3rem);
+    font-weight: 460;
+    line-height: 1.06;
+    color: #f7f6f2;
+  }
+  .grad-night {
+    background: linear-gradient(100deg, #9db4ff, var(--teal));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .cta-lead {
+    position: relative;
+    color: rgba(247, 246, 242, 0.72);
+    max-width: 46ch;
+    font-size: clamp(1.02rem, 2.2vw, 1.15rem);
+    line-height: 1.5;
+  }
+  .waitlist {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+    width: min(100%, 30rem);
+    margin-top: 0.4rem;
+  }
+  input[type="email"] {
+    flex: 1 1 16rem;
+    padding: 0.78rem 1rem;
+    border-radius: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    color: #f7f6f2;
+    font-family: inherit;
+    font-size: 0.97rem;
+  }
+  input[type="email"]::placeholder {
+    color: rgba(247, 246, 242, 0.45);
+  }
+  input[type="email"]:focus-visible {
+    outline: 3px solid rgba(74, 108, 247, 0.5);
+    outline-offset: 1px;
+    border-color: var(--dusk);
+  }
+  .waitlist button {
+    flex: 0 0 auto;
+  }
+  .form-note {
+    position: relative;
+    color: rgba(247, 246, 242, 0.5);
+    font-size: 0.86rem;
+  }
+  .form-note a {
+    color: var(--teal);
+  }
+  .form-note.ok {
+    color: var(--teal);
+  }
+  .form-note.err {
+    color: #ff9b8b;
+  }
+</style>
+
+<script>
+  // Waitlist capture. If a backend endpoint is configured, POST there.
+  // Otherwise fall back to noting interest on-device and pointing to GitHub —
+  // honest about the fact that no server received it yet.
+  const FORM_ENDPOINT = ""; // e.g. a Formspree / Cloudflare Worker URL
+
+  const form = document.getElementById("waitlist-form") as HTMLFormElement | null;
+  const note = document.getElementById("form-note");
+  const input = document.getElementById("email") as HTMLInputElement | null;
+
+  function setNote(msg: string, kind: "" | "ok" | "err") {
+    if (!note) return;
+    note.textContent = msg;
+    note.classList.remove("ok", "err");
+    if (kind) note.classList.add(kind);
+  }
+
+  const valid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = input?.value.trim() ?? "";
+    if (!valid(email)) {
+      setNote("Please enter a valid email address.", "err");
+      input?.focus();
+      return;
+    }
+
+    if (FORM_ENDPOINT) {
+      try {
+        const res = await fetch(FORM_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        if (!res.ok) throw new Error("bad status");
+        form.reset();
+        setNote("You're on the list — talk soon. ✦", "ok");
+      } catch {
+        setNote("Something went wrong. Please try again or use GitHub.", "err");
+      }
+      return;
+    }
+
+    // No backend yet: record interest locally and be honest about it.
+    try {
+      const key = "hd:waitlist";
+      const list = JSON.parse(localStorage.getItem(key) ?? "[]");
+      if (!list.includes(email)) list.push(email);
+      localStorage.setItem(key, JSON.stringify(list));
+    } catch {
+      /* ignore storage errors */
+    }
+    form.reset();
+    setNote("Noted on this device — ⭐ the repo so you don't miss launch.", "ok");
+  });
+</script>

@@ -1,0 +1,69 @@
+---
+/**
+ * Apple-Health-style concentric activity rings.
+ * Three composite scores: Efficiency, Effectiveness, Alignment (0–100).
+ */
+interface Props {
+  efficiency: number;
+  effectiveness: number;
+  alignment: number;
+  size?: number;
+}
+
+const {
+  efficiency,
+  effectiveness,
+  alignment,
+  size = 132,
+} = Astro.props as Props;
+
+const rings = [
+  { pct: efficiency, r: 52, color: "var(--dusk)", label: "Efficiency" },
+  {
+    pct: effectiveness,
+    r: 39,
+    color: "var(--teal-deep)",
+    label: "Effectiveness",
+  },
+  { pct: alignment, r: 26, color: "var(--apricot)", label: "Alignment" },
+];
+
+const circ = (r: number) => 2 * Math.PI * r;
+---
+
+<svg
+  class="rings"
+  width={size}
+  height={size}
+  viewBox="0 0 120 120"
+  role="img"
+  aria-label={`Efficiency ${efficiency}, Effectiveness ${effectiveness}, Alignment ${alignment} out of 100`}
+>
+  <g transform="rotate(-90 60 60)">
+    {
+      rings.map((ring) => (
+        <>
+          <circle
+            cx="60"
+            cy="60"
+            r={ring.r}
+            fill="none"
+            stroke="rgba(13,27,42,0.07)"
+            stroke-width="9"
+          />
+          <circle
+            cx="60"
+            cy="60"
+            r={ring.r}
+            fill="none"
+            stroke={ring.color}
+            stroke-width="9"
+            stroke-linecap="round"
+            stroke-dasharray={circ(ring.r)}
+            stroke-dashoffset={circ(ring.r) * (1 - ring.pct / 100)}
+          />
+        </>
+      ))
+    }
+  </g>
+</svg>

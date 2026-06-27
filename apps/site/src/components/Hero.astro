@@ -1,0 +1,150 @@
+---
+import DreamReport from "./DreamReport.astro";
+---
+
+<section class="hero" id="top">
+  <div class="orbits" aria-hidden="true">
+    <svg viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+      <g fill="none" stroke="var(--dusk)" stroke-opacity="0.10">
+        <ellipse cx="880" cy="300" rx="520" ry="180" transform="rotate(-16 880 300)"></ellipse>
+        <ellipse cx="880" cy="300" rx="360" ry="120" transform="rotate(-16 880 300)"></ellipse>
+      </g>
+      <g fill="var(--teal-deep)" fill-opacity="0.5">
+        <circle cx="1290" cy="190" r="4"></circle>
+        <circle cx="470" cy="430" r="3"></circle>
+      </g>
+    </svg>
+  </div>
+
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <span class="eyebrow reveal">
+        <span class="dot" aria-hidden="true"></span> Your Harness Health App
+      </span>
+
+      <h1 class="reveal" data-delay="1">
+        Your coding harness<br />
+        gets better <span class="grad">overnight</span>.
+      </h1>
+
+      <p class="tagline reveal" data-delay="1">
+        Quiet intelligence, working while you rest.
+      </p>
+
+      <p class="lead reveal" data-delay="2">
+        Harness Dreams is a health app for your AI coding agents. While you
+        rest, it reviews the day, finds what worked and what didn't, and wakes
+        you with a report and experiments to make tomorrow sharper — fewer
+        tokens, less back-and-forth, fewer repeated mistakes.
+      </p>
+
+      <div class="hero-cta reveal" data-delay="3">
+        <a class="btn btn-primary" href="#waitlist">Join the waitlist</a>
+        <a class="btn" href="#how">See how it works →</a>
+      </div>
+
+      <ul class="trust reveal" data-delay="3">
+        <li>Local-first — your code stays on your machine</li>
+        <li>Built on your real session telemetry</li>
+        <li>Lives in your macOS menu bar</li>
+      </ul>
+    </div>
+
+    <div class="hero-visual reveal" data-delay="2">
+      <div class="glow" aria-hidden="true"></div>
+      <DreamReport />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding-block: clamp(3rem, 8vw, 6rem) clamp(3.5rem, 9vw, 7rem);
+    overflow: hidden;
+  }
+  .orbits {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .orbits svg {
+    width: 100%;
+    height: 100%;
+    mask-image: radial-gradient(80% 70% at 70% 30%, #000, transparent 85%);
+  }
+  .hero-inner {
+    position: relative;
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 4rem);
+    align-items: center;
+  }
+  .hero-copy {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: start;
+  }
+  h1 {
+    font-size: clamp(2.7rem, 7vw, 4.6rem);
+    font-weight: 460;
+    letter-spacing: -0.02em;
+    line-height: 1.03;
+  }
+  .tagline {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(1.15rem, 2.6vw, 1.4rem);
+    color: var(--slate);
+    margin-top: -0.3rem;
+  }
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+  }
+  .trust {
+    list-style: none;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .trust li {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .trust li::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--teal-deep);
+    flex: none;
+  }
+  .hero-visual {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+  .glow {
+    position: absolute;
+    inset: -12% -6%;
+    background: radial-gradient(
+      55% 55% at 50% 40%,
+      rgba(74, 108, 247, 0.14),
+      transparent 70%
+    );
+    filter: blur(22px);
+    pointer-events: none;
+  }
+
+  @media (min-width: 940px) {
+    .hero-inner {
+      grid-template-columns: 1.05fr 0.95fr;
+    }
+  }
+</style>

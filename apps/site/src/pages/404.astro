@@ -1,21 +1,50 @@
 ---
 import SiteLayout from "../layouts/SiteLayout.astro";
+import BrandMark from "../components/BrandMark.astro";
 ---
 
 <SiteLayout
   title="Page not found | Harness Dreams"
   description="That page does not exist."
 >
-  <main class="wrap" id="main">
-    <div class="card">
-      <span class="pill">
-        <span class="mono">404</span>
-      </span>
-      <h1>Lost in a dream.</h1>
-      <p class="sub">That page does not exist.</p>
-      <div class="links">
-        <a class="btn" href="/">Back to home <span aria-hidden="true">&rarr;</span></a>
-      </div>
-    </div>
+  <main class="nf" id="main">
+    <span class="nf-logo" aria-hidden="true"><BrandMark size={34} /></span>
+    <span class="pill"><span class="mono">404</span></span>
+    <h1 class="serif">Lost in a dream.</h1>
+    <p class="nf-sub">That page drifted off somewhere. Let's get you back.</p>
+    <a class="btn btn-primary" href="/">Back to home →</a>
   </main>
 </SiteLayout>
+
+<style>
+  .nf {
+    min-height: 100svh;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    text-align: center;
+    gap: 1.1rem;
+    padding: 2rem 1.25rem;
+  }
+  .nf-logo {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-soft);
+  }
+  h1 {
+    font-size: clamp(2.2rem, 6vw, 3.2rem);
+    line-height: 1.05;
+  }
+  .nf-sub {
+    color: var(--muted);
+    max-width: 40ch;
+  }
+  .nf .btn {
+    margin-top: 0.4rem;
+  }
+</style>
