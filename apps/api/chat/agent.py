@@ -18,6 +18,7 @@ from typing import AsyncIterator
 from dotenv import load_dotenv
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse, UserPromptPart, TextPart
+from pydantic_ai.settings import ModelSettings
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from db import get_db
@@ -77,6 +78,7 @@ def _make_agent() -> Agent:
         deps_type=ChatDeps,
         system_prompt=_SYSTEM_PROMPT,
         retries=1,
+        model_settings=ModelSettings(thinking=False),
     )
 
 
