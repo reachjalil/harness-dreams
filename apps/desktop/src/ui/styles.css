@@ -5743,6 +5743,18 @@ body {
 .chat-tool-call-done {
   opacity: 0.45;
 }
+.chat-tool-summary {
+  color: var(--text-2);
+  opacity: 0.7;
+}
+.chat-status-line {
+  font-size: var(--t-label);
+  color: var(--text-2);
+  font-style: italic;
+  padding-top: 3px;
+  margin: 0;
+  opacity: 0.75;
+}
 .chat-tool-check {
   width: 11px !important;
   height: 11px !important;

@@ -142,10 +142,13 @@ async def get_dream_log(ctx: RunContext[ChatDeps], date: str) -> dict:
             {}, {"date": 1}
         ).sort("date", -1).limit(14).to_list(14)
         dates = [d["date"] for d in available]
-        await ctx.deps.events.put({"type": "tool_result", "name": "get_dream_log"})
+        await ctx.deps.events.put({"type": "tool_result", "name": "get_dream_log", "summary": "not found"})
         return {"error": f"No dream log for {resolved}", "available_dates": dates}
     doc.pop("_id", None)
-    await ctx.deps.events.put({"type": "tool_result", "name": "get_dream_log"})
+    alignment = doc.get("alignment_score")
+    summary = f"alignment {alignment:.0f}" if isinstance(alignment, (int, float)) else "loaded"
+    await ctx.deps.events.put({"type": "tool_result", "name": "get_dream_log", "summary": summary})
+    await ctx.deps.events.put({"type": "status", "text": "Reading through your session data..."})
     return doc
 
 
@@ -169,7 +172,9 @@ async def list_dream_logs(ctx: RunContext[ChatDeps]) -> list[dict]:
     ).sort("date", -1).limit(7).to_list(7)
     for d in docs:
         d.pop("_id", None)
-    await ctx.deps.events.put({"type": "tool_result", "name": "list_dream_logs"})
+    count = len(docs)
+    await ctx.deps.events.put({"type": "tool_result", "name": "list_dream_logs", "summary": f"{count} day{'s' if count != 1 else ''}"})
+    await ctx.deps.events.put({"type": "status", "text": "Looking for patterns across the week..."})
     return docs
 
 
@@ -189,7 +194,11 @@ async def search_chat_history(
     """
     await ctx.deps.events.put({"type": "tool_call", "name": "search_chat_history", "label": f"Searching for \"{query}\""})
     result = await _search(query, sources=sources, date_from=date_from, date_to=date_to)
-    await ctx.deps.events.put({"type": "tool_result", "name": "search_chat_history"})
+    count = len(result)
+    summary = f"{count} session{'s' if count != 1 else ''} found" if count else "nothing found"
+    await ctx.deps.events.put({"type": "tool_result", "name": "search_chat_history", "summary": summary})
+    if count:
+        await ctx.deps.events.put({"type": "status", "text": f"Reading through {count} matching session{'s' if count != 1 else ''}..."})
     return result
 
 

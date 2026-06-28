@@ -26,9 +26,16 @@ interface ToolEvent {
   name: string;
   label: string;
   done: boolean;
+  summary?: string;
 }
 
-type ChatItem = TextMessage | ToolEvent;
+interface StatusEvent {
+  kind: "status";
+  id: string;
+  text: string;
+}
+
+type ChatItem = TextMessage | ToolEvent | StatusEvent;
 
 const SUGGESTIONS = [
   { label: "Why was my alignment low?", sub: "Explain yesterday's score" },
@@ -106,6 +113,9 @@ function ToolEventRow({ item }: { item: ToolEvent }): ReactElement {
           <path d="M8 5v3l2 1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         <span>{item.label}</span>
+        {item.done && item.summary ? (
+          <span className="chat-tool-summary">— {item.summary}</span>
+        ) : null}
         {item.done ? (
           <svg className="chat-tool-check" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
@@ -120,8 +130,18 @@ function ToolEventRow({ item }: { item: ToolEvent }): ReactElement {
   );
 }
 
+function StatusRow({ item }: { item: StatusEvent }): ReactElement {
+  return (
+    <div className="chat-row chat-row-assistant">
+      <div className="chat-ai-icon-spacer" aria-hidden="true" />
+      <p className="chat-status-line">{item.text}</p>
+    </div>
+  );
+}
+
 function MessageRow({ item }: { item: ChatItem }): ReactElement {
   if (item.kind === "tool") return <ToolEventRow item={item} />;
+  if (item.kind === "status") return <StatusRow item={item} />;
   if (item.role === "user") {
     return (
       <div className="chat-row chat-row-user">
@@ -248,14 +268,29 @@ function TextChat(): ReactElement {
               setItems((prev) =>
                 prev.map((item) =>
                   item.kind === "tool" && item.name === payload.name && !item.done
-                    ? { ...item, done: true }
+                    ? { ...item, done: true, summary: payload.summary ?? undefined }
                     : item
                 )
               );
+            } else if (payload.type === "status") {
+              setThinking(false);
+              const statusItem: StatusEvent = {
+                kind: "status",
+                id: `status-${Date.now()}`,
+                text: payload.text,
+              };
+              setItems((prev) => {
+                // Replace any existing status line, insert before assistant bubble
+                const withoutStatus = prev.filter((item) => item.kind !== "status");
+                const rest = withoutStatus.slice(0, -1);
+                const last = withoutStatus[withoutStatus.length - 1];
+                return [...rest, statusItem, last];
+              });
             } else if (payload.type === "token") {
               setThinking(false);
+              // Drop status lines once real text starts flowing
               setItems((prev) => {
-                const next = [...prev];
+                const next = prev.filter((item) => item.kind !== "status");
                 const last = next[next.length - 1];
                 if (last?.kind === "text" && last.role === "assistant") {
                   next[next.length - 1] = {
