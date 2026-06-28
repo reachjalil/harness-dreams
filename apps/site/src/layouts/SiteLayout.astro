@@ -22,20 +22,9 @@ const siteName = "Harness Dreams";
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl.toString()} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#f7f6f2" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="color-scheme" content="light" />
     <meta name="author" content="Harness Dreams" />
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,380;9..144,460;9..144,540&family=Inter:wght@400;500;600;700;800&display=swap"
-    />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={siteName} />
@@ -66,6 +55,12 @@ const siteName = "Harness Dreams";
       if (reduce || !("IntersectionObserver" in window)) {
         for (const el of els) el.classList.add("in");
       } else {
+        const strictEls = new Set(
+          Array.from(
+            document.querySelectorAll<HTMLElement>(".reveal-on-scroll")
+          )
+        );
+        const normalEls = els.filter((el) => !strictEls.has(el));
         const io = new IntersectionObserver(
           (entries, obs) => {
             for (const e of entries) {
@@ -77,15 +72,19 @@ const siteName = "Harness Dreams";
           },
           { rootMargin: "0px 0px -10% 0px", threshold: 0.12 }
         );
-        for (const el of els) io.observe(el);
-
-        // Fail-open backstop: never leave content hidden if the observer is
-        // delayed, unsupported, or the page is captured before it fires.
-        window.addEventListener("load", () => {
-          setTimeout(() => {
-            for (const el of els) el.classList.add("in");
-          }, 1500);
-        });
+        const strictIo = new IntersectionObserver(
+          (entries, obs) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                e.target.classList.add("in");
+                obs.unobserve(e.target);
+              }
+            }
+          },
+          { rootMargin: "0px 0px -38% 0px", threshold: 0.4 }
+        );
+        for (const el of normalEls) io.observe(el);
+        for (const el of strictEls) strictIo.observe(el);
       }
     </script>
   </body>

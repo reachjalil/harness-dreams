@@ -1,0 +1,74 @@
+---
+import Footer from "../../components/Footer.astro";
+import Nav from "../../components/Nav.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+
+const title = "Case Studies — Harness Dreams";
+const description =
+  "Realistic case studies showing how Harness Dreams turns agent-session patterns into measurable workflow improvements.";
+
+const studies = [
+  {
+    title: "Agent-fleet stopped asking for the same test command",
+    href: "/case-studies/agent-fleet/",
+    metric: "4 repeated prompts removed",
+    text: "A missing project hint caused the harness to guess validation commands. The dream report surfaced the pattern and turned it into an AGENTS.md improvement.",
+  },
+  {
+    title: "UI work got cheaper without losing review quality",
+    href: "/case-studies/",
+    metric: "12% lower token spend",
+    text: "Harness Dreams compared UI sessions against the baseline and suggested a lighter reasoning setting for bounded visual iteration.",
+  },
+  {
+    title: "Duplicate parser work became a reusable helper",
+    href: "/case-studies/",
+    metric: "2 repos consolidated",
+    text: "The report noticed similar code being recreated across repos and converted that repetition into a shared-workflow improvement.",
+  },
+];
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <section class="page-hero">
+      <div class="container page-hero-grid">
+        <div>
+          <span class="eyebrow">Case studies</span>
+          <h1>What harness health looks like in real work.</h1>
+          <p class="lead">
+            These stories are based on the product’s mock telemetry model, but
+            they reflect the concrete patterns Harness Dreams is built to find:
+            repeated corrections, missing local guidance, expensive loops, and
+            habits worth reinforcing.
+          </p>
+        </div>
+        <figure class="page-visual">
+          <img
+            src="/story-team-standup.png"
+            alt="Two developers in a clean San Francisco office reviewing harness health improvements at a shared monitor."
+            loading="eager"
+            decoding="async"
+          />
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container resource-grid">
+        {
+          studies.map((study, i) => (
+            <a class="resource-card reveal" data-delay={String((i % 3) + 1)} href={study.href}>
+              <span class="mono">Case study</span>
+              <h2>{study.title}</h2>
+              <p>{study.text}</p>
+              <small>{study.metric} →</small>
+            </a>
+          ))
+        }
+      </div>
+    </section>
+  </main>
+  <Footer />
+</SiteLayout>

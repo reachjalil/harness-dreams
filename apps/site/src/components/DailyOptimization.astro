@@ -1,0 +1,86 @@
+---
+import Rings from "./Rings.astro";
+
+const loops = [
+  {
+    label: "Efficiency",
+    title: "See where the loop is wasting effort.",
+    text: "Tokens, cost, and repeated validation mistakes become a readable work pulse instead of a buried log.",
+    score: "84",
+    caption: "efficiency score",
+    type: "rings",
+  },
+  {
+    label: "Effectiveness",
+    title: "Measure whether the agent is landing the work.",
+    text: "Accepted changes, tool success, and resolved findings show whether the collaboration is getting cleaner.",
+    score: "69",
+    caption: "effectiveness score",
+    type: "bars",
+  },
+  {
+    label: "Alignment",
+    title: "Track how closely the agent follows intent.",
+    text: "Re-asks and corrections become a signal for the next project habit or harness instruction to improve.",
+    score: "76",
+    caption: "alignment score",
+    type: "pulse",
+  },
+];
+---
+
+<section class="apple-story apple-story-white daily-optimization">
+  <div class="apple-copy reveal">
+    <span class="health-glyph glyph-blue" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </span>
+    <h2>A daily optimization loop for you and your coding agents.</h2>
+    <p>
+      Your best collaboration is the result of small choices that add up:
+      <strong>clearer instructions, fewer repeated corrections, and a harness
+      that learns how you ship</strong>. Harness Dreams turns yesterday into the
+      next useful adjustment.
+    </p>
+  </div>
+
+  <div class="optimization-slider" aria-label="Daily optimization cards">
+    {
+      loops.map((loop, i) => (
+        <article class="optimization-card reveal" data-delay={String(i + 1)}>
+          <div class={`optimization-visual visual-${loop.type}`} aria-hidden="true">
+            {loop.type === "rings" ? (
+              <div class="desktop-score">
+                <Rings efficiency={84} effectiveness={69} alignment={76} />
+                <strong>{loop.score}</strong>
+                <span>{loop.caption}</span>
+              </div>
+            ) : loop.type === "bars" ? (
+              <div class="graph-tile">
+                <div class="graph-bars">
+                  <i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+                <strong>{loop.score}</strong>
+                <span>{loop.caption}</span>
+              </div>
+            ) : (
+              <div class="pulse-tile">
+                <svg viewBox="0 0 220 100">
+                  <path d="M4 56h38l12-24 20 52 23-72 25 44h42l14-18 14 30 22-46"></path>
+                </svg>
+                <strong>{loop.score}</strong>
+                <span>{loop.caption}</span>
+              </div>
+            )}
+          </div>
+          <div class="optimization-copy">
+            <span>{loop.label}</span>
+            <h3>{loop.title}</h3>
+            <p>{loop.text}</p>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</section>

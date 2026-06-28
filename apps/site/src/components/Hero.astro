@@ -1,151 +1,600 @@
 ---
-import DreamReport from "./DreamReport.astro";
 ---
 
-<section class="hero" id="top">
-  <div class="orbits" aria-hidden="true">
-    <svg viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
-      <g fill="none" stroke="var(--dusk)" stroke-opacity="0.10">
-        <ellipse cx="880" cy="300" rx="520" ry="180" transform="rotate(-16 880 300)"></ellipse>
-        <ellipse cx="880" cy="300" rx="360" ry="120" transform="rotate(-16 880 300)"></ellipse>
-      </g>
-      <g fill="var(--teal-deep)" fill-opacity="0.5">
-        <circle cx="1290" cy="190" r="4"></circle>
-        <circle cx="470" cy="430" r="3"></circle>
-      </g>
-    </svg>
+<section class="hero splash-hero" id="top">
+  <div class="splash-motion" aria-hidden="true">
+    <span class="splash-shape shape-a"></span>
+    <span class="splash-shape shape-b"></span>
+    <span class="splash-shape shape-c"></span>
+    <span class="splash-shape shape-d"></span>
   </div>
 
-  <div class="container hero-inner">
-    <div class="hero-copy">
-      <span class="eyebrow reveal">
-        <span class="dot" aria-hidden="true"></span> Your Harness Health App
+  <div class="splash-content reveal">
+    <div class="splash-icon-cycle" aria-hidden="true">
+      <!-- dream — Harness Dreams mark -->
+      <span class="splash-icon icon-logo">
+        <img src="/logo-white.png" alt="" loading="eager" decoding="async" />
       </span>
 
-      <h1 class="reveal" data-delay="1">
-        Your coding harness<br />
-        gets better <span class="grad">overnight</span>.
-      </h1>
+      <!-- review — Lucide "file-code-2", from the desktop action language -->
+      <span class="splash-icon icon-review">
+        <svg viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+          <path d="M14 2v6h6"></path>
+          <path d="m10 13-2 2 2 2"></path>
+          <path d="m14 17 2-2-2-2"></path>
+        </svg>
+      </span>
 
-      <p class="tagline reveal" data-delay="1">
-        Quiet intelligence, working while you rest.
-      </p>
+      <!-- connect — desktop-inspired workflow nodes -->
+      <span class="splash-icon icon-connect">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="4" width="6" height="6" rx="1.5"></rect>
+          <rect x="15" y="4" width="6" height="6" rx="1.5"></rect>
+          <rect x="15" y="14" width="6" height="6" rx="1.5"></rect>
+          <path d="M9 7h6"></path>
+          <path d="M18 10v4"></path>
+          <path d="M6 10v2a4 4 0 0 0 4 4h5"></path>
+        </svg>
+      </span>
 
-      <p class="lead reveal" data-delay="2">
-        Harness Dreams is a health app for your AI coding agents. While you
-        rest, it reviews the day, finds what worked and what didn't, and wakes
-        you with a report and experiments to make tomorrow sharper — fewer
-        tokens, less back-and-forth, fewer repeated mistakes.
-      </p>
+      <!-- adapt — Lucide "sliders-horizontal" -->
+      <span class="splash-icon icon-adapt">
+        <svg viewBox="0 0 24 24">
+          <line x1="21" x2="14" y1="4" y2="4"></line>
+          <line x1="10" x2="3" y1="4" y2="4"></line>
+          <line x1="21" x2="12" y1="12" y2="12"></line>
+          <line x1="8" x2="3" y1="12" y2="12"></line>
+          <line x1="21" x2="16" y1="20" y2="20"></line>
+          <line x1="12" x2="3" y1="20" y2="20"></line>
+          <line x1="14" x2="14" y1="2" y2="6"></line>
+          <line x1="8" x2="8" y1="10" y2="14"></line>
+          <line x1="16" x2="16" y1="18" y2="22"></line>
+        </svg>
+      </span>
 
-      <div class="hero-cta reveal" data-delay="3">
-        <a class="btn btn-primary" href="#waitlist">Join the waitlist</a>
-        <a class="btn" href="#how">See how it works →</a>
-      </div>
-
-      <ul class="trust reveal" data-delay="3">
-        <li>Local-first — your code stays on your machine</li>
-        <li>Built on your real session telemetry</li>
-        <li>Lives in your macOS menu bar</li>
-      </ul>
+      <!-- improve — Lucide "trending-up" -->
+      <span class="splash-icon icon-improve">
+        <svg viewBox="0 0 24 24">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+          <polyline points="16 7 22 7 22 13"></polyline>
+        </svg>
+      </span>
     </div>
 
-    <div class="hero-visual reveal" data-delay="2">
-      <div class="glow" aria-hidden="true"></div>
-      <DreamReport />
+    <p class="splash-product">Harness Dreams</p>
+    <h1>What should your harness do when it goes to sleep?</h1>
+    <p
+      class="splash-answer"
+      aria-label="It should dream, review, connect, adapt, and improve."
+    >
+      <span aria-hidden="true">It should&nbsp;</span>
+      <span class="answer-morph" aria-hidden="true">
+        <span class="answer-sizer">improve.</span>
+        <span class="answer-word aw-1">dream.</span>
+        <span class="answer-word aw-2">review.</span>
+        <span class="answer-word aw-3">connect.</span>
+        <span class="answer-word aw-4">adapt.</span>
+        <span class="answer-word aw-5">improve.</span>
+      </span>
+    </p>
+    <p class="splash-lede">
+      A health app for the coding harness you work inside. While you're away it
+      reviews the day's sessions, finds what to fix, and wakes you with a short,
+      reviewable list of changes for tomorrow.
+    </p>
+
+    <div class="hero-cta">
+      <a class="btn btn-primary hero-primary" href="/start/">Start locally</a>
+      <a class="btn hero-secondary" href="#insights">Keep reading</a>
     </div>
   </div>
+
+  <a class="scroll-cue" href="#insights" aria-label="Scroll to more insights">
+    <span></span>
+  </a>
 </section>
 
 <style>
   .hero {
     position: relative;
-    padding-block: clamp(3rem, 8vw, 6rem) clamp(3.5rem, 9vw, 7rem);
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
     overflow: hidden;
+    isolation: isolate;
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.05), transparent 42%),
+      linear-gradient(150deg, #084c9a 0%, #0c82c2 100%);
+    color: #fff;
+    padding: clamp(4.5rem, 8vw, 7rem) clamp(1.25rem, 4vw, 2rem);
   }
-  .orbits {
+
+  .hero::before,
+  .hero::after {
+    content: "";
     position: absolute;
     inset: 0;
-    pointer-events: none;
-  }
-  .orbits svg {
-    width: 100%;
-    height: 100%;
-    mask-image: radial-gradient(80% 70% at 70% 30%, #000, transparent 85%);
-  }
-  .hero-inner {
-    position: relative;
-    display: grid;
-    gap: clamp(2.5rem, 6vw, 4rem);
-    align-items: center;
-  }
-  .hero-copy {
-    display: grid;
-    gap: 1.1rem;
-    justify-items: start;
-  }
-  h1 {
-    font-size: clamp(2.7rem, 7vw, 4.6rem);
-    font-weight: 460;
-    letter-spacing: -0.02em;
-    line-height: 1.03;
-  }
-  .tagline {
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: clamp(1.15rem, 2.6vw, 1.4rem);
-    color: var(--slate);
-    margin-top: -0.3rem;
-  }
-  .hero-cta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.8rem;
-    margin-top: 0.5rem;
-  }
-  .trust {
-    list-style: none;
-    margin: 0.6rem 0 0;
-    padding: 0;
-    display: grid;
-    gap: 0.5rem;
-    color: var(--muted);
-    font-size: 0.92rem;
-  }
-  .trust li {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-  }
-  .trust li::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--teal-deep);
-    flex: none;
-  }
-  .hero-visual {
-    position: relative;
-    display: flex;
-    justify-content: center;
-  }
-  .glow {
-    position: absolute;
-    inset: -14% -8%;
-    background: radial-gradient(
-      58% 58% at 52% 38%,
-      rgba(167, 139, 250, 0.28),
-      rgba(74, 108, 247, 0.12) 45%,
-      transparent 72%
-    );
-    filter: blur(26px);
+    z-index: 0;
+    opacity: 0;
     pointer-events: none;
   }
 
-  @media (min-width: 940px) {
-    .hero-inner {
-      grid-template-columns: 1.05fr 0.95fr;
+  .hero::before {
+    background: linear-gradient(150deg, #075f57 0%, #169f91 100%);
+    animation: gradient-teal 20s ease-in-out infinite;
+  }
+
+  .hero::after {
+    background: linear-gradient(150deg, #302e87 0%, #655fd0 100%);
+    animation: gradient-violet 20s ease-in-out infinite;
+  }
+
+  .splash-motion {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .splash-shape {
+    position: absolute;
+    display: block;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.025)),
+      rgba(255, 255, 255, 0.03);
+    opacity: 0;
+    transform-origin: center;
+    will-change: transform, opacity, border-radius;
+  }
+
+  .shape-a {
+    width: 82vw;
+    height: 52vw;
+    left: -28vw;
+    top: 2vh;
+    border-radius: 52% 48% 58% 42% / 46% 62% 38% 54%;
+    animation: soft-field-a 20s ease-in-out infinite;
+  }
+
+  .shape-b {
+    width: 74vw;
+    height: 48vw;
+    right: -23vw;
+    top: 11vh;
+    border-radius: 44% 56% 50% 50% / 62% 44% 56% 38%;
+    background:
+      linear-gradient(160deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.018)),
+      rgba(255, 255, 255, 0.03);
+    animation: soft-field-b 20s ease-in-out infinite;
+  }
+
+  .shape-c {
+    width: 78vw;
+    height: 18vw;
+    left: 10vw;
+    bottom: 13vh;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.105), transparent);
+    transform: rotate(-13deg) scaleX(0.78);
+    animation: ribbon-flow 20s ease-in-out infinite;
+  }
+
+  .shape-d {
+    width: 54vw;
+    height: 36vw;
+    right: 12vw;
+    bottom: -20vw;
+    border-radius: 56% 44% 42% 58% / 55% 58% 42% 45%;
+    background:
+      linear-gradient(30deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0.025);
+    animation: soft-field-d 20s ease-in-out infinite;
+  }
+
+  .splash-content {
+    position: relative;
+    z-index: 2;
+    width: min(100%, 68rem);
+    display: grid;
+    justify-items: center;
+    gap: 0.85rem;
+    text-align: center;
+  }
+
+  .splash-icon-cycle {
+    position: relative;
+    width: 5.4rem;
+    height: 5.4rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .splash-icon-cycle::before,
+  .splash-icon-cycle::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .splash-icon-cycle::before {
+    inset: -0.4rem;
+    background: conic-gradient(
+      from 30deg,
+      rgba(255, 255, 255, 0.03),
+      rgba(255, 255, 255, 0.28),
+      rgba(255, 255, 255, 0.02) 34%,
+      transparent 56%,
+      rgba(255, 255, 255, 0.18) 72%,
+      rgba(255, 255, 255, 0.03)
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 0);
+    mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 0);
+    animation: icon-orbit 20s linear infinite;
+  }
+
+  .splash-icon-cycle::after {
+    inset: 0.34rem;
+    background: conic-gradient(
+      from -70deg,
+      transparent,
+      rgba(255, 255, 255, 0.18),
+      transparent 42%,
+      rgba(255, 255, 255, 0.11) 58%,
+      transparent
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 0);
+    mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 0);
+    animation: icon-orbit 28s linear infinite reverse;
+  }
+
+  .splash-icon {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    transform: translateY(14px) rotate(-10deg) scale(0.84);
+    animation: icon-cycle 20s linear infinite;
+  }
+
+  .splash-icon img {
+    width: 94%;
+    height: 94%;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.18));
+  }
+
+  .splash-icon svg {
+    width: 72%;
+    height: 72%;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.18));
+  }
+
+  /* Each phase runs on a shared 20s timeline: logo first, then enhancement icons. */
+  .icon-logo {
+    animation-delay: 0s;
+  }
+  .icon-review {
+    animation-delay: 4s;
+  }
+  .icon-connect {
+    animation-delay: 8s;
+  }
+  .icon-adapt {
+    animation-delay: 12s;
+  }
+  .icon-improve {
+    animation-delay: 16s;
+  }
+
+  .splash-product {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: clamp(1rem, 1.6vw, 1.22rem);
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  h1 {
+    max-width: 20ch;
+    font-size: clamp(2.35rem, 5vw, 4.4rem);
+    font-weight: 800;
+    letter-spacing: 0;
+    line-height: 1.02;
+  }
+
+  /* The cycling answer to the headline — synced to the icon via icon-cycle */
+  .splash-answer {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    margin-top: 0.1rem;
+    font-size: clamp(1.5rem, 3.4vw, 2.7rem);
+    font-weight: 800;
+    line-height: 1.1;
+    color: #fff;
+  }
+
+  .answer-morph {
+    position: relative;
+    display: inline-block;
+    text-align: left;
+  }
+
+  .answer-sizer {
+    visibility: hidden;
+  }
+
+  .answer-word {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    color: #a9e0ff;
+    text-shadow: 0 0 26px rgba(140, 200, 255, 0.5);
+    animation: word-pop 20s linear infinite;
+  }
+
+  .aw-1 {
+    animation-delay: 0s;
+  }
+  .aw-2 {
+    animation-delay: 4s;
+  }
+  .aw-3 {
+    animation-delay: 8s;
+  }
+  .aw-4 {
+    animation-delay: 12s;
+  }
+  .aw-5 {
+    animation-delay: 16s;
+  }
+
+  .splash-lede {
+    max-width: 35rem;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: clamp(1rem, 1.35vw, 1.12rem);
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.8rem;
+    margin-top: 0.9rem;
+  }
+
+  .hero-primary {
+    background: #fff;
+    color: #0f3c91;
+    box-shadow: 0 18px 50px -28px rgba(0, 0, 0, 0.5);
+  }
+
+  .hero-secondary {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+
+  .scroll-cue {
+    position: absolute;
+    z-index: 2;
+    right: clamp(1.2rem, 3vw, 2.4rem);
+    bottom: clamp(1.2rem, 3vw, 2.4rem);
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #0f3c91;
+  }
+
+  .scroll-cue span {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
+  }
+
+  @keyframes gradient-teal {
+    0%,
+    18% {
+      opacity: 0;
+    }
+    28%,
+    46% {
+      opacity: 1;
+    }
+    58%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes gradient-violet {
+    0%,
+    50% {
+      opacity: 0;
+    }
+    62%,
+    80% {
+      opacity: 1;
+    }
+    92%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes soft-field-a {
+    0% {
+      opacity: 0;
+      transform: translate3d(-3vw, 2vh, 0) scale(0.8) rotate(-10deg);
+      border-radius: 52% 48% 58% 42% / 46% 62% 38% 54%;
+    }
+    18%,
+    46% {
+      opacity: 0.76;
+      transform: translate3d(3vw, -2vh, 0) scale(1.06) rotate(4deg);
+      border-radius: 44% 56% 50% 50% / 56% 42% 58% 44%;
+    }
+    64%,
+    100% {
+      opacity: 0;
+      transform: translate3d(8vw, -1vh, 0) scale(1.24) rotate(11deg);
+      border-radius: 58% 42% 44% 56% / 42% 58% 46% 54%;
+    }
+  }
+
+  @keyframes soft-field-b {
+    0%,
+    12% {
+      opacity: 0;
+      transform: translate3d(8vw, -4vh, 0) scale(0.82) rotate(8deg);
+    }
+    30%,
+    58% {
+      opacity: 0.66;
+      transform: translate3d(-1vw, 2vh, 0) scale(1.05) rotate(-4deg);
+      border-radius: 58% 42% 48% 52% / 40% 60% 42% 58%;
+    }
+    78%,
+    100% {
+      opacity: 0;
+      transform: translate3d(-8vw, 4vh, 0) scale(1.2) rotate(-10deg);
+    }
+  }
+
+  @keyframes ribbon-flow {
+    0%,
+    16% {
+      opacity: 0;
+      transform: translate3d(-20vw, 8vh, 0) rotate(-13deg) scaleX(0.54);
+    }
+    36%,
+    70% {
+      opacity: 0.56;
+      transform: translate3d(0, 0, 0) rotate(-10deg) scaleX(1.08);
+    }
+    100% {
+      opacity: 0;
+      transform: translate3d(22vw, -9vh, 0) rotate(-8deg) scaleX(0.76);
+    }
+  }
+
+  @keyframes soft-field-d {
+    0%,
+    42% {
+      opacity: 0;
+      transform: translate3d(2vw, 10vh, 0) scale(0.7) rotate(0deg);
+    }
+    58%,
+    86% {
+      opacity: 0.62;
+      transform: translate3d(-2vw, -2vh, 0) scale(1.08) rotate(-7deg);
+      border-radius: 46% 54% 56% 44% / 50% 45% 55% 50%;
+    }
+    100% {
+      opacity: 0;
+      transform: translate3d(-7vw, -7vh, 0) scale(1.18) rotate(-13deg);
+    }
+  }
+
+  @keyframes icon-orbit {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  /* Slow logo-to-icon phase loop. The icon rotates gently as it enters so the
+     motion feels like a handoff instead of a random spinner. */
+  @keyframes icon-cycle {
+    0% {
+      opacity: 0;
+      transform: translateY(14px) rotate(-10deg) scale(0.84);
+      animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    5% {
+      opacity: 1;
+      transform: translateY(0) rotate(0deg) scale(1);
+      animation-timing-function: linear;
+    }
+    16% {
+      opacity: 1;
+      transform: translateY(0) rotate(0deg) scale(1);
+      animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.2);
+    }
+    20%,
+    100% {
+      opacity: 0;
+      transform: translateY(-12px) rotate(9deg) scale(0.9);
+    }
+  }
+
+  @keyframes word-pop {
+    0% {
+      opacity: 0;
+      transform: translateY(0.62em) scale(0.9);
+      animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    5% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      animation-timing-function: linear;
+    }
+    16% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.2);
+    }
+    20%,
+    100% {
+      opacity: 0;
+      transform: translateY(-0.5em) scale(0.96);
+    }
+  }
+
+  @media (max-width: 700px) {
+    .hero {
+      place-items: end center;
+      padding-bottom: 6rem;
+    }
+
+    h1 {
+      font-size: clamp(2.55rem, 11.6vw, 4.25rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero::before,
+    .hero::after,
+    .splash-shape,
+    .splash-icon,
+    .splash-icon-cycle::before,
+    .splash-icon-cycle::after,
+    .answer-word {
+      animation: none;
+    }
+
+    .splash-shape {
+      opacity: 0.18;
+      transform: none;
+    }
+
+    .splash-icon.icon-logo,
+    .answer-word.aw-1 {
+      opacity: 1;
+      transform: none;
     }
   }
 </style>

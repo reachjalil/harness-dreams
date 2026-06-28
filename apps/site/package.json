@@ -17,6 +17,7 @@
   "dependencies": {
     "@astrojs/check": "catalog:",
     "astro": "catalog:",
+    "embla-carousel": "^8.6.0",
     "typescript": "catalog:"
   },
   "devDependencies": {

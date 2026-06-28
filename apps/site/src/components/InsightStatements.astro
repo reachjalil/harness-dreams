@@ -1,0 +1,27 @@
+---
+const statements = [
+  "Your agent work creates a health signal every day.",
+  "Harness Dreams turns real sessions into a small set of improvements.",
+  "You decide what changes. The next cycle measures whether it helped.",
+];
+---
+
+<section class="insight-statements" id="insights">
+  <div class="insight-motion" aria-hidden="true">
+    <span class="insight-wave wave-a"></span>
+    <span class="insight-wave wave-b"></span>
+    <span class="insight-ribbon"></span>
+  </div>
+  <div class="statement-stack">
+    {
+      statements.map((statement, i) => (
+        <p
+          class="statement reveal reveal-on-scroll"
+          data-delay={String((i % 3) + 1)}
+        >
+          {statement}
+        </p>
+      ))
+    }
+  </div>
+</section>
