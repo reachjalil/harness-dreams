@@ -5,12 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  ConnectionState,
-  Room,
-  RoomEvent,
-  Track,
-} from "livekit-client";
+import { ConnectionState, Room, RoomEvent, Track } from "livekit-client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -34,16 +29,29 @@ const SUGGESTIONS = [
 function AssistantIcon(): ReactElement {
   return (
     <div className="chat-ai-icon" aria-hidden="true">
-      <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 20 20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
         <circle cx="10" cy="10" r="7" />
-        <path d="M7 10c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3" strokeLinecap="round" />
+        <path
+          d="M7 10c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3"
+          strokeLinecap="round"
+        />
         <circle cx="10" cy="10" r="1" fill="currentColor" stroke="none" />
       </svg>
     </div>
   );
 }
 
-function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }): ReactElement {
+function EmptyState({
+  onSuggest,
+}: {
+  onSuggest: (text: string) => void;
+}): ReactElement {
   return (
     <div className="chat-empty">
       <p className="chat-empty-title">How can I help you?</p>
@@ -90,7 +98,9 @@ function MessageRow({ msg }: { msg: Message }): ReactElement {
       <AssistantIcon />
       <div className="chat-prose">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-        {msg.streaming ? <span className="chat-cursor" aria-hidden="true" /> : null}
+        {msg.streaming ? (
+          <span className="chat-cursor" aria-hidden="true" />
+        ) : null}
       </div>
     </div>
   );
@@ -104,6 +114,7 @@ function TextChat(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const messageCount = messages.length;
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom on new messages
@@ -118,6 +129,10 @@ function TextChat(): ReactElement {
     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
   }
 
+  function stop(): void {
+    abortRef.current?.abort();
+  }
+
   async function send(text?: string): Promise<void> {
     const value = (text ?? input).trim();
     if (!value || busy) return;
@@ -126,12 +141,24 @@ function TextChat(): ReactElement {
     setError(null);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
-    const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: value };
-    const assistantMsg: Message = { id: `a-${Date.now()}`, role: "assistant", content: "", streaming: true };
+    const userMsg: Message = {
+      id: `u-${Date.now()}`,
+      role: "user",
+      content: value,
+    };
+    const assistantMsg: Message = {
+      id: `a-${Date.now()}`,
+      role: "assistant",
+      content: "",
+      streaming: true,
+    };
 
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setBusy(true);
     setThinking(true);
+
+    const abort = new AbortController();
+    abortRef.current = abort;
 
     const history = [...messages, userMsg].map((m) => ({
       role: m.role,
@@ -143,6 +170,7 @@ function TextChat(): ReactElement {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: history }),
+        signal: abort.signal,
       });
 
       if (!res.ok || !res.body) throw new Error(`API error ${res.status}`);
@@ -169,7 +197,10 @@ function TextChat(): ReactElement {
                 const next = [...prev];
                 const last = next[next.length - 1];
                 if (last?.role === "assistant") {
-                  next[next.length - 1] = { ...last, content: last.content + payload.token };
+                  next[next.length - 1] = {
+                    ...last,
+                    content: last.content + payload.token,
+                  };
                 }
                 return next;
               });
@@ -181,14 +212,18 @@ function TextChat(): ReactElement {
       }
     } catch (err) {
       setThinking(false);
-      setError(err instanceof Error ? err.message : "Something went wrong");
-      setMessages((prev) => prev.slice(0, -1));
+      // AbortError = user stopped — keep the partial response, no error banner
+      if (!(err instanceof Error && err.name === "AbortError")) {
+        setError(err instanceof Error ? err.message : "Something went wrong");
+        setMessages((prev) => prev.slice(0, -1));
+      }
     } finally {
       setThinking(false);
       setMessages((prev) => {
         const next = [...prev];
         const last = next[next.length - 1];
-        if (last?.role === "assistant") next[next.length - 1] = { ...last, streaming: false };
+        if (last?.role === "assistant")
+          next[next.length - 1] = { ...last, streaming: false };
         return next;
       });
       setBusy(false);
@@ -224,29 +259,41 @@ function TextChat(): ReactElement {
             placeholder="Ask Dream anything…"
             value={input}
             rows={1}
-            onChange={(e) => { setInput(e.target.value); autoResize(); }}
+            onChange={(e) => {
+              setInput(e.target.value);
+              autoResize();
+            }}
             onKeyDown={onKeyDown}
             disabled={busy}
           />
-          <button
-            type="button"
-            className={`chat-send-btn${busy ? " busy" : ""}`}
-            onClick={() => void send()}
-            disabled={busy || !input.trim()}
-            aria-label="Send"
-          >
-            {busy ? (
-              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <circle cx="10" cy="10" r="7" strokeDasharray="4 2" />
+          {busy ? (
+            <button
+              type="button"
+              className="chat-send-btn chat-stop-btn"
+              onClick={stop}
+              aria-label="Stop"
+            >
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
+                <rect x="5" y="5" width="10" height="10" rx="2" />
               </svg>
-            ) : (
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="chat-send-btn"
+              onClick={() => void send()}
+              disabled={!input.trim()}
+              aria-label="Send"
+            >
               <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10 3l7 14-7-3.5L3 17l7-14z" />
               </svg>
-            )}
-          </button>
+            </button>
+          )}
         </div>
-        <p className="chat-footer-hint">Dream can make mistakes. Check important info.</p>
+        <p className="chat-footer-hint">
+          Dream can make mistakes. Check important info.
+        </p>
       </div>
     </div>
   );
@@ -254,17 +301,27 @@ function TextChat(): ReactElement {
 
 // ── Voice mode ────────────────────────────────────────────────────────────────
 
-type VoiceStatus = "idle" | "connecting" | "connected" | "agent-speaking" | "error";
+type VoiceStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "agent-speaking"
+  | "error";
 
 function VoiceMode(): ReactElement {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [muted, setMuted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const roomRef = useRef<Room | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioElemsRef = useRef<HTMLAudioElement[]>([]);
 
   useEffect(() => {
-    let room: Room;
+    let active = true;
+
+    function cleanupAudio() {
+      for (const el of audioElemsRef.current) el.remove();
+      audioElemsRef.current = [];
+    }
 
     async function connect() {
       setStatus("connecting");
@@ -272,12 +329,18 @@ function VoiceMode(): ReactElement {
       try {
         const res = await fetch(`${API_URL}/voice/token`, { method: "POST" });
         if (!res.ok) throw new Error(`Token error ${res.status}`);
-        const { token, url } = await res.json() as { token: string; url: string };
+        const { token, url } = (await res.json()) as {
+          token: string;
+          url: string;
+        };
 
-        room = new Room();
+        if (!active) return; // unmounted before token arrived
+
+        const room = new Room();
         roomRef.current = room;
 
         room.on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
+          if (!active) return;
           if (state === ConnectionState.Connected) setStatus("connected");
           if (state === ConnectionState.Disconnected) setStatus("idle");
         });
@@ -286,7 +349,7 @@ function VoiceMode(): ReactElement {
           if (track.kind === Track.Kind.Audio) {
             const el = track.attach() as HTMLAudioElement;
             el.autoplay = true;
-            audioRef.current = el;
+            audioElemsRef.current.push(el);
             document.body.appendChild(el);
           }
         });
@@ -294,18 +357,27 @@ function VoiceMode(): ReactElement {
         room.on(RoomEvent.TrackUnsubscribed, (track) => {
           if (track.kind === Track.Kind.Audio) {
             track.detach();
-            audioRef.current?.remove();
+            cleanupAudio();
           }
         });
 
         room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
-          const agentSpeaking = speakers.some((s) => s.identity !== room.localParticipant.identity);
+          if (!active) return;
+          const agentSpeaking = speakers.some(
+            (s) => s.identity !== room.localParticipant.identity
+          );
           setStatus(agentSpeaking ? "agent-speaking" : "connected");
         });
 
         await room.connect(url, token);
-        await room.localParticipant.setMicrophoneEnabled(true);
+        // echo cancellation prevents the agent's audio from looping back into the mic
+        await room.localParticipant.setMicrophoneEnabled(true, {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        });
       } catch (err) {
+        if (!active) return;
         setStatus("error");
         setErrorMsg(err instanceof Error ? err.message : "Connection failed");
       }
@@ -314,15 +386,26 @@ function VoiceMode(): ReactElement {
     void connect();
 
     return () => {
-      audioRef.current?.remove();
+      active = false;
+      cleanupAudio();
       roomRef.current?.disconnect();
+      roomRef.current = null;
     };
   }, []);
 
   async function toggleMute(): Promise<void> {
-    if (!roomRef.current) return;
+    const room = roomRef.current;
+    if (!room) return;
+    const pub = room.localParticipant.getTrackPublication(
+      Track.Source.Microphone
+    );
+    if (!pub) return;
     const next = !muted;
-    await roomRef.current.localParticipant.setMicrophoneEnabled(!next);
+    if (next) {
+      await pub.mute();
+    } else {
+      await pub.unmute();
+    }
     setMuted(next);
   }
 
@@ -336,7 +419,9 @@ function VoiceMode(): ReactElement {
 
   return (
     <div className="voice-shell">
-      <div className={`voice-orb${status === "agent-speaking" ? " voice-orb-active" : ""}`}>
+      <div
+        className={`voice-orb${status === "agent-speaking" ? " voice-orb-active" : ""}`}
+      >
         <AssistantIcon />
       </div>
       <p className="voice-status">{statusLabel[status]}</p>
@@ -348,15 +433,30 @@ function VoiceMode(): ReactElement {
           aria-label={muted ? "Unmute" : "Mute"}
         >
           {muted ? (
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <line x1="1" y1="1" x2="23" y2="23" />
               <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-              <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" strokeLinecap="round" />
+              <path
+                d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"
+                strokeLinecap="round"
+              />
               <line x1="12" y1="19" x2="12" y2="23" />
               <line x1="8" y1="23" x2="16" y2="23" />
             </svg>
           ) : (
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" strokeLinecap="round" />
               <line x1="12" y1="19" x2="12" y2="23" />
@@ -367,7 +467,8 @@ function VoiceMode(): ReactElement {
       )}
       {status === "error" && (
         <p className="chat-error" style={{ marginTop: "1rem" }}>
-          {errorMsg ?? "Failed to connect"}<br />
+          {errorMsg ?? "Failed to connect"}
+          <br />
           <small>Make sure livekit-server and voice agent are running.</small>
         </p>
       )}
