@@ -130,6 +130,13 @@ const STOPWORDS = new Set([
   "really",
   "maybe",
   "sense",
+  "user",
+  "request",
+  "mentioned",
+  "codex",
+  "clipboard",
+  "image",
+  "attached",
 ]);
 
 const RULE_HINTS: { re: RegExp; rule: string }[] = [
@@ -169,11 +176,44 @@ function clamp(value: number, min: number, max: number): number {
 
 function quote(text: string, max = 96): string {
   const clean = text
+    .replace(/<image[\s\S]*?<\/image>/g, " ")
     .replace(/```[\s\S]*?```/g, " ")
     .replace(/`+/g, "")
     .replace(/\s+/g, " ")
     .trim();
   return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
+}
+
+function cleanUserSignal(text: string): string {
+  return text
+    .replace(/<image[\s\S]*?<\/image>/g, " ")
+    .split(/\r?\n/)
+    .filter((line) => {
+      const clean = line.trim();
+      if (!clean) return false;
+      if (/^#\s*Files mentioned by the user/i.test(clean)) return false;
+      if (/^##\s*My request for Codex/i.test(clean)) return false;
+      if (/^##\s*codex-clipboard-[\w-]+\.(?:png|jpe?g|webp)/i.test(clean)) {
+        return false;
+      }
+      if (/^<image\b/i.test(clean) || /^<\/image>/i.test(clean)) return false;
+      return true;
+    })
+    .join(" ")
+    .replace(
+      /codex-clipboard-[\w-]+\.(?:png|jpe?g|webp)[^\s"'`),;]*/gi,
+      "attached image"
+    )
+    .replace(/\/var\/folders\/[^\s"'`),;]+/g, "local attachment")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isUsefulSignal(text: string): boolean {
+  if (text.length < 12) return false;
+  if (/files mentioned by the user/i.test(text)) return false;
+  if (/codex-clipboard|\/var\/folders|<image\b/i.test(text)) return false;
+  return true;
 }
 
 function fmtDuration(ms: number): string {
@@ -207,8 +247,11 @@ interface SessionSignals {
 
 function topicsFrom(turns: LocalTurn[], counter: Map<string, number>): void {
   for (const turn of turns) {
+    const content =
+      turn.kind === "user" ? cleanUserSignal(turn.content) : turn.content;
+    if (!content) continue;
     const seen = new Set<string>();
-    for (const raw of turn.content.toLowerCase().split(/[^a-z0-9-]+/)) {
+    for (const raw of content.toLowerCase().split(/[^a-z0-9-]+/)) {
       const word = raw.replace(/^-+|-+$/g, "");
       if (word.length < 4 || word.length > 22) continue;
       if (STOPWORDS.has(word) || /^\d+$/.test(word)) continue;
@@ -240,11 +283,16 @@ function analyzeSession(
   for (const turn of turns) {
     if (turn.hasToolCall) toolCalls += 1;
     if (turn.kind === "user") {
-      const isFrustrated = FRUSTRATION_RE.test(turn.content);
+      const cleanContent = cleanUserSignal(turn.content);
+      if (!cleanContent) continue;
+      const isFrustrated = FRUSTRATION_RE.test(cleanContent);
       const isRapid = prevUserAt > 0 && turn.timestamp - prevUserAt < RAPID_MS;
       if (isFrustrated) {
         corrections += 1;
-        if (frustration.length < 4) frustration.push(quote(turn.content));
+        const signal = quote(cleanContent);
+        if (frustration.length < 4 && isUsefulSignal(signal)) {
+          frustration.push(signal);
+        }
       } else if (isRapid) {
         corrections += 1;
       }
@@ -972,6 +1020,53 @@ function makeMetrics(
   ];
 }
 
+function categoryLabel(category: Finding["category"]): string {
+  if (category === "agentsmd") return "project guidance";
+  if (category === "claudemd") return "Claude guidance";
+  if (category === "contextdoc") return "project context";
+  if (category === "skill") return "skill routing";
+  if (category === "prompthabit") return "prompt habit";
+  return "guidance";
+}
+
+function alignmentHumanSignals(
+  t: Totals,
+  aggs: ProjectAgg[],
+  findings: Finding[],
+  reask: number,
+  topic: string | undefined
+): string[] {
+  const signals: string[] = [];
+  if (t.corrections > 0) {
+    signals.push(`${t.corrections} correction signals (${reask}% re-ask)`);
+  }
+  const correctionProject = [...aggs]
+    .filter((agg) => agg.corrections > 0)
+    .sort((a, b) => b.corrections - a.corrections)[0];
+  if (correctionProject) {
+    signals.push(
+      `${correctionProject.name}: ${correctionProject.corrections} correction${correctionProject.corrections === 1 ? "" : "s"} across ${correctionProject.userTurns} user turn${correctionProject.userTurns === 1 ? "" : "s"}`
+    );
+  }
+  const primaryFinding = findings.find((finding) => finding.frictionType);
+  if (primaryFinding) {
+    const gap = primaryFinding.configGap || primaryFinding.title;
+    signals.push(
+      `Best fix found: ${categoryLabel(primaryFinding.category)} - ${quote(gap, 72)}`
+    );
+  }
+  if (topic) signals.push(`Main thread: ${topic}`);
+  if (signals.length === 0) {
+    signals.push(
+      `${t.sessions} session${t.sessions === 1 ? "" : "s"} reviewed`
+    );
+    signals.push(
+      `${t.userTurns} user turn${t.userTurns === 1 ? "" : "s"} checked`
+    );
+  }
+  return [...new Set(signals)].slice(0, 3);
+}
+
 function makeAlignment(
   t: Totals,
   aggs: ProjectAgg[],
@@ -981,7 +1076,7 @@ function makeAlignment(
   const reask = Math.round((t.corrections / Math.max(1, t.userTurns)) * 100);
   const busiest = [...aggs].sort((a, b) => b.turns - a.turns)[0];
   const topic = busiest ? topTopics(busiest, 1)[0] : undefined;
-  const humanSignals = aggs.flatMap((agg) => agg.frustrationQuotes).slice(0, 3);
+  const humanSignals = alignmentHumanSignals(t, aggs, findings, reask, topic);
   return {
     score,
     band: score >= 80 ? "collaborating" : score >= 45 ? "friction" : "fighting",
@@ -995,10 +1090,7 @@ function makeAlignment(
       question: topic
         ? `How do I get the agent to handle ${topic} without repeated corrections?`
         : "How do I keep the agent aligned with my intent across sessions?",
-      signals:
-        humanSignals.length > 0
-          ? humanSignals
-          : [`${t.corrections} corrections`, `${reask}% re-ask`],
+      signals: humanSignals,
     },
     agent: {
       mood:

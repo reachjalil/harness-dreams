@@ -73,7 +73,7 @@ export default function Onboarding({
   const [projectSourceFilter, setProjectSourceFilter] =
     useState<ProjectSourceFilter>("all");
   const [scanning, setScanning] = useState(false);
-  const lastStep = setupMode === "demo" ? 2 : 6;
+  const lastStep = setupMode === "demo" ? 2 : 5;
 
   useEffect(() => {
     if (setupMode === "demo") return;
@@ -183,7 +183,11 @@ export default function Onboarding({
   return (
     <div className={`onb${step === 3 ? " project-step" : ""}`}>
       <div className="titlebar" />
-      <div className={`onb-body${step === 3 ? " project-step" : ""}`}>
+      <div
+        className={`onb-body${step === 3 ? " project-step" : ""}${
+          step === 4 ? " sync-step" : ""
+        }`}
+      >
         {step === 0 ? (
           <>
             <div className="onb-mark-wrap">
@@ -367,10 +371,12 @@ export default function Onboarding({
 
         {step === 4 ? (
           <>
-            <h2>Private by design</h2>
+            <h2>Privacy &amp; sync</h2>
             <p>
-              Your transcripts hold code and secrets. You choose what leaves.
+              Choose what leaves your Mac for analysis, and whether your cycle
+              syncs to your phone and watch.
             </p>
+            <div className="onb-subhead">Where analysis runs</div>
             <div className="choices">
               {PRIVACY_OPTIONS.map((option) => (
                 <button
@@ -449,13 +455,9 @@ export default function Onboarding({
                 </div>
               </>
             ) : null}
-          </>
-        ) : null}
 
-        {step === 5 ? (
-          <>
-            <h2>Sync to iPhone &amp; Apple Watch</h2>
-            <p>{CLOUD_SYNC_TAGLINE}</p>
+            <div className="onb-subhead">Sync to iPhone &amp; Apple Watch</div>
+            <p className="onb-subnote">{CLOUD_SYNC_TAGLINE}</p>
             <div className="choices">
               <button
                 type="button"
@@ -494,7 +496,7 @@ export default function Onboarding({
           </>
         ) : null}
 
-        {step === 6 ? (
+        {step === 5 ? (
           <>
             <h2>When should it dream?</h2>
             <p>You can change this anytime in Settings.</p>

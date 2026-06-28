@@ -455,8 +455,8 @@ export default function Settings({
             <div className="settings-row-main">
               <div className="settings-row-label">Accepted file changes</div>
               <div className="settings-row-hint">
-                Branch mode creates a review branch and PR link for GitHub
-                repos; direct mode edits the target file immediately.
+                Direct local edits are the default. Branch + PR is optional for
+                GitHub review workflows.
               </div>
             </div>
             <Segmented<GuidanceApplyMode>
@@ -464,8 +464,8 @@ export default function Settings({
               value={config.guidanceApplyMode}
               onChange={(guidanceApplyMode) => patch({ guidanceApplyMode })}
               options={[
+                { value: "direct", label: "Direct local" },
                 { value: "branch", label: "Branch + PR" },
-                { value: "direct", label: "Direct edit" },
               ]}
             />
           </div>
@@ -662,6 +662,9 @@ export default function Settings({
                   <div className="settings-row-hint">
                     Expires at {syncTimeLabel(pairing.expiresAt)} ·{" "}
                     {shortId(pairing.device.deviceId)}
+                  </div>
+                  <div className="pairing-url">
+                    Local dev: {pairing.devSyncBaseUrl}
                   </div>
                   <div className="row">
                     <Button onClick={() => void copyPairing()}>

@@ -22,6 +22,7 @@ import { getLatest, mergeRemoteReviewDecisions } from "./reports";
 import { getConfig, setConfig } from "./store";
 
 const PAIRING_TTL_MS = 10 * 60 * 1000;
+const DEV_SYNC_PORT = 39_391;
 const JWT_ISSUER = "harness-dreams-desktop";
 const JWT_AUDIENCE = "harness-dreams-companion";
 const VALID_DECISION_STATES = new Set<ActionState>([
@@ -56,6 +57,39 @@ interface AuthenticatedDevice {
   tokenHash: string;
   device: CloudSyncDevice;
   payload: PairingJwtPayload;
+}
+
+function devAutoPairEnabled(): boolean {
+  if (process.env.HARNESS_DREAMS_DEV_AUTO_PAIR === "0") return false;
+  if (process.env.HARNESS_DREAMS_DEV_AUTO_PAIR === "1") return true;
+  return (
+    process.env.NODE_ENV === "development" ||
+    Boolean((process as NodeJS.Process & { defaultApp?: boolean }).defaultApp)
+  );
+}
+
+function deviceSyncPort(): number {
+  const raw = process.env.HARNESS_DREAMS_DEVICE_SYNC_PORT;
+  if (raw) {
+    const parsed = Number(raw);
+    if (Number.isInteger(parsed) && parsed > 0 && parsed < 65_536) {
+      return parsed;
+    }
+  }
+  return devAutoPairEnabled() ? DEV_SYNC_PORT : 0;
+}
+
+function isLoopbackRequest(request: IncomingMessage): boolean {
+  const address = request.socket.remoteAddress ?? "";
+  return (
+    address === "127.0.0.1" ||
+    address === "::1" ||
+    address === "::ffff:127.0.0.1"
+  );
+}
+
+function parseDeviceKind(value: string | null): CloudSyncDeviceKind {
+  return value === "ipad" || value === "watch" ? value : "iphone";
 }
 
 function base64url(input: Buffer | string): string {
@@ -353,7 +387,45 @@ async function handleRequest(
     await handleDecisions(request, response);
     return;
   }
+  if (request.method === "GET" && url.pathname === "/v1/dev/pair") {
+    await handleDevPair(request, response, url);
+    return;
+  }
   json(response, 404, { error: "not found" });
+}
+
+async function handleDevPair(
+  request: IncomingMessage,
+  response: ServerResponse,
+  url: URL
+): Promise<void> {
+  const config = getConfig().cloudSync;
+  if (!devAutoPairEnabled() || !config.devBypassPaidPlan) {
+    json(response, 404, { error: "dev auto-pair is disabled" });
+    return;
+  }
+  if (!isLoopbackRequest(request)) {
+    json(response, 403, { error: "dev auto-pair requires loopback" });
+    return;
+  }
+
+  const kind = parseDeviceKind(url.searchParams.get("kind"));
+  const deviceName =
+    url.searchParams.get("deviceName") ??
+    (kind === "watch" ? "Dev Apple Watch" : "Dev iPhone");
+  const pairing = await createCloudSyncPairing({
+    deviceId: `dev-${kind}-simulator`,
+    deviceName,
+    kind,
+  });
+  json(response, 200, {
+    token: pairing.token,
+    pairingUrl: pairing.pairingUrl,
+    syncBaseUrl: getDeviceSyncUrl(),
+    devSyncBaseUrl: pairing.devSyncBaseUrl,
+    expiresAt: pairing.expiresAt,
+    device: pairing.device,
+  });
 }
 
 export function initDeviceSyncServer(): void {
@@ -365,7 +437,17 @@ export function initDeviceSyncServer(): void {
       });
     });
   });
-  server.listen(0, "0.0.0.0", () => {
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE" && serverPort === null) {
+      console.warn(
+        `[device-sync] port ${deviceSyncPort()} unavailable; falling back to an ephemeral port`
+      );
+      server?.listen(0, "0.0.0.0");
+      return;
+    }
+    console.error("[device-sync] server error", err);
+  });
+  server.listen(deviceSyncPort(), "0.0.0.0", () => {
     const address = server?.address();
     serverPort = typeof address === "object" && address ? address.port : null;
   });
@@ -385,19 +467,22 @@ export function shutdownDeviceSyncServer(): Promise<void> {
 }
 
 export async function createCloudSyncPairing(input: {
+  deviceId?: string;
   deviceName?: string;
   kind?: CloudSyncDeviceKind;
 }): Promise<CloudSyncPairing> {
   if (!server) initDeviceSyncServer();
   const config = getConfig().cloudSync;
   const now = Date.now();
-  const deviceId = randomUUID();
+  const deviceId = input.deviceId ?? randomUUID();
   const kind = input.kind ?? "iphone";
   const deviceName =
     input.deviceName?.trim() ||
     (kind === "watch" ? "Apple Watch" : kind === "ipad" ? "iPad" : "iPhone");
   const expiresAt = now + PAIRING_TTL_MS;
   const syncBaseUrl = await waitForDeviceSyncUrl();
+  const devSyncBaseUrl =
+    serverPort === null ? syncBaseUrl : `http://127.0.0.1:${serverPort}`;
   const payload: PairingJwtPayload = {
     iss: JWT_ISSUER,
     aud: JWT_AUDIENCE,
@@ -439,9 +524,9 @@ export async function createCloudSyncPairing(input: {
 
   const pairingUrl = `harnessdreams://pair?token=${encodeURIComponent(
     token
-  )}&syncBaseUrl=${encodeURIComponent(syncBaseUrl)}&deviceName=${encodeURIComponent(
-    deviceName
-  )}`;
+  )}&syncBaseUrl=${encodeURIComponent(syncBaseUrl)}&devSyncBaseUrl=${encodeURIComponent(
+    devSyncBaseUrl
+  )}&deviceName=${encodeURIComponent(deviceName)}`;
   const QRCode = await import("qrcode");
   const qrDataUrl = await QRCode.toDataURL(pairingUrl, {
     errorCorrectionLevel: "M",
@@ -449,7 +534,7 @@ export async function createCloudSyncPairing(input: {
     width: 360,
   });
 
-  return { token, pairingUrl, qrDataUrl, expiresAt, device };
+  return { token, pairingUrl, devSyncBaseUrl, qrDataUrl, expiresAt, device };
 }
 
 export function removeCloudSyncDevice(deviceId: string): CloudSyncDevice[] {

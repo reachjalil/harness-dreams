@@ -80,11 +80,9 @@ function cycleCrumbs(
   toOverview: () => void,
   queueCount: number
 ): Crumb[] {
+  const cycleLabel = longDate(report.timestamp);
   if (step === "overview") {
-    return [
-      { label: "Sleep Cycles", onClick: toList },
-      { label: report.rangeLabel },
-    ];
+    return [{ label: "Sleep Cycles", onClick: toList }, { label: cycleLabel }];
   }
   const label =
     step === "queue"
@@ -92,9 +90,13 @@ function cycleCrumbs(
       : "Review suggested goals";
   return [
     { label: "Sleep Cycles", onClick: toList },
-    { label: report.rangeLabel, onClick: toOverview },
+    { label: cycleLabel, onClick: toOverview },
     { label },
   ];
+}
+
+function cycleTitle(report: DreamReport): string {
+  return report.kind === "nap" ? "Nap Cycle" : "Sleep Cycle";
 }
 
 function composite(report: DreamReport): number {
@@ -776,6 +778,7 @@ function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
   const topFindings = report.findings.slice(0, 3);
   const friction = report.alignment?.friction.slice(0, 3) ?? [];
   const metrics = reviewMetrics(report);
+  const provenance = provenanceSummary(report);
   const emptyReason =
     report.provenance?.generator === "no-data"
       ? "No projects are selected, so the run has no local sessions to inspect."
@@ -788,10 +791,12 @@ function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
       <div className="report-panel report-panel-wide">
         <span className="report-kicker">Cycle readout</span>
         <p className="report-digest">{report.digest}</p>
+        <p className="report-provenance">
+          {provenance.value} · {provenance.sublabel}
+        </p>
         <div className="report-tags">
           <span>{report.sessions} sessions</span>
           <span>{report.projects} projects</span>
-          <span>{report.harness}</span>
         </div>
       </div>
 
@@ -860,8 +865,8 @@ function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
 function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
   const split = alignmentSplit(report);
   const alignmentRing = report.rings.find((ring) => ring.key === "alignment");
+  const alignmentDelta = alignmentRing?.delta ?? 0;
   const findingCount = report.findings.length;
-  const provenance = provenanceSummary(report);
   const acceptedAppliedChanges =
     report.reviewDecisions?.filter(
       (entry) => entry.state === "accepted" && entry.reviewBranch
@@ -871,22 +876,23 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
     <div className="review-overview">
       {report.window ? <CycleWindowBanner info={report.window} /> : null}
 
-      <div className="flat-strip">
+      <div className="flat-strip flat-strip-divided">
         <SummaryCard
           eyebrow="Alignment"
           value={split.human === split.agent ? split.human : composite(report)}
           size="hero"
-          trend={{
-            delta: alignmentRing?.delta ?? 0,
-            tone: trendTone(alignmentRing?.delta ?? 0),
-          }}
-          sublabel={`${bandLabel(split.band)} · ${report.sessions} sessions · ${report.projects} projects`}
+          trend={
+            alignmentDelta === 0
+              ? undefined
+              : { delta: alignmentDelta, tone: trendTone(alignmentDelta) }
+          }
+          sublabel={`${bandLabel(split.band)} · ${report.sessions} sessions`}
           tip={`${RING_TIP.alignment.text} ${TERM.alignmentBand}`}
         />
         <SummaryCard
           eyebrow="Suggested goals"
           value={findingCount}
-          sublabel="Each suggested goal becomes an accept / reject decision"
+          sublabel="Each becomes an accept / reject decision"
           tip={TERM.suggestedGoals}
         />
         <SummaryCard
@@ -894,11 +900,6 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
           value={report.alignment?.friction.length ?? 0}
           sublabel="Where your intent and the agent diverged"
           tip={TERM.frictionPoints}
-        />
-        <SummaryCard
-          eyebrow="Run source"
-          value={provenance.value}
-          sublabel={provenance.sublabel}
         />
       </div>
 
@@ -1332,9 +1333,13 @@ export default function Cycle({
           () => setActiveId("__overview"),
           decisionCount
         )}
-        title={report.rangeLabel}
+        title={cycleTitle(report)}
         subtitle={
-          onOverview ? `${statusLabel(status)} · ${report.digest}` : undefined
+          onOverview
+            ? `${statusLabel(status)} · ${report.sessions} session${
+                report.sessions === 1 ? "" : "s"
+              } · ${report.projects} project${report.projects === 1 ? "" : "s"}`
+            : undefined
         }
         secondary={<Pill tone={statusTone(status)}>{statusLabel(status)}</Pill>}
         primary={

@@ -54,6 +54,12 @@ describe("recommendation apply modes", () => {
       mode: "direct",
       appliedDirectly: true,
       changedFiles: ["AGENTS.md"],
+      previousFiles: [
+        {
+          relativePath: "AGENTS.md",
+          existed: false,
+        },
+      ],
     });
     expect(readFileSync(path.join(projectPath, "AGENTS.md"), "utf8")).toContain(
       "Always run the real CLI before writing the report."

@@ -93,6 +93,16 @@ export function registerIpc(controller: Controller): void {
       return getReports();
     }
   );
+  ipcMain.handle(
+    Invoke.RevertConfigUpdate,
+    (_event, reportId: unknown, findingId: unknown) => {
+      controller.revertConfigUpdate(
+        z.string().parse(reportId),
+        z.string().parse(findingId)
+      );
+      return getReports();
+    }
+  );
   ipcMain.handle(Invoke.SetLaunchAtLogin, (_event, value: unknown) => {
     controller.setLaunchAtLogin(z.boolean().parse(value));
     return getConfig();

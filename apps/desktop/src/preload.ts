@@ -91,6 +91,11 @@ const api = {
         experimentId,
         disposition
       ),
+    revertConfigUpdate: (
+      reportId: string,
+      findingId: string
+    ): Promise<DreamReport[]> =>
+      ipcRenderer.invoke(Invoke.RevertConfigUpdate, reportId, findingId),
     setLaunchAtLogin: (value: boolean): Promise<AppConfig> =>
       ipcRenderer.invoke(Invoke.SetLaunchAtLogin, value),
     testNotification: (): Promise<void> =>

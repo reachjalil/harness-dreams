@@ -2,6 +2,7 @@ import { type ReactElement, useEffect, useState } from "react";
 
 import Chat from "./Chat";
 import { CloudSyncDialog } from "./CloudSyncDialog";
+import ConfigUpdates from "./ConfigUpdates";
 import Cycle from "./Cycle";
 import { alignmentSplit, band, Sidebar, type Tab } from "./components";
 import Lab from "./Lab";
@@ -125,6 +126,9 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
               />
             ) : null}
             {tab === "lab" ? <Lab hd={hd} report={reportForProgress} /> : null}
+            {tab === "config" ? (
+              <ConfigUpdates hd={hd} reports={hd.reports} />
+            ) : null}
             {tab === "chat" ? <Chat /> : null}
             {tab === "settings" ? (
               <Settings hd={hd} onRunSleepCycle={runSleepCycle} />

@@ -55,6 +55,29 @@ function session(): LocalSession {
   };
 }
 
+function sessionWithAttachmentMetadata(): LocalSession {
+  return {
+    ...session(),
+    turns: [
+      {
+        kind: "user",
+        content:
+          "# Files mentioned by the user:\n\n## codex-clipboard-1a61ff3c-08f0-49d8-a51c-6a78d40ba962.png: /var/folders/tmp/codex-clipboard.png\n\n## My request for Codex:\nNo you went too simple, keep the dashboard experience and explain the findings.",
+        timestamp: now - 5_000,
+        hasToolCall: false,
+        toolError: false,
+      },
+      {
+        kind: "assistant",
+        content: "I will revise the dashboard summary.",
+        timestamp: now - 1_000,
+        hasToolCall: true,
+        toolError: false,
+      },
+    ],
+  };
+}
+
 function expectFrictionMatchesFindings(
   report: ReturnType<typeof runSleepCycle>
 ): void {
@@ -194,5 +217,21 @@ describe("runSleepCycle provenance", () => {
       },
     });
     expectFrictionMatchesFindings(report);
+  });
+
+  test("summarizes alignment signals instead of showing attachment metadata", () => {
+    mockIngest.mockReturnValue([sessionWithAttachmentMetadata()]);
+
+    const report = runSleepCycle([project], {
+      now,
+      privacyMode: "local",
+    });
+
+    const signals = report.alignment?.human.signals.join(" ") ?? "";
+    expect(signals).toContain("correction signals");
+    expect(signals).not.toMatch(/Files mentioned by the user/i);
+    expect(signals).not.toMatch(/codex-clipboard/i);
+    expect(signals).not.toMatch(/\/var\/folders/i);
+    expect(report.alignment?.human.question).not.toMatch(/codex-clipboard/i);
   });
 });

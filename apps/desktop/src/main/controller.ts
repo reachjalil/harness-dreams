@@ -18,6 +18,7 @@ import {
   markReportReviewed,
   onReportsChange,
   resetReports,
+  revertConfigUpdate,
   setGoalDisposition,
 } from "./reports";
 import { getState, onStateChange, patchState } from "./state";
@@ -50,6 +51,7 @@ export interface Controller {
     experimentId: string,
     disposition: GoalDisposition | null
   ): void;
+  revertConfigUpdate(reportId: string, findingId: string): void;
   discoverProjects(): DiscoveredProject[];
   addProject(projectPath: string): AnalysisProject | null;
   setLaunchAtLogin(value: boolean): void;
@@ -179,6 +181,9 @@ export function createController(): Controller {
     },
     setGoalDisposition: (reportId, experimentId, disposition) => {
       setGoalDisposition(reportId, experimentId, disposition);
+    },
+    revertConfigUpdate: (reportId, findingId) => {
+      revertConfigUpdate(reportId, findingId);
     },
     discoverProjects: () => discoverAnalysisProjects(),
     addProject: (projectPath: string) => {

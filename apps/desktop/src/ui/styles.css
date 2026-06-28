@@ -2467,6 +2467,27 @@ button {
   justify-content: flex-start;
   padding-top: var(--s-6);
 }
+.onb-body.sync-step {
+  justify-content: flex-start;
+  padding-top: var(--s-6);
+  overflow-y: auto;
+}
+.onb-subhead {
+  width: 100%;
+  margin-top: var(--s-4);
+  font-size: var(--t-eyebrow);
+  font-weight: var(--w-semi);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.onb-subnote {
+  max-width: 40ch;
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--t-label);
+  line-height: 1.5;
+}
 .onb-body h2 {
   font-size: var(--t-display);
   font-weight: var(--w-semi);
@@ -4413,6 +4434,25 @@ body {
   gap: var(--s-3);
 }
 
+.config-update-card {
+  gap: var(--s-4);
+}
+
+.config-update-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.config-update-files span {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--ink-700);
+  color: var(--text-2);
+  font-size: var(--t-small);
+  font-weight: var(--w-med);
+}
+
 .goal-card {
   display: flex;
   flex-direction: column;
@@ -4536,6 +4576,12 @@ body {
   font-size: var(--t-body);
   line-height: 1.55;
   color: var(--text);
+}
+
+.report-provenance {
+  margin: var(--s-2) 0 0;
+  font-size: var(--t-label);
+  color: var(--muted);
 }
 
 .report-tags {
@@ -5774,8 +5820,12 @@ body {
   opacity: 0.5;
   animation: chat-dot-bounce 1.2s ease-in-out infinite;
 }
-.chat-tool-dots span:nth-child(2) { animation-delay: 0.2s; }
-.chat-tool-dots span:nth-child(3) { animation-delay: 0.4s; }
+.chat-tool-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.chat-tool-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 .chat-thinking {
   display: flex;

@@ -47,7 +47,9 @@ function fmtSigned(value: number, unit = ""): string {
 
 function average(values: number[]): number | null {
   if (values.length === 0) return null;
-  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+  return Math.round(
+    values.reduce((sum, value) => sum + value, 0) / values.length
+  );
 }
 
 function insightForGoal(
@@ -55,8 +57,9 @@ function insightForGoal(
   goal: Experiment
 ): ProjectInsight | null {
   return (
-    report.projectInsights?.find((project) => project.path === goal.projectPath) ??
-    null
+    report.projectInsights?.find(
+      (project) => project.path === goal.projectPath
+    ) ?? null
   );
 }
 
@@ -104,22 +107,30 @@ interface GoalSignal {
 function goalSignals(report: DreamReport, goals: Experiment[]): GoalSignal[] {
   if (goals.length === 0) return [];
   const targetInsights = uniqueTargetInsights(report, goals);
-  const activeTargets = targetInsights.filter((insight) => insight.sessions > 0);
-  const sessions = targetInsights.reduce((sum, insight) => sum + insight.sessions, 0);
+  const activeTargets = targetInsights.filter(
+    (insight) => insight.sessions > 0
+  );
+  const sessions = targetInsights.reduce(
+    (sum, insight) => sum + insight.sessions,
+    0
+  );
   const turns = targetInsights.reduce((sum, insight) => sum + insight.turns, 0);
   const withBaseline = goals
     .map((goal) => ({ goal, insight: insightForGoal(report, goal) }))
-    .filter(
-      (item): item is { goal: Experiment; insight: ProjectInsight } =>
-        Boolean(item.insight && item.goal.baseline)
+    .filter((item): item is { goal: Experiment; insight: ProjectInsight } =>
+      Boolean(item.insight && item.goal.baseline)
     );
   const alignmentDelta = average(
-    withBaseline.map((item) => item.insight.alignment - item.goal.baseline!.alignment)
+    withBaseline.map(
+      (item) => item.insight.alignment - item.goal.baseline!.alignment
+    )
   );
   const baselineAlignment = average(
     withBaseline.map((item) => item.goal.baseline!.alignment)
   );
-  const currentAlignment = average(withBaseline.map((item) => item.insight.alignment));
+  const currentAlignment = average(
+    withBaseline.map((item) => item.insight.alignment)
+  );
   const currentCorrections = withBaseline.reduce(
     (sum, item) => sum + item.insight.corrections,
     0
@@ -129,7 +140,8 @@ function goalSignals(report: DreamReport, goals: Experiment[]): GoalSignal[] {
     0
   );
   const contextPairs = withBaseline.filter(
-    (item) => item.goal.baseline?.contextScore != null && item.insight.contextHealth
+    (item) =>
+      item.goal.baseline?.contextScore != null && item.insight.contextHealth
   );
   const currentContext = average(
     contextPairs.map((item) => item.insight.contextHealth?.score ?? 0)
@@ -157,7 +169,8 @@ function goalSignals(report: DreamReport, goals: Experiment[]): GoalSignal[] {
       key: "alignment",
       label: "Alignment change",
       value: alignmentDelta == null ? "Waiting" : fmtSigned(alignmentDelta),
-      delta: alignmentDelta == null ? undefined : `${fmtSigned(alignmentDelta)} pts`,
+      delta:
+        alignmentDelta == null ? undefined : `${fmtSigned(alignmentDelta)} pts`,
       detail:
         baselineAlignment != null && currentAlignment != null
           ? `Current ${currentAlignment} vs accepted baseline ${baselineAlignment}`
@@ -185,7 +198,8 @@ function goalSignals(report: DreamReport, goals: Experiment[]): GoalSignal[] {
       key: "context",
       label: "Context score",
       value: currentContext == null ? "Not tracked" : `${currentContext}`,
-      delta: contextDelta == null ? undefined : `${fmtSigned(contextDelta)} pts`,
+      delta:
+        contextDelta == null ? undefined : `${fmtSigned(contextDelta)} pts`,
       detail:
         currentContext != null && baselineContext != null
           ? `Current ${currentContext} vs accepted baseline ${baselineContext}`
@@ -418,7 +432,9 @@ export default function Lab({
   const signals = goalSignals(report, running);
   const measuringCount = running.length;
   const targetInsights = uniqueTargetInsights(report, running);
-  const activeTargets = targetInsights.filter((insight) => insight.sessions > 0);
+  const activeTargets = targetInsights.filter(
+    (insight) => insight.sessions > 0
+  );
   const alignmentRing = report.rings.find((ring) => ring.key === "alignment");
   const setDisposition = (
     experimentId: string,

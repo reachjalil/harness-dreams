@@ -40,7 +40,7 @@ const PREVIEW_CONFIG: AppConfig = {
   schedule: { mode: "nightly", time: "03:00" },
   notifications: true,
   analysisDepth: "standard",
-  guidanceApplyMode: "branch",
+  guidanceApplyMode: "direct",
   remRunner: {
     provider: "codex",
     model: "gpt-5.5",
@@ -93,6 +93,16 @@ const PREVIEW_CLOUD_STATUS: CloudSyncStatus = {
   decisionsPushed: 0,
   remoteDecisionsApplied: 0,
 };
+
+function previewGoalTitle(finding: {
+  patch?: unknown;
+  project: string;
+  title: string;
+}): string {
+  return finding.patch
+    ? `Measure ${finding.project} after config update`
+    : finding.title;
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -349,8 +359,10 @@ export function useHarnessDreams(): HarnessDreams {
                 );
                 return {
                   id: `accepted_${finding.id}`,
-                  title: finding.action,
-                  hypothesis: finding.improvement,
+                  title: previewGoalTitle(finding),
+                  hypothesis: finding.patch
+                    ? `Check whether this config update improves the next sessions: ${finding.userBenefit}`
+                    : finding.improvement,
                   agentBenefit: finding.agentBenefit,
                   userBenefit: finding.userBenefit,
                   reflection: finding.reflection,
@@ -437,6 +449,28 @@ export function useHarnessDreams(): HarnessDreams {
             }),
           };
         });
+      },
+      revertConfigUpdate: async (reportId, findingId) => {
+        const nextReports = reports.map((report) => {
+          if (report.id !== reportId) return report;
+          return {
+            ...report,
+            reviewDecisions: report.reviewDecisions?.map((entry) =>
+              entry.findingId === findingId && entry.reviewBranch
+                ? {
+                    ...entry,
+                    reviewBranch: {
+                      ...entry.reviewBranch,
+                      appliedDirectly: false,
+                      revertedAt: Date.now(),
+                    },
+                  }
+                : entry
+            ),
+          };
+        });
+        setReports(nextReports);
+        return nextReports;
       },
       setLaunchAtLogin: async (launchAtLogin) => {
         const next = { ...(config ?? PREVIEW_CONFIG), launchAtLogin };
@@ -537,6 +571,7 @@ export function useHarnessDreams(): HarnessDreams {
         return {
           token: "preview.jwt.token",
           pairingUrl: "harnessdreams://pair?token=preview.jwt.token",
+          devSyncBaseUrl: "http://127.0.0.1:17382",
           qrDataUrl:
             "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' fill='white'/%3E%3Cpath d='M20 20h50v50H20zM110 20h50v50h-50zM20 110h50v50H20zM92 92h18v18H92zM122 92h38v18h-38zM92 122h18v38H92zM122 122h18v18h-18zM146 146h14v14h-14z' fill='black'/%3E%3C/svg%3E",
           expiresAt: now + 10 * 60 * 1000,

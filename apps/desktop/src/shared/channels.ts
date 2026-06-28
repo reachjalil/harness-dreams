@@ -24,6 +24,7 @@ export const Invoke = {
   CompleteOnboarding: "action:completeOnboarding",
   MarkReviewed: "action:markReviewed",
   SetGoalDisposition: "action:setGoalDisposition",
+  RevertConfigUpdate: "action:revertConfigUpdate",
   SetLaunchAtLogin: "action:setLaunchAtLogin",
   TestNotification: "action:testNotification",
   ResetOnboarding: "action:resetOnboarding",

@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import type { ActionQueueEntry, ConfigPatchPreview } from "../shared/types";
@@ -29,6 +29,7 @@ interface DirectGroup {
 }
 
 type ReviewBranch = NonNullable<ActionQueueEntry["reviewBranch"]>;
+type PreviousFile = NonNullable<ReviewBranch["previousFiles"]>[number];
 
 function git(cwd: string, args: string[], timeout = 30_000): GitResult {
   const result = spawnSync("git", args, {
@@ -210,6 +211,30 @@ function displayChangedFile(root: string, file: string): string {
   return relativeInside(root, file) ?? file;
 }
 
+function directTargetFiles(entries: ActionQueueEntry[]): string[] {
+  return [
+    ...new Set(
+      entries
+        .map((entry) =>
+          entry.category === "skill" ? entry.patch?.file : directFileFor(entry)
+        )
+        .filter((file): file is string => Boolean(file))
+    ),
+  ];
+}
+
+function snapshotFiles(root: string, files: string[]): PreviousFile[] {
+  return files.map((file) => {
+    const existed = existsSync(file);
+    return {
+      file,
+      relativePath: displayChangedFile(root, file),
+      existed,
+      content: existed ? readFileSync(file, "utf8") : undefined,
+    };
+  });
+}
+
 function applyDirectChanges(
   entries: ActionQueueEntry[],
   root: string
@@ -294,12 +319,17 @@ export function applyAcceptedRecommendationsDirectly(
   for (const [findingId, failure] of failures) result.set(findingId, failure);
 
   for (const group of groups) {
+    const previousFiles = snapshotFiles(
+      group.root,
+      directTargetFiles(group.entries)
+    );
     const changedFiles = applyDirectChanges(group.entries, group.root);
     const reviewBranch: ReviewBranch = {
       mode: "direct",
       branch: "",
       worktreePath: group.root,
       changedFiles,
+      previousFiles,
       appliedDirectly: changedFiles.length > 0,
       pushed: false,
       error:

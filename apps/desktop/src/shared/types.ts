@@ -54,6 +54,7 @@ export interface CloudSyncDevice {
 export interface CloudSyncPairing {
   token: string;
   pairingUrl: string;
+  devSyncBaseUrl: string;
   qrDataUrl: string;
   expiresAt: number;
   device: CloudSyncDevice;
@@ -397,7 +398,14 @@ export interface ActionQueueEntry {
     remote?: string;
     prUrl?: string;
     changedFiles?: string[];
+    previousFiles?: Array<{
+      file: string;
+      relativePath: string;
+      existed: boolean;
+      content?: string;
+    }>;
     appliedDirectly?: boolean;
+    revertedAt?: number;
     pushed: boolean;
     error?: string;
   };

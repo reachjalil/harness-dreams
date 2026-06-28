@@ -3,6 +3,7 @@ import {
   mkdirSync,
   readFileSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
@@ -185,6 +186,22 @@ function categoryForFinding(finding: Finding): ActionCategory {
   );
 }
 
+function categoryLabel(category: ActionCategory | undefined): string {
+  if (category === "agentsmd") return "project guidance";
+  if (category === "claudemd") return "Claude guidance";
+  if (category === "contextdoc") return "project context";
+  if (category === "skill") return "skill";
+  if (category === "prompthabit") return "prompt habit";
+  return "guidance";
+}
+
+function goalTitleFromFinding(finding: Finding): string {
+  if (finding.patch) {
+    return `Measure ${finding.project} after ${categoryLabel(finding.category)} update`;
+  }
+  return finding.title;
+}
+
 function experimentFromFinding(
   finding: Finding,
   report: DreamReport
@@ -195,8 +212,10 @@ function experimentFromFinding(
   );
   return {
     id: `accepted_${finding.id}`,
-    title: finding.action,
-    hypothesis: finding.improvement,
+    title: goalTitleFromFinding(finding),
+    hypothesis: finding.patch
+      ? `Check whether this config update improves the next sessions: ${finding.userBenefit}`
+      : finding.improvement,
     agentBenefit: finding.agentBenefit,
     userBenefit: finding.userBenefit,
     reflection: finding.reflection,
@@ -243,6 +262,64 @@ function applyAcceptedExperiments(
     ),
     ...acceptedExperiments,
   ];
+}
+
+export function revertConfigUpdate(
+  reportId: string,
+  findingId: string
+): DreamReport | null {
+  let changed = false;
+  reports = reports.map((report) => {
+    if (report.id !== reportId) return report;
+    return {
+      ...report,
+      reviewDecisions: report.reviewDecisions?.map((entry) => {
+        if (entry.findingId !== findingId) return entry;
+        const applied = entry.reviewBranch;
+        if (
+          applied?.mode !== "direct" ||
+          applied.revertedAt ||
+          !applied.previousFiles?.length
+        ) {
+          return entry;
+        }
+        try {
+          for (const previous of applied.previousFiles) {
+            if (previous.existed) {
+              mkdirSync(path.dirname(previous.file), { recursive: true });
+              writeFileSync(previous.file, previous.content ?? "", "utf8");
+            } else if (existsSync(previous.file)) {
+              rmSync(previous.file, { force: true });
+            }
+          }
+          changed = true;
+          return {
+            ...entry,
+            reviewBranch: {
+              ...applied,
+              appliedDirectly: false,
+              revertedAt: Date.now(),
+              error: undefined,
+            },
+          };
+        } catch (err) {
+          changed = true;
+          return {
+            ...entry,
+            reviewBranch: {
+              ...applied,
+              error:
+                err instanceof Error
+                  ? err.message
+                  : "failed to revert config update",
+            },
+          };
+        }
+      }),
+    };
+  });
+  if (changed) publish();
+  return getReports().find((report) => report.id === reportId) ?? null;
 }
 
 export function setGoalDisposition(
