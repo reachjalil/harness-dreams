@@ -64,7 +64,9 @@ function ReplyChips({
   onSuggest: (text: string) => void;
 }): ReactElement {
   const start = (turn * 3) % REPLY_POOL.length;
-  const chips = [0, 1, 2].map((i) => REPLY_POOL[(start + i) % REPLY_POOL.length]);
+  const chips = [0, 1, 2].map(
+    (i) => REPLY_POOL[(start + i) % REPLY_POOL.length]
+  );
   return (
     <div className="chat-reply-chips">
       {chips.map((c) => (
@@ -144,8 +146,16 @@ function ToolEventRow({ item }: { item: ToolEvent }): ReactElement {
   return (
     <div className="chat-row chat-row-assistant">
       <div className="chat-ai-icon-spacer" aria-hidden="true" />
-      <div className={`chat-tool-call${item.done ? " chat-tool-call-done" : ""}`}>
-        <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <div
+        className={`chat-tool-call${item.done ? " chat-tool-call-done" : ""}`}
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
           <path d="M2 8a6 6 0 1 0 12 0A6 6 0 0 0 2 8z" strokeLinecap="round" />
           <path d="M8 5v3l2 1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -154,12 +164,25 @@ function ToolEventRow({ item }: { item: ToolEvent }): ReactElement {
           <span className="chat-tool-summary">— {item.summary}</span>
         ) : null}
         {item.done ? (
-          <svg className="chat-tool-check" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            className="chat-tool-check"
+            aria-hidden="true"
+            viewBox="0 0 12 12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path
+              d="M2 6l3 3 5-5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         ) : (
           <span className="chat-tool-dots">
-            <span /><span /><span />
+            <span />
+            <span />
+            <span />
           </span>
         )}
       </div>
@@ -190,7 +213,9 @@ function MessageRow({ item }: { item: ChatItem }): ReactElement {
     <div className="chat-row chat-row-assistant">
       <AssistantIcon />
       <div className="chat-prose">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {item.content}
+        </ReactMarkdown>
         {item.streaming ? (
           <span className="chat-cursor" aria-hidden="true" />
         ) : null}
@@ -201,39 +226,143 @@ function MessageRow({ item }: { item: ChatItem }): ReactElement {
 
 const SESSION_KEY = "dream-chat-session-id";
 
+interface SessionSummary {
+  session_id: string;
+  updated_at: string;
+  preview: string;
+}
+
+function HistoryPanel({
+  onSelect,
+  onClose,
+}: {
+  onSelect: (id: string) => void;
+  onClose: () => void;
+}): ReactElement {
+  const [sessions, setSessions] = useState<SessionSummary[]>([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch(`${API_URL}/chat/sessions?limit=50`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: SessionSummary[]) => setSessions(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+    inputRef.current?.focus();
+  }, []);
+
+  const filtered = query.trim()
+    ? sessions.filter((s) =>
+        s.preview.toLowerCase().includes(query.trim().toLowerCase())
+      )
+    : sessions;
+
+  function fmt(iso: string): string {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffDays === 0) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return d.toLocaleDateString([], { weekday: "short" });
+    return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+
+  return (
+    <div className="chat-history-panel">
+      <div className="chat-history-header">
+        <span className="chat-history-title">History</span>
+        <button
+          type="button"
+          className="chat-history-close"
+          onClick={onClose}
+          aria-label="Close history"
+        >
+          <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+      <div className="chat-history-search-wrap">
+        <svg aria-hidden="true" className="chat-history-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <circle cx="6.5" cy="6.5" r="4" />
+          <path d="M11 11l3 3" strokeLinecap="round" />
+        </svg>
+        <input
+          ref={inputRef}
+          className="chat-history-search"
+          placeholder="Search sessions…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+      <div className="chat-history-list">
+        {loading && <p className="chat-history-empty">Loading…</p>}
+        {!loading && filtered.length === 0 && (
+          <p className="chat-history-empty">No sessions found.</p>
+        )}
+        {filtered.map((s) => (
+          <button
+            key={s.session_id}
+            type="button"
+            className="chat-history-item"
+            onClick={() => onSelect(s.session_id)}
+          >
+            <span className="chat-history-preview">{s.preview || "Empty session"}</span>
+            <span className="chat-history-time">{fmt(s.updated_at)}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TextChat(): ReactElement {
   const [items, setItems] = useState<ChatItem[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const sessionIdRef = useRef<string | null>(
-    typeof localStorage !== "undefined" ? localStorage.getItem(SESSION_KEY) : null
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(SESSION_KEY)
+      : null
   );
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Load previous session on mount
-  useEffect(() => {
-    const sid = sessionIdRef.current;
-    if (!sid) return;
+  function loadSession(sid: string): void {
     fetch(`${API_URL}/chat/sessions/${sid}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((doc) => {
         if (!doc?.messages?.length) return;
         const loaded: TextMessage[] = doc.messages
-          .filter((m: { role: string }) => m.role === "user" || m.role === "assistant")
+          .filter(
+            (m: { role: string }) => m.role === "user" || m.role === "assistant"
+          )
           .map((m: { role: string; content: string }, i: number) => ({
             kind: "text" as const,
             id: `loaded-${i}`,
             role: m.role as "user" | "assistant",
             content: m.content,
           }));
+        sessionIdRef.current = sid;
+        localStorage.setItem(SESSION_KEY, sid);
         setItems(loaded);
+        setError(null);
       })
       .catch(() => {});
-  }, []);
+  }
+
+  // Load previous session on mount
+  useEffect(() => {
+    const sid = sessionIdRef.current;
+    if (sid) loadSession(sid);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const itemCount = items.length;
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom on new items
@@ -290,7 +419,10 @@ function TextChat(): ReactElement {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, session_id: sessionIdRef.current }),
+        body: JSON.stringify({
+          messages: history,
+          session_id: sessionIdRef.current,
+        }),
         signal: abort.signal,
       });
 
@@ -333,8 +465,14 @@ function TextChat(): ReactElement {
             } else if (payload.type === "tool_result") {
               setItems((prev) =>
                 prev.map((item) =>
-                  item.kind === "tool" && item.name === payload.name && !item.done
-                    ? { ...item, done: true, summary: payload.summary ?? undefined }
+                  item.kind === "tool" &&
+                  item.name === payload.name &&
+                  !item.done
+                    ? {
+                        ...item,
+                        done: true,
+                        summary: payload.summary ?? undefined,
+                      }
                     : item
                 )
               );
@@ -347,7 +485,9 @@ function TextChat(): ReactElement {
               };
               setItems((prev) => {
                 // Replace any existing status line, insert before assistant bubble
-                const withoutStatus = prev.filter((item) => item.kind !== "status");
+                const withoutStatus = prev.filter(
+                  (item) => item.kind !== "status"
+                );
                 const rest = withoutStatus.slice(0, -1);
                 const last = withoutStatus[withoutStatus.length - 1];
                 return [...rest, statusItem, last];
@@ -377,7 +517,9 @@ function TextChat(): ReactElement {
       // AbortError = user stopped — keep the partial response, no error banner
       if (!(err instanceof Error && err.name === "AbortError")) {
         setError(err instanceof Error ? err.message : "Something went wrong");
-        setItems((prev) => prev.filter((item) => item.kind !== "tool" || item.done).slice(0, -1));
+        setItems((prev) =>
+          prev.filter((item) => item.kind !== "tool" || item.done).slice(0, -1)
+        );
       }
     } finally {
       setThinking(false);
@@ -402,13 +544,23 @@ function TextChat(): ReactElement {
 
   return (
     <div className="chat-text-inner">
+      {showHistory && (
+        <HistoryPanel
+          onClose={() => setShowHistory(false)}
+          onSelect={(id) => {
+            loadSession(id);
+            setShowHistory(false);
+          }}
+        />
+      )}
       <div className="chat-messages">
         {items.length === 0 ? (
           <EmptyState onSuggest={(t) => void send(t)} />
         ) : (
           (() => {
             const assistantTurns = items.filter(
-              (it): it is TextMessage => it.kind === "text" && it.role === "assistant"
+              (it): it is TextMessage =>
+                it.kind === "text" && it.role === "assistant"
             ).length;
             const lastItem = items[items.length - 1];
             const showChips =
@@ -419,7 +571,9 @@ function TextChat(): ReactElement {
               !lastItem.streaming;
             return (
               <>
-                {items.map((item) => <MessageRow key={item.id} item={item} />)}
+                {items.map((item) => (
+                  <MessageRow key={item.id} item={item} />
+                ))}
                 {showChips && (
                   <ReplyChips
                     turn={assistantTurns - 1}
@@ -476,21 +630,37 @@ function TextChat(): ReactElement {
           )}
         </div>
         <div className="chat-footer-row">
-          <p className="chat-footer-hint">Dream can make mistakes. Check important info.</p>
-          {items.length > 0 && !busy && (
+          <p className="chat-footer-hint">
+            Dream can make mistakes. Check important info.
+          </p>
+          <div className="chat-footer-actions">
             <button
               type="button"
-              className="chat-new-btn"
-              onClick={() => {
-                sessionIdRef.current = null;
-                localStorage.removeItem(SESSION_KEY);
-                setItems([]);
-                setError(null);
-              }}
+              className="chat-history-btn"
+              onClick={() => setShowHistory((v) => !v)}
+              aria-label="Chat history"
+              title="Chat history"
             >
-              New chat
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <circle cx="10" cy="10" r="7" />
+                <path d="M10 6v4l2.5 2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
-          )}
+            {items.length > 0 && !busy && (
+              <button
+                type="button"
+                className="chat-new-btn"
+                onClick={() => {
+                  sessionIdRef.current = null;
+                  localStorage.removeItem(SESSION_KEY);
+                  setItems([]);
+                  setError(null);
+                }}
+              >
+                New chat
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -597,7 +767,9 @@ function VoiceMode(): ReactElement {
     if (!room) return;
     const next = !paused;
     // Freeze/unfreeze mic
-    const pub = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+    const pub = room.localParticipant.getTrackPublication(
+      Track.Source.Microphone
+    );
     if (pub) {
       if (next) await pub.mute();
       else if (!muted) await pub.unmute();
@@ -716,6 +888,12 @@ function VoiceMode(): ReactElement {
 
 export default function Chat(): ReactElement {
   const [mode, setMode] = useState<Mode>("text");
+  const [chatKey, setChatKey] = useState(0);
+
+  function newChat(): void {
+    localStorage.removeItem(SESSION_KEY);
+    setChatKey((k) => k + 1);
+  }
 
   return (
     <div className="chat-shell">
@@ -734,8 +912,28 @@ export default function Chat(): ReactElement {
         >
           Voice
         </button>
+        {mode === "text" && (
+          <button
+            type="button"
+            className="chat-new-session-btn"
+            onClick={newChat}
+            aria-label="New chat"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            >
+              <path d="M8 3v10M3 8h10" />
+            </svg>
+            New chat
+          </button>
+        )}
       </div>
-      {mode === "text" ? <TextChat /> : <VoiceMode />}
+      {mode === "text" ? <TextChat key={chatKey} /> : <VoiceMode />}
     </div>
   );
 }
