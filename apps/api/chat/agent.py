@@ -30,17 +30,25 @@ _SYSTEM_PROMPT = """\
 You are Dream — a personal AI that has analyzed the collaboration between this \
 builder and their coding agents (Claude Code, Codex, Cursor, opencode, Gemini CLI, Pi).
 
-You have already synthesized the day's sessions into a DreamLog — a structured \
-picture of mood, alignment, friction, and recommendations. That synthesis_context \
-is loaded as your baseline understanding.
+You have access to three tools. Use them — do not guess or refuse when a tool \
+can answer the question.
 
-When the user asks questions:
-- Answer from your synthesized knowledge first.
-- Use get_dream_log or list_dream_logs when they ask about a specific date or trends.
-- Use search_chat_history when they want to dig into a specific conversation, \
-  topic, or moment — "what did I say about X", "find the session where we discussed Y".
-- Be specific and grounded. Quote from sessions and logs when it adds clarity.
-- Don't hedge or encourage. Be direct — you watched the sessions, you know what happened.
+TOOL RULES (mandatory):
+1. search_chat_history — call this whenever the user uses any of these words: \
+   "find", "search", "look up", "show me", "was there a session", "did I discuss", \
+   "what did I say about", "where did we talk about". Do NOT answer these from memory.
+2. get_dream_log — call this when they ask about a specific date ("June 26", \
+   "yesterday", "last Tuesday") and want details beyond the loaded context.
+3. list_dream_logs — call this for trend questions ("how was my week", \
+   "which day had the highest alignment").
+
+When you have tool results:
+- Quote specific excerpts and session dates.
+- If search returns no results, say so plainly and suggest a different query.
+
+When answering from the loaded synthesis_context:
+- Be direct and specific. Name the actual friction points, sessions, projects.
+- Don't hedge. Don't encourage. You watched the sessions — say what happened.
 - Keep responses concise unless asked to elaborate.
 """
 
@@ -64,15 +72,65 @@ def _make_agent() -> Agent:
 _agent = _make_agent()
 
 
+def _resolve_date(raw: str) -> str:
+    """
+    Convert natural language date references to YYYY-MM-DD.
+    Handles: 'yesterday', 'today', 'June 25', 'June 25th', '06-25', etc.
+    Falls back to the raw string if unrecognised.
+    """
+    import re
+    from datetime import date, timedelta
+
+    raw = raw.strip().lower()
+    today = date.today()
+
+    if raw in ("today",):
+        return today.isoformat()
+    if raw in ("yesterday",):
+        return (today - timedelta(days=1)).isoformat()
+
+    # Already YYYY-MM-DD
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", raw):
+        return raw
+
+    # Month name patterns: "june 25", "june 25th", "jun 25"
+    _MONTHS = {
+        "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+        "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+        "january": 1, "february": 2, "march": 3, "april": 4, "june": 6,
+        "july": 7, "august": 8, "september": 9, "october": 10,
+        "november": 11, "december": 12,
+    }
+    m = re.match(r"([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s+(\d{4}))?", raw)
+    if m:
+        mon = _MONTHS.get(m.group(1))
+        day = int(m.group(2))
+        year = int(m.group(3)) if m.group(3) else today.year
+        if mon:
+            return f"{year}-{mon:02d}-{day:02d}"
+
+    return raw
+
+
 @_agent.tool
 async def get_dream_log(ctx: RunContext[ChatDeps], date: str) -> dict:
     """
-    Fetch the full DreamLog for a specific date (YYYY-MM-DD).
+    Fetch the full DreamLog for a specific date.
+    date can be YYYY-MM-DD, or natural language like 'yesterday', 'June 25', 'June 25th 2026'.
     Returns mood, alignment score, friction points, recommendations, and synthesis_context.
     """
-    doc = await ctx.deps.db.dream_logs.find_one({"date": date})
+    resolved = _resolve_date(date)
+    doc = await ctx.deps.db.dream_logs.find_one({"date": resolved})
     if not doc:
-        return {"error": f"No dream log found for {date}"}
+        # Fuzzy fallback: find the nearest available date
+        available = await ctx.deps.db.dream_logs.find(
+            {}, {"date": 1}
+        ).sort("date", -1).limit(14).to_list(14)
+        dates = [d["date"] for d in available]
+        return {
+            "error": f"No dream log for {resolved}",
+            "available_dates": dates,
+        }
     doc.pop("_id", None)
     return doc
 
