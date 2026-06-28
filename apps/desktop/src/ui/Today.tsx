@@ -112,7 +112,8 @@ interface LoopImpact {
 
 function reviewedReports(reports: DreamReport[]): DreamReport[] {
   return reports.filter(
-    (candidate) => candidate.reviewStatus === "reviewed" || candidate.reviewedAt
+    (candidate) =>
+      candidate.reviewStatus === "reviewed" || candidate.reviewedAt,
   );
 }
 
@@ -135,21 +136,22 @@ function latestExperiments(reports: DreamReport[]): LoopExperiment[] {
 function loopImpact(reports: DreamReport[], report: DreamReport): LoopImpact {
   const reviewed = reviewedReports(reports);
   const decisions: ActionQueueEntry[] = reviewed.flatMap(
-    (candidate) => candidate.reviewDecisions ?? []
+    (candidate) => candidate.reviewDecisions ?? [],
   );
   const accepted = decisions.filter((entry) => entry.state === "accepted");
   const queued = decisions.filter((entry) => entry.state === "queued");
   const experiments = latestExperiments(reports);
   const concluded = experiments.filter(
-    ({ experiment }) => experiment.status === "concluded"
+    ({ experiment }) => experiment.status === "concluded",
   );
   const deltas = concluded
     .map((item) => item.alignmentDelta)
     .filter((value): value is number => value != null);
   const guidanceTotal = report.projectInsights?.length ?? 0;
   const guidanceCovered =
-    report.projectInsights?.filter((project) => project.hasAgentsMd).length ??
-    0;
+    report.projectInsights?.filter(
+      (project) => project.contextHealth?.status !== "overloaded",
+    ).length ?? 0;
 
   return {
     accepted: accepted.length,
@@ -158,20 +160,25 @@ function loopImpact(reports: DreamReport[], report: DreamReport): LoopImpact {
     prLinks: accepted.filter((entry) => entry.reviewBranch?.prUrl).length,
     branchErrors: accepted.filter((entry) => entry.reviewBranch?.error).length,
     concluded: concluded.length,
-    helped: concluded.filter(({ experiment }) => experiment.verdict === "helped")
-      .length,
+    helped: concluded.filter(
+      ({ experiment }) => experiment.verdict === "helped",
+    ).length,
     noChange: concluded.filter(
-      ({ experiment }) => experiment.verdict === "no-change"
+      ({ experiment }) => experiment.verdict === "no-change",
     ).length,
     worse: concluded.filter(({ experiment }) => experiment.verdict === "worse")
       .length,
     averageDelta:
       deltas.length === 0
         ? null
-        : Math.round(deltas.reduce((sum, value) => sum + value, 0) / deltas.length),
+        : Math.round(
+            deltas.reduce((sum, value) => sum + value, 0) / deltas.length,
+          ),
     bestDelta: deltas.length === 0 ? null : Math.max(...deltas),
     guidanceCoverage:
-      guidanceTotal === 0 ? null : Math.round((guidanceCovered / guidanceTotal) * 100),
+      guidanceTotal === 0
+        ? null
+        : Math.round((guidanceCovered / guidanceTotal) * 100),
     guidanceCovered,
     guidanceTotal,
     latestVerdict:
@@ -246,13 +253,15 @@ function LoopOutcome({
           value={`${impact.helped}/${impact.concluded}`}
           detail={`${plural(impact.noChange, "no-change")} · ${plural(
             impact.worse,
-            "worse"
+            "worse",
           )}`}
           tone={impact.helped > 0 ? "good" : "neutral"}
         />
         <LoopStat
           label="Alignment delta"
-          value={impact.averageDelta == null ? "—" : signed(impact.averageDelta)}
+          value={
+            impact.averageDelta == null ? "—" : signed(impact.averageDelta)
+          }
           detail={
             impact.bestDelta == null
               ? "No concluded measurement"
@@ -269,14 +278,16 @@ function LoopOutcome({
           }
         />
         <LoopStat
-          label="AGENTS.md coverage"
+          label="Context health"
           value={
-            impact.guidanceCoverage == null ? "—" : `${impact.guidanceCoverage}%`
+            impact.guidanceCoverage == null
+              ? "—"
+              : `${impact.guidanceCoverage}%`
           }
           detail={
             impact.guidanceTotal === 0
               ? "No projects in latest report"
-              : `${impact.guidanceCovered}/${impact.guidanceTotal} projects covered`
+              : `${impact.guidanceCovered}/${impact.guidanceTotal} projects clear`
           }
           tone={
             impact.guidanceCoverage == null
@@ -288,7 +299,9 @@ function LoopOutcome({
         />
       </div>
       {latest ? (
-        <div className={`loop-verdict ${latest.experiment.verdict ?? "no-change"}`}>
+        <div
+          className={`loop-verdict ${latest.experiment.verdict ?? "no-change"}`}
+        >
           <Pill tone={verdictTone(latest.experiment.verdict)}>
             {latest.experiment.verdict ?? "measured"}
           </Pill>
@@ -356,7 +369,7 @@ export default function Today({
   const recent = chronological.slice(-8);
   const seriesFor = (key: string): number[] =>
     chronological.map((r) =>
-      parseNum(r.metrics.find((m) => m.key === key)?.value ?? "0")
+      parseNum(r.metrics.find((m) => m.key === key)?.value ?? "0"),
     );
 
   const score = composite(report);
@@ -364,7 +377,7 @@ export default function Today({
   const latestCycle = reports[0] ?? null;
   const previousReviewed = reports.find(
     (candidate) =>
-      candidate.id !== report.id && candidate.reviewStatus === "reviewed"
+      candidate.id !== report.id && candidate.reviewStatus === "reviewed",
   );
   const alignmentScore = ringScore(report, "alignment");
   const scoreDelta = previousReviewed
@@ -377,7 +390,7 @@ export default function Today({
 
   const overviewMetrics = report.metrics.slice(0, 4);
   const runningImprovements = report.experiments.filter(
-    (experiment) => experiment.status === "running"
+    (experiment) => experiment.status === "running",
   );
   const lastDream =
     state.lastDreamAt != null ? formatTime(state.lastDreamAt) : "—";
@@ -439,6 +452,16 @@ export default function Today({
           </>
         }
       />
+
+      {hd.config?.demoMode ? (
+        <div className="demo-banner">
+          <Icon name="cycle" size={16} />
+          <span>
+            Demo Mode is using fictional projects and persisted sample cycles.
+            Running a Sleep Cycle simulates the next measurement pass.
+          </span>
+        </div>
+      ) : null}
 
       {pendingCycle ? (
         <button type="button" className="dash-pending" onClick={onOpenCycle}>

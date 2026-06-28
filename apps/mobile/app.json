@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Harness Dreams",
+    "slug": "harness-dreams",
+    "scheme": "harnessdreams",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "newArchEnabled": true,
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.harnessdreams.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Scan the Harness Dreams desktop pairing QR code."
+      }
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Scan the Harness Dreams desktop pairing QR code."
+        }
+      ]
+    ]
+  }
+}

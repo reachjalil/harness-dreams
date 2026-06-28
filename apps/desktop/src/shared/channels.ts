@@ -11,6 +11,10 @@ export const Invoke = {
   StateGet: "state:get",
   ReportGet: "report:get",
   ReportList: "report:list",
+  CloudSyncStatus: "cloudSync:status",
+  CloudSyncNow: "cloudSync:syncNow",
+  CloudSyncPairDevice: "cloudSync:pairDevice",
+  CloudSyncRemoveDevice: "cloudSync:removeDevice",
   DiscoverProjects: "projects:discover",
   AddProject: "projects:add",
   DreamNow: "action:dreamNow",
@@ -33,6 +37,7 @@ export const Send = {
   BroadcastConfig: "broadcast:config",
   BroadcastState: "broadcast:state",
   BroadcastReports: "broadcast:reports",
+  BroadcastCloudSync: "broadcast:cloudSync",
   /** main → UI: select and show a specific past session */
   SelectReport: "broadcast:selectReport",
 } as const;

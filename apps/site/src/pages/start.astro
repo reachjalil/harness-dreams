@@ -5,7 +5,7 @@ import SiteLayout from "../layouts/SiteLayout.astro";
 
 const title = "Download for macOS - Harness Dreams";
 const description =
-  "Set up Harness Dreams on macOS. The signed app is being prepared with Apple notarization; until then, clone the repo and run the desktop app locally.";
+  "Set up Harness Dreams on macOS. The signed app is being prepared with Apple notarization; optional iPhone and Apple Watch Cloud Sync is $5/month.";
 const repoUrl = "https://github.com/reachjalil/harness-dreams";
 ---
 
@@ -36,6 +36,9 @@ const repoUrl = "https://github.com/reachjalil/harness-dreams";
             We are preparing Developer ID signing and Apple notarization so the
             first normal download opens cleanly through macOS Gatekeeper.
           </p>
+          <a class="setup-sync-note" href="/#cloud-sync">
+            Add iPhone and Apple Watch sync as an optional $5/month upgrade.
+          </a>
         </div>
 
         <aside class="setup-panel" aria-label="Local setup steps">
@@ -98,6 +101,16 @@ pnpm install</code></pre>
             Use macOS, Node.js 22.12 or newer, and Corepack. The commands above
             start the desktop app in development mode while the signed download
             and updater are being finished.
+          </p>
+        </article>
+
+        <article class="info-block reveal" data-delay="2">
+          <span class="mono">Multi-device sync</span>
+          <h2>Cloud Sync will mirror the report, not your code.</h2>
+          <p>
+            The companion iPhone and Apple Watch apps mirror the cycle signal:
+            scores, findings, and goals. Transcripts, code, and secrets stay on
+            the Mac.
           </p>
         </article>
       </div>
@@ -246,6 +259,26 @@ pnpm install</code></pre>
     line-height: 1.45;
   }
 
+  .setup-sync-note {
+    display: inline-flex;
+    width: fit-content;
+    max-width: 34rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 0.58rem 0.82rem;
+    background: rgba(255, 255, 255, 0.09);
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.9rem;
+    font-weight: 750;
+    line-height: 1.3;
+  }
+
+  .setup-sync-note:hover {
+    border-color: rgba(255, 255, 255, 0.34);
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+  }
+
   .setup-panel {
     border: 1px solid rgba(255, 255, 255, 0.24);
     border-radius: 28px;
@@ -384,7 +417,13 @@ pnpm install</code></pre>
     }
 
     .status-grid {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 700px) {
+    .setup-sync-note {
+      border-radius: 16px;
     }
   }
 

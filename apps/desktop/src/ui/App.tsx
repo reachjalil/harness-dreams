@@ -129,8 +129,11 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
       <CloudSyncDialog
         open={cloudSyncOpen}
         onClose={() => setCloudSyncOpen(false)}
-        interested={hd.config?.cloudSyncInterest ?? false}
-        onNotify={() => hd.patch({ cloudSyncInterest: true })}
+        enabled={hd.config?.cloudSync.enabled ?? false}
+        onOpenSettings={() => {
+          setCloudSyncOpen(false);
+          setTab("settings");
+        }}
       />
     </div>
   );

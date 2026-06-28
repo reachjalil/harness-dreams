@@ -15,6 +15,8 @@ import type {
 } from "../shared/types";
 import {
   agentsPatch,
+  claudePatch,
+  contextRulesPatch,
   type ProjectConfig,
   readProjectConfig,
   skillPatch,
@@ -215,7 +217,7 @@ function topicsFrom(turns: LocalTurn[], counter: Map<string, number>): void {
 
 function analyzeSession(
   session: LocalSession,
-  windowStart: number
+  windowStart: number,
 ): SessionSignals {
   const turns = session.turns.filter((turn) => turn.timestamp >= windowStart);
   const userTurns = turns.filter((turn) => turn.kind === "user");
@@ -328,11 +330,42 @@ function aggregate(signals: SessionSignals[]): Map<string, ProjectAgg> {
   return byProject;
 }
 
+function configOnlyAgg(project: AnalysisProject): ProjectAgg {
+  return {
+    path: project.path,
+    name: project.name,
+    sources: new Set(project.sources),
+    config: readProjectConfig(project.path),
+    sessions: 0,
+    turns: 0,
+    userTurns: 0,
+    corrections: 0,
+    toolCalls: 0,
+    toolFailures: 0,
+    hedges: 0,
+    frustrationQuotes: [],
+    toolFailQuotes: [],
+    hedgeQuotes: [],
+    topicFreq: new Map(),
+    topicSessions: new Map(),
+  };
+}
+
 function topTopics(agg: ProjectAgg, limit: number): string[] {
   return [...agg.topicSessions.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, limit)
     .map(([topic]) => topic);
+}
+
+function lineCount(text: string): number {
+  if (!text) return 0;
+  return text.split(/\r?\n/).length;
+}
+
+function compactChars(chars: number): string {
+  if (chars >= 1000) return `${Math.round(chars / 1000)}k chars`;
+  return `${chars} chars`;
 }
 
 function projectAlignment(agg: ProjectAgg): number {
@@ -363,8 +396,119 @@ function makeCandidates(agg: ProjectAgg): Candidate[] {
   const topics = topTopics(agg, 5);
   const topic = topics[0];
   const reask = Math.round(
-    (agg.corrections / Math.max(1, agg.userTurns)) * 100
+    (agg.corrections / Math.max(1, agg.userTurns)) * 100,
   );
+  const health = agg.config.contextHealth;
+  const agentsChars = agg.config.agentsMd.length;
+  const agentsLines = lineCount(agg.config.agentsMd);
+
+  // 0 · Context hygiene: long AGENTS.md should split durable detail into rules.md.
+  if (
+    agg.config.hasAgentsMd &&
+    !agg.config.hasRulesMd &&
+    (agentsChars > 6_000 || agentsLines > 120)
+  ) {
+    const line =
+      "Move detailed project rules and long-lived decisions into rules.md; keep AGENTS.md focused on routing, safety, test commands, and links to deeper context.";
+    out.push({
+      severity: agentsChars > 9_000 || agentsLines > 160 ? 88 : 72,
+      finding: baseFinding(agg, {
+        id: `context-split-${agg.path}`,
+        type: "risk",
+        title: `AGENTS.md is carrying too much context in ${agg.name}`,
+        body: `${agg.name} loads ${compactChars(agentsChars)} across ${agentsLines} AGENTS.md lines and has no rules.md split. That makes high-priority instructions easier to miss.`,
+        action: `Create rules.md for ${agg.name} and move detailed guidance out of AGENTS.md.`,
+        improvement:
+          "A smaller AGENTS.md stays readable while rules.md holds durable details the user can maintain deliberately.",
+        category: "contextdoc",
+        frictionType: "config-conflict",
+        evidence: `${compactChars(agentsChars)} AGENTS.md · ${agentsLines} lines · no rules.md`,
+        patch: contextRulesPatch(agg.config, line, agg.name),
+      }),
+    });
+  }
+
+  // 0b · Too many skills can create routing noise before the agent starts work.
+  if (health.localSkillCount > 8 || health.skillCount > 22) {
+    const rule = `Skill routing for ${agg.name}: prefer project-local skills that match the task, and do not load a global skill unless its description directly fits the current request.`;
+    out.push({
+      severity: 68 + Math.min(20, health.skillCount),
+      finding: baseFinding(agg, {
+        id: `skill-noise-${agg.path}`,
+        type: "opportunity",
+        title: `Skill routing may be noisy in ${agg.name}`,
+        body: `${agg.name} sees ${health.skillCount} skills (${health.localSkillCount} project, ${health.globalSkillCount} global). A small routing rule reduces accidental skill selection.`,
+        action: `Add a skill-routing rule for ${agg.name} and review rarely used skills.`,
+        improvement:
+          "Constraining skill selection keeps the agent from loading irrelevant instructions before it understands the task.",
+        category: "agentsmd",
+        frictionType: "missing-skill",
+        evidence: `${health.skillCount} available skills`,
+        patch: agentsPatch(agg.config, "agentsmd", rule, agg.name),
+      }),
+    });
+  }
+
+  // 0c · Large home-level Claude/Codex context competes with project guidance.
+  if (health.globalChars > 10_000) {
+    const line = `For ${agg.name}, keep project-specific guidance in this repo's AGENTS.md, CLAUDE.md, or rules.md; keep home Claude/Codex instructions for global defaults only.`;
+    out.push({
+      severity: 74,
+      finding: baseFinding(agg, {
+        id: `home-context-${agg.path}`,
+        type: "risk",
+        title: `Home Claude/Codex context is heavy for ${agg.name}`,
+        body: `The cycle found ${compactChars(health.globalChars)} of home-directory Claude/Codex context before project instructions. Project-specific guidance should live closer to the repo.`,
+        action: `Move ${agg.name}-specific guidance out of home Claude/Codex memory and into project files.`,
+        improvement:
+          "Keeping home context global and project context local makes the next session's instruction stack easier to reason about.",
+        category: "claudemd",
+        frictionType: "config-conflict",
+        evidence: `${compactChars(health.globalChars)} home Claude/Codex context`,
+        patch: claudePatch(agg.config, line, agg.name),
+      }),
+    });
+  }
+
+  // 0d · Claude memory can be missing or too scattered to serve as useful recall.
+  if (
+    health.memoryFiles > 10 ||
+    health.memoryChars > 16_000 ||
+    (health.memoryFiles === 0 && agg.corrections >= 2)
+  ) {
+    const line =
+      health.memoryFiles === 0
+        ? "Memory handoff: after repeated corrections, record the durable decision in MEMORY.md or rules.md so the next session does not rediscover it."
+        : "Memory consolidation: keep durable facts in a short indexed MEMORY.md, and prune duplicate or stale Claude memory notes before adding new ones.";
+    out.push({
+      severity: health.memoryFiles === 0 ? 66 : 76,
+      finding: baseFinding(agg, {
+        id: `memory-hygiene-${agg.path}`,
+        type: "opportunity",
+        title:
+          health.memoryFiles === 0
+            ? `No durable memory handoff in ${agg.name}`
+            : `Claude memory needs consolidation for ${agg.name}`,
+        body:
+          health.memoryFiles === 0
+            ? `${agg.name} had repeated corrections, but no MEMORY.md or Claude memory file was found for durable handoff.`
+            : `${agg.name} has ${health.memoryFiles} memory files totaling ${compactChars(health.memoryChars)}. Consolidation keeps recall sharp.`,
+        action:
+          health.memoryFiles === 0
+            ? `Create a memory handoff rule for ${agg.name}.`
+            : `Consolidate Claude memory for ${agg.name}.`,
+        improvement:
+          "Memory stays useful when durable facts are indexed and stale context is pruned.",
+        category: "contextdoc",
+        frictionType: "wrong-domain",
+        evidence:
+          health.memoryFiles === 0
+            ? `${agg.corrections} corrections · no memory files`
+            : `${health.memoryFiles} memory files · ${compactChars(health.memoryChars)}`,
+        patch: contextRulesPatch(agg.config, line, agg.name),
+      }),
+    });
+  }
 
   // A · Missing AGENTS.md on a project with real activity.
   if (agg.turns >= 8 && !agg.config.hasAgentsMd && !agg.config.hasClaudeMd) {
@@ -437,7 +581,7 @@ function makeCandidates(agg: ProjectAgg): Candidate[] {
           agg.config,
           task,
           `Steps for the recurring "${task}" task in ${agg.name}.`,
-          agg.name
+          agg.name,
         ),
       }),
     });
@@ -463,7 +607,7 @@ function makeCandidates(agg: ProjectAgg): Candidate[] {
           agg.config,
           "contextdoc",
           `Known-good setup for ${topic ?? agg.name}: document the exact working command so tool calls stop failing.`,
-          agg.name
+          agg.name,
         ),
       }),
     });
@@ -524,7 +668,7 @@ function baseFinding(
     frictionType: FrictionType;
     evidence: string;
     patch?: Finding["patch"];
-  }
+  },
 ): Finding {
   return {
     id: fields.id,
@@ -567,9 +711,9 @@ function selectFindings(aggs: ProjectAgg[]): Finding[] {
     if (seen.has(key)) continue;
     seen.add(key);
     picked.push(candidate.finding);
-    // Keep it a *small* set of improvements — the product promise is a few
-    // high-signal changes per cycle, not an exhaustive list.
-    if (picked.length >= 3) break;
+    // Keep it a *small* set of improvements — behavior findings plus at most
+    // a little context hygiene, not an exhaustive audit.
+    if (picked.length >= 4) break;
   }
   return picked;
 }
@@ -583,10 +727,10 @@ function selectFindings(aggs: ProjectAgg[]): Finding[] {
  */
 function gradeCarriedExperiments(
   prev: DreamReport | null,
-  insights: ProjectInsight[]
+  insights: ProjectInsight[],
 ): Experiment[] {
   const running = (prev?.experiments ?? []).filter(
-    (exp) => exp.status === "running"
+    (exp) => exp.status === "running",
   );
   return running.map((exp) => {
     const progress = Math.min(1, (exp.progress ?? 0) + 1 / 3);
@@ -599,12 +743,23 @@ function gradeCarriedExperiments(
 
     if (now && base) {
       // Judge on alignment only — it's a rate, so it's comparable across
-      // windows of different lengths. Raw correction counts are not.
+      // windows of different lengths. Raw correction counts are not. For
+      // context-hygiene changes, also compare the deterministic context score.
       const alignmentDelta = now.alignment - base.alignment;
-      const helped = alignmentDelta > 0;
-      const worse = alignmentDelta < 0;
+      const contextDelta =
+        base.contextScore != null && now.contextHealth
+          ? now.contextHealth.score - base.contextScore
+          : null;
+      const helped =
+        alignmentDelta > 0 || (contextDelta != null && contextDelta > 0);
+      const worse =
+        alignmentDelta < 0 && (contextDelta == null || contextDelta <= 0);
       const sign = alignmentDelta >= 0 ? "+" : "";
-      const note = `Alignment ${base.alignment} → ${now.alignment} (${sign}${alignmentDelta})`;
+      const contextNote =
+        contextDelta == null || base.contextScore == null || !now.contextHealth
+          ? ""
+          : ` · Context ${base.contextScore} → ${now.contextHealth.score} (${contextDelta >= 0 ? "+" : ""}${contextDelta})`;
+      const note = `Alignment ${base.alignment} → ${now.alignment} (${sign}${alignmentDelta})${contextNote}`;
       return {
         ...exp,
         status: "concluded",
@@ -665,7 +820,7 @@ function totalsOf(aggs: ProjectAgg[]): Totals {
       toolCalls: 0,
       toolFailures: 0,
       hedges: 0,
-    }
+    },
   );
 }
 
@@ -678,11 +833,11 @@ function makeRings(t: Totals, prev: DreamReport | null): Ring[] {
   const toolFailRate = (t.toolFailures / Math.max(1, t.toolCalls)) * 100;
   const hedgeRate = (t.hedges / assistantTurns) * 100;
   const alignment = clampScore(
-    96 - reaskRate * 0.7 - toolFailRate * 0.3 - hedgeRate * 0.4
+    96 - reaskRate * 0.7 - toolFailRate * 0.3 - hedgeRate * 0.4,
   );
   const efficiency = clampScore(95 - reaskRate * 0.45 - toolFailRate * 0.9);
   const effectiveness = clampScore(
-    93 - reaskRate * 0.3 - hedgeRate * 0.6 - toolFailRate * 0.4
+    93 - reaskRate * 0.3 - hedgeRate * 0.6 - toolFailRate * 0.4,
   );
   const prevScore = (key: string): number =>
     prev?.rings.find((ring) => ring.key === key)?.score ?? 0;
@@ -716,16 +871,22 @@ function makeRings(t: Totals, prev: DreamReport | null): Ring[] {
 function makeMetrics(
   t: Totals,
   aggs: ProjectAgg[],
-  findingCount: number
+  findingCount: number,
 ): Metric[] {
   const reask = Math.round((t.corrections / Math.max(1, t.userTurns)) * 100);
   const toolSuccess = clamp(
     100 - (t.toolFailures / Math.max(1, t.toolCalls)) * 100,
     0,
-    100
+    100,
   );
   const withAgents = aggs.filter((agg) => agg.config.hasAgentsMd).length;
   const coverage = Math.round((withAgents / Math.max(1, aggs.length)) * 100);
+  const contextChars =
+    aggs.reduce((sum, agg) => sum + agg.config.contextHealth.projectChars, 0) +
+    Math.max(0, ...aggs.map((agg) => agg.config.contextHealth.globalChars));
+  const overloadedContexts = aggs.filter(
+    (agg) => agg.config.contextHealth.status === "overloaded",
+  ).length;
   return [
     {
       key: "reask",
@@ -742,6 +903,14 @@ function makeMetrics(
       delta: -t.toolFailures,
       trend: t.toolFailures > 0 ? "down" : "flat",
       good: toolSuccess >= 90,
+    },
+    {
+      key: "context_load",
+      label: "Context load",
+      value: compactChars(contextChars),
+      delta: overloadedContexts,
+      trend: overloadedContexts > 0 ? "up" : "flat",
+      good: overloadedContexts === 0,
     },
     {
       key: "tokens_per_change",
@@ -782,7 +951,7 @@ function makeAlignment(
   t: Totals,
   aggs: ProjectAgg[],
   findings: Finding[],
-  score: number
+  score: number,
 ): AlignmentDetail {
   const reask = Math.round((t.corrections / Math.max(1, t.userTurns)) * 100);
   const busiest = [...aggs].sort((a, b) => b.turns - a.turns)[0];
@@ -839,7 +1008,7 @@ function computeWindow(
   sessions: LocalSession[],
   start: number,
   end: number,
-  basis: WindowBasis
+  basis: WindowBasis,
 ): CycleWindow {
   let earliest = end;
   let latest = start;
@@ -893,90 +1062,165 @@ function projectInsightsOf(aggs: ProjectAgg[]): ProjectInsight[] {
       topics: topTopics(agg, 4),
       hasAgentsMd: agg.config.hasAgentsMd,
       hasClaudeMd: agg.config.hasClaudeMd,
+      hasRulesMd: agg.config.hasRulesMd,
       skillCount: agg.config.skills.length,
+      contextHealth: agg.config.contextHealth,
     }))
-    .sort((a, b) => b.turns - a.turns);
+    .sort(
+      (a, b) =>
+        b.turns - a.turns || a.contextHealth.score - b.contextHealth.score,
+    );
+}
+
+function contextSummaryOf(
+  insights: ProjectInsight[],
+): DreamReport["contextHealth"] {
+  if (insights.length === 0) return undefined;
+  const scores = insights.map((insight) => insight.contextHealth?.score ?? 100);
+  const score = Math.round(
+    scores.reduce((sum, value) => sum + value, 0) / Math.max(1, scores.length),
+  );
+  const overloadedProjects = insights.filter(
+    (insight) => insight.contextHealth?.status === "overloaded",
+  ).length;
+  const riskCount = insights.reduce(
+    (sum, insight) => sum + (insight.contextHealth?.risks.length ?? 0),
+    0,
+  );
+  const suggestions = [
+    ...new Set(
+      insights.flatMap((insight) => insight.contextHealth?.suggestions ?? []),
+    ),
+  ].slice(0, 3);
+  return {
+    score,
+    status: score >= 82 ? "clear" : score >= 62 ? "watch" : "overloaded",
+    overloadedProjects,
+    riskCount,
+    chars:
+      insights.reduce(
+        (sum, insight) => sum + (insight.contextHealth?.projectChars ?? 0),
+        0,
+      ) +
+      Math.max(
+        0,
+        ...insights.map((insight) => insight.contextHealth?.globalChars ?? 0),
+      ),
+    memoryFiles: insights.reduce(
+      (sum, insight) => sum + (insight.contextHealth?.memoryFiles ?? 0),
+      0,
+    ),
+    skillCount: insights.reduce(
+      (sum, insight) => sum + (insight.contextHealth?.localSkillCount ?? 0),
+      0,
+    ),
+    suggestions,
+  };
 }
 
 function quietReport(
   window: CycleWindow,
   projects: AnalysisProject[],
   prev: DreamReport | null,
-  now: number
+  now: number,
+  aggs: ProjectAgg[],
 ): DreamReport {
   const enabled = projects.filter((project) => project.enabled);
-  const rings = makeRings(
-    {
-      sessions: 0,
-      turns: 0,
-      userTurns: 0,
-      corrections: 0,
-      toolCalls: 0,
-      toolFailures: 0,
-      hedges: 0,
-    },
-    prev
-  );
-  const finding: Finding = {
-    id: `quiet-${now}`,
-    type: "win",
-    title: "Quiet window — nothing new to review",
-    body: `No agent activity in the ${enabled.length} tracked project${enabled.length === 1 ? "" : "s"} since the last Sleep Cycle.`,
-    improvement:
-      "Keep your project scope current so the next active window is captured.",
-    agentBenefit:
-      "Nothing to change — the agent had no friction to learn from.",
-    userBenefit:
-      "A calm cycle is a healthy one; review resumes when work does.",
-    reflection: "Whether the next window picks up fresh sessions to analyze.",
-    confidence: "high",
-    project: enabled[0]?.name ?? "workspace",
-    evidence: `0 sessions in ${window.label.toLowerCase()}`,
-    action: "No action needed this cycle",
-    category: "contextdoc",
+  const totals: Totals = {
+    sessions: 0,
+    turns: 0,
+    userTurns: 0,
+    corrections: 0,
+    toolCalls: 0,
+    toolFailures: 0,
+    hedges: 0,
   };
+  const rings = makeRings(totals, prev);
+  const contextFindings = selectFindings(aggs);
+  const findings =
+    contextFindings.length > 0
+      ? contextFindings
+      : [
+          {
+            id: `quiet-${now}`,
+            type: "win",
+            title: "Quiet window — nothing new to review",
+            body: `No agent activity in the ${enabled.length} tracked project${enabled.length === 1 ? "" : "s"} since the last Sleep Cycle.`,
+            improvement:
+              "Keep your project scope current so the next active window is captured.",
+            agentBenefit:
+              "Nothing to change — the agent had no friction to learn from.",
+            userBenefit:
+              "A calm cycle is a healthy one; review resumes when work does.",
+            reflection:
+              "Whether the next window picks up fresh sessions to analyze.",
+            confidence: "high",
+            project: enabled[0]?.name ?? "workspace",
+            projectPath: enabled[0]?.path,
+            evidence: `0 sessions in ${window.label.toLowerCase()}`,
+            action: "No action needed this cycle",
+            category: "contextdoc",
+          } satisfies Finding,
+        ];
+  const insights = projectInsightsOf(aggs);
+  const contextHealth = contextSummaryOf(insights);
+  const digest =
+    contextFindings.length > 0
+      ? `No new agent activity, but the context review found ${contextFindings.length} cleanup recommendation${contextFindings.length === 1 ? "" : "s"} across ${insights.length} tracked project${insights.length === 1 ? "" : "s"}.`
+      : "No new agent activity in this window. The Sleep Cycle stayed quiet — nothing to accept or change.";
   return {
     id: `cycle_${now}`,
     timestamp: now,
     reviewStatus: "unreviewed",
     rangeLabel: `${window.label} · quiet`,
     sessions: 0,
-    projects: enabled.length,
+    projects: insights.length || enabled.length,
     harness: "Local agent data",
-    digest:
-      "No new agent activity in this window. The Sleep Cycle stayed quiet — nothing to accept or change.",
+    digest,
     rings,
-    metrics: makeMetrics(
-      {
-        sessions: 0,
-        turns: 0,
-        userTurns: 0,
-        corrections: 0,
-        toolCalls: 0,
-        toolFailures: 0,
-        hedges: 0,
-      },
-      [],
-      0
-    ),
-    findings: [finding],
-    experiments: gradeCarriedExperiments(prev, []),
+    metrics: makeMetrics(totals, aggs, contextFindings.length),
+    findings,
+    experiments: gradeCarriedExperiments(prev, insights),
     window,
-    projectInsights: [],
+    projectInsights: insights,
+    contextHealth,
     alignment: {
       score: rings.find((ring) => ring.key === "alignment")?.score ?? 80,
       band: "collaborating",
       human: {
         mood: "deep-focus",
-        question: "Nothing pending — what should the next window watch?",
-        signals: ["0 sessions", window.label],
+        question:
+          contextFindings.length > 0
+            ? "Which context cleanup should happen before the next session?"
+            : "Nothing pending — what should the next window watch?",
+        signals:
+          contextFindings.length > 0
+            ? contextFindings.slice(0, 3).map((finding) => finding.evidence)
+            : ["0 sessions", window.label],
       },
       agent: {
-        mood: "confident",
-        question: "No open questions this window.",
-        signals: ["0 friction points"],
+        mood: contextFindings.length > 0 ? "overloaded" : "confident",
+        question:
+          contextFindings.length > 0
+            ? "Which instructions are global, project-local, or detailed reference context?"
+            : "No open questions this window.",
+        signals:
+          contextHealth && contextFindings.length > 0
+            ? [
+                `${compactChars(contextHealth.chars)} context load`,
+                `${contextHealth.riskCount} context risks`,
+                `${contextHealth.skillCount} project skills`,
+              ]
+            : ["0 friction points"],
       },
-      friction: [],
+      friction: findings
+        .filter((finding) => finding.frictionType)
+        .slice(0, 5)
+        .map((finding) => ({
+          type: finding.frictionType ?? "wrong-domain",
+          example: finding.evidence,
+          findingId: finding.id,
+        })),
     },
   };
 }
@@ -999,7 +1243,7 @@ export interface CycleOptions {
  */
 export function runSleepCycle(
   projects: AnalysisProject[],
-  options: CycleOptions = {}
+  options: CycleOptions = {},
 ): DreamReport | null {
   const enabled = projects.filter((project) => project.enabled);
   if (enabled.length === 0) return null;
@@ -1018,19 +1262,19 @@ export function runSleepCycle(
     .map((session) => ({
       ...session,
       turns: session.turns.filter(
-        (turn) => turn.timestamp >= start && turn.timestamp <= now
+        (turn) => turn.timestamp >= start && turn.timestamp <= now,
       ),
     }))
     .filter((session) =>
-      session.turns.some((turn) => turn.kind !== "tool_result")
+      session.turns.some((turn) => turn.kind !== "tool_result"),
     );
 
   if (boundedSessions.length === 0) {
-    return quietReport(window, projects, prev, now);
+    return quietReport(window, projects, prev, now, enabled.map(configOnlyAgg));
   }
 
   const signals = boundedSessions.map((session) =>
-    analyzeSession(session, start)
+    analyzeSession(session, start),
   );
   const aggs = [...aggregate(signals).values()].filter((agg) => agg.turns > 0);
   const totals = totalsOf(aggs);
@@ -1040,7 +1284,7 @@ export function runSleepCycle(
           enabled,
           boundedSessions,
           options.analysisDepth ?? "standard",
-          options.remRunner
+          options.remRunner,
         )
       : null;
   const heuristicFindings = selectFindings(aggs);
@@ -1050,6 +1294,7 @@ export function runSleepCycle(
   const alignmentScore =
     rings.find((ring) => ring.key === "alignment")?.score ?? 70;
   const insights = projectInsightsOf(aggs);
+  const contextHealth = contextSummaryOf(insights);
   const sources = [...new Set(aggs.flatMap((agg) => [...agg.sources]))];
   const topTopicsAll = [
     ...new Set(insights.flatMap((insight) => insight.topics)),
@@ -1085,6 +1330,7 @@ export function runSleepCycle(
     experiments: gradeCarriedExperiments(prev, insights),
     window,
     projectInsights: insights,
+    contextHealth,
     alignment: makeAlignment(totals, aggs, findings, alignmentScore),
     cloudRedactionPreview: rem
       ? { ...rem.redactionPreview, error: rem.error }

@@ -5,6 +5,21 @@ build
 .cache
 coverage
 
+# Swift / Xcode build artifacts
+.build/
+DerivedData/
+.swiftpm/
+xcuserdata/
+*.xcuserstate
+*.dSYM
+*.dSYM.zip
+*.ipa
+
+# Generated marketing artifacts
+marketing/hackathon-prints/final/*.png
+marketing/hackathon-prints/generated/
+marketing/hackathon-prints/screenshots/
+
 # Env
 .env
 .env.*

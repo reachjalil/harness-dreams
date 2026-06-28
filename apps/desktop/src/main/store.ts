@@ -1,3 +1,4 @@
+import { randomBytes, randomUUID } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
@@ -5,8 +6,8 @@ import {
   renameSync,
   writeFileSync,
 } from "node:fs";
+import { hostname } from "node:os";
 import path from "node:path";
-
 import { app } from "electron";
 
 import { AppConfigSchema } from "../shared/schemas";
@@ -20,6 +21,7 @@ import type { AppConfig } from "../shared/types";
 
 export const DEFAULT_CONFIG: AppConfig = {
   onboarded: false,
+  demoMode: false,
   showOnboardingOnLaunch: false,
   privacyMode: "local",
   schedule: { mode: "nightly", time: "03:00" },
@@ -34,6 +36,19 @@ export const DEFAULT_CONFIG: AppConfig = {
   },
   launchAtLogin: false,
   reduceMotion: false,
+  cloudSync: {
+    enabled: false,
+    paidPlan: false,
+    devBypassPaidPlan: true,
+    atlasUri: "",
+    databaseName: "harness_dreams",
+    userId: "",
+    jwtSecret: "",
+    deviceId: "",
+    deviceName: "",
+    syncIntervalMs: 30_000,
+    devices: [],
+  },
   cloudSyncInterest: false,
   connectors: { claudeCode: true, codex: false, cursor: false },
   projects: [],
@@ -74,19 +89,44 @@ function persist(): void {
   }
 }
 
+function withRuntimeDefaults(next: AppConfig): AppConfig {
+  const cloudSync = next.cloudSync ?? DEFAULT_CONFIG.cloudSync;
+  return {
+    ...next,
+    cloudSync: {
+      ...cloudSync,
+      databaseName:
+        cloudSync.databaseName || DEFAULT_CONFIG.cloudSync.databaseName,
+      userId: cloudSync.userId || randomUUID(),
+      jwtSecret:
+        cloudSync.jwtSecret || randomBytes(32).toString("base64url"),
+      deviceId: cloudSync.deviceId || randomUUID(),
+      deviceName: cloudSync.deviceName || hostname() || "Desktop",
+      syncIntervalMs: Math.max(
+        5_000,
+        cloudSync.syncIntervalMs || DEFAULT_CONFIG.cloudSync.syncIntervalMs
+      ),
+      devices: cloudSync.devices ?? [],
+    },
+  };
+}
+
 export function initStore(): AppConfig {
   filePath = path.join(app.getPath("userData"), "harness-dreams-config.json");
   try {
     if (existsSync(filePath)) {
       const raw: unknown = JSON.parse(readFileSync(filePath, "utf8"));
-      config = AppConfigSchema.parse(deepMerge(DEFAULT_CONFIG, raw));
+      config = withRuntimeDefaults(
+        AppConfigSchema.parse(deepMerge(DEFAULT_CONFIG, raw))
+      );
+      persist();
     } else {
-      config = DEFAULT_CONFIG;
+      config = withRuntimeDefaults(DEFAULT_CONFIG);
       persist();
     }
   } catch (err) {
     console.error("[store] invalid config, using defaults", err);
-    config = DEFAULT_CONFIG;
+    config = withRuntimeDefaults(DEFAULT_CONFIG);
   }
   return config;
 }
@@ -102,7 +142,7 @@ export function getConfigPath(): string {
 
 /** Reset everything to defaults (used by "Reset all data"). */
 export function resetConfig(): AppConfig {
-  config = DEFAULT_CONFIG;
+  config = withRuntimeDefaults(DEFAULT_CONFIG);
   persist();
   for (const listener of listeners) listener(config);
   return config;
@@ -110,7 +150,9 @@ export function resetConfig(): AppConfig {
 
 /** Deep-merge a (validated) patch, re-validate, persist, notify. */
 export function setConfig(patch: unknown): AppConfig {
-  config = AppConfigSchema.parse(deepMerge(config, patch ?? {}));
+  config = withRuntimeDefaults(
+    AppConfigSchema.parse(deepMerge(config, patch ?? {}))
+  );
   persist();
   for (const listener of listeners) listener(config);
   return config;

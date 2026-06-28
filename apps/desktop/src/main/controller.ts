@@ -7,6 +7,7 @@ import type {
   DiscoveredProject,
   ReviewDecisions,
 } from "../shared/types";
+import { onCloudSyncStatusChange } from "./cloudSync";
 import { discoverAnalysisProjects } from "./localIngest";
 import {
   addDream,
@@ -15,7 +16,6 @@ import {
   onReportsChange,
   resetReports,
 } from "./reports";
-import { refreshTray } from "./tray";
 import { getState, onStateChange, patchState } from "./state";
 import {
   getConfig,
@@ -24,6 +24,7 @@ import {
   resetConfig,
   setConfig,
 } from "./store";
+import { refreshTray } from "./tray";
 import { broadcastToUi, setQuitting, showMain } from "./windows";
 
 /**
@@ -52,6 +53,7 @@ export interface Controller {
 
 const DREAM_TICK_MS = 200;
 const DREAM_STEP = 0.02;
+const DEMO_DREAM_STEP = 0.14;
 
 let dreamTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -82,7 +84,9 @@ function runDream(): void {
   dreamTimer = setInterval(() => {
     // While paused, hold position — the icon and UI stay put.
     if (getState().paused) return;
-    const next = getState().progress + DREAM_STEP;
+    const next =
+      getState().progress +
+      (getConfig().demoMode ? DEMO_DREAM_STEP : DREAM_STEP);
     if (next >= 1) {
       if (dreamTimer) clearInterval(dreamTimer);
       dreamTimer = null;
@@ -213,5 +217,8 @@ export function initOrchestration(): void {
   });
   onReportsChange((reports) => {
     broadcastToUi(Send.BroadcastReports, reports);
+  });
+  onCloudSyncStatusChange((status) => {
+    broadcastToUi(Send.BroadcastCloudSync, status);
   });
 }

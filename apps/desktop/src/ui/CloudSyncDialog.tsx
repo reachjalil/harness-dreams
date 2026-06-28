@@ -2,9 +2,7 @@ import { type ReactElement, type ReactNode, useEffect, useRef } from "react";
 
 import {
   CLOUD_SYNC_BENEFITS,
-  CLOUD_SYNC_CADENCE,
   CLOUD_SYNC_FOOTNOTE,
-  CLOUD_SYNC_PRICE,
   CLOUD_SYNC_TAGLINE,
 } from "./cloudSync";
 import { Button, Pill } from "./components";
@@ -65,21 +63,20 @@ function Modal({
 }
 
 /**
- * The always-reachable "Upgrade to Cloud Sync" dialog. Explains the promise —
- * sync the cycle signal to iPhone/Apple Watch, code stays local, open source
- * forever — and lets the user ask to be notified when the (coming-soon, paid)
- * sync ships. It never actually leaves local-only.
+ * The always-reachable Cloud Sync dialog. Explains the promise — sync the cycle
+ * signal to MongoDB Atlas for phone/watch clients, while code stays local — and
+ * routes setup to Settings.
  */
 export function CloudSyncDialog({
   open,
   onClose,
-  interested,
-  onNotify,
+  enabled,
+  onOpenSettings,
 }: {
   open: boolean;
   onClose: () => void;
-  interested: boolean;
-  onNotify: () => void;
+  enabled: boolean;
+  onOpenSettings: () => void;
 }): ReactElement {
   return (
     <Modal open={open} onClose={onClose} labelledBy="cloudsync-title">
@@ -98,24 +95,26 @@ export function CloudSyncDialog({
             <Icon name="cloudsync" size={22} />
           </span>
           <div className="cloudsync-head-text">
-            <div className="cloudsync-eyebrow">Upgrade</div>
+            <div className="cloudsync-eyebrow">MongoDB Atlas</div>
             <h2 id="cloudsync-title" className="cloudsync-title">
               Cloud Sync
             </h2>
           </div>
           <span className="cloudsync-price">
-            <b>{CLOUD_SYNC_PRICE}</b>
-            <span>{CLOUD_SYNC_CADENCE}</span>
+            <Icon name="sync" size={18} />
+            <span>{enabled ? "On" : "Setup"}</span>
           </span>
         </div>
 
         <p className="cloudsync-lede">{CLOUD_SYNC_TAGLINE}</p>
 
         <div className="cloudsync-soon">
-          <Pill tone="accent">Coming soon</Pill>
+          <Pill tone={enabled ? "good" : "accent"}>
+            {enabled ? "Enabled" : "Self-hosted"}
+          </Pill>
           <span>
-            Paid sync isn't live yet — you'll keep running local-only until it
-            ships.
+            Add your Atlas URI and shared user id in Settings. The desktop keeps
+            syncing whenever it can connect.
           </span>
         </div>
 
@@ -133,29 +132,16 @@ export function CloudSyncDialog({
           ))}
         </ul>
 
-        {interested ? (
-          <div className="cloudsync-confirm">
-            <Icon name="finding-win" size={16} />
-            You're on the list — we'll let you know the moment Cloud Sync ships.
-          </div>
-        ) : (
-          <p className="cloudsync-footnote">{CLOUD_SYNC_FOOTNOTE}</p>
-        )}
+        <p className="cloudsync-footnote">{CLOUD_SYNC_FOOTNOTE}</p>
 
         <div className="cloudsync-actions">
           <Button variant="ghost" onClick={onClose}>
-            {interested ? "Close" : "Continue local-only"}
+            Close
           </Button>
-          {interested ? (
-            <Button variant="accent" onClick={onClose}>
-              Done
-            </Button>
-          ) : (
-            <Button variant="accent" onClick={onNotify}>
-              <Icon name="notifications" size={15} />
-              Notify me when it's ready
-            </Button>
-          )}
+          <Button variant="accent" onClick={onOpenSettings}>
+            <Icon name="settings" size={15} />
+            Open Settings
+          </Button>
         </div>
       </div>
     </Modal>

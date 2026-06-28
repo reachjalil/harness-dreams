@@ -16,7 +16,6 @@ import type {
   Ring,
 } from "../shared/types";
 import { sparklinePath, useCountUp, useMounted } from "./anim";
-import { CLOUD_SYNC_PRICE_LABEL } from "./cloudSync";
 import {
   CATEGORY_TIP,
   CONFIDENCE_TIP,
@@ -601,9 +600,8 @@ const PHASE_LABEL: Record<DreamPhase, string> = {
 };
 
 /**
- * The always-present "Upgrade to Cloud Sync" call-to-action, pinned to the
- * bottom-left of the app shell. Opens the benefits dialog; never changes any
- * setting on its own.
+ * The always-present Cloud Sync call-to-action, pinned to the bottom-left of
+ * the app shell. Opens the setup dialog; never changes any setting on its own.
  */
 export function CloudSyncCTA({
   onClick,
@@ -616,8 +614,7 @@ export function CloudSyncCTA({
         <Icon name="cloudsync" size={15} />
       </span>
       <span className="cloud-cta-title">
-        Upgrade to Cloud Sync{" "}
-        <span className="cloud-cta-price">{CLOUD_SYNC_PRICE_LABEL}</span>
+        Set up Cloud Sync
       </span>
       <span className="cloud-cta-arrow" aria-hidden="true">
         ›

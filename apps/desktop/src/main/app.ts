@@ -1,7 +1,9 @@
 import { app, Menu, nativeTheme } from "electron";
 import started from "electron-squirrel-startup";
 
+import { initCloudSync, shutdownCloudSync } from "./cloudSync";
 import { createController, initOrchestration } from "./controller";
+import { initDeviceSyncServer, shutdownDeviceSyncServer } from "./deviceSync";
 import { registerIpc } from "./ipc";
 import { initReports } from "./reports";
 import { getState } from "./state";
@@ -32,7 +34,11 @@ if (!app.requestSingleInstanceLock()) {
     if (process.platform !== "darwin") app.quit();
   });
 
-  app.on("before-quit", () => setQuitting(true));
+  app.on("before-quit", () => {
+    setQuitting(true);
+    void shutdownCloudSync();
+    void shutdownDeviceSyncServer();
+  });
 }
 
 function setupMenu(): void {
@@ -66,6 +72,8 @@ function bootstrap(): void {
   setupMenu();
   initStore();
   initReports();
+  initDeviceSyncServer();
+  initCloudSync();
 
   // Honor the Settings "Show setup on launch" toggle: re-arm onboarding so the
   // welcome flow appears on this start. Consumed here in the main process (not

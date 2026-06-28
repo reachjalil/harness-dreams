@@ -58,6 +58,18 @@
       <a class="btn btn-primary hero-primary" href="/start/">Download for macOS</a>
       <a class="btn hero-secondary" href="#insights">Learn more</a>
     </div>
+
+    <a class="sync-teaser" href="#cloud-sync" aria-label="Learn about Cloud Sync for iPhone and Apple Watch">
+      <span class="device-stack" aria-hidden="true">
+        <span class="device-phone"></span>
+        <span class="device-watch"></span>
+      </span>
+      <span>
+        Cloud Sync:
+        <strong>iPhone &amp; Apple Watch</strong>
+        for $5/month
+      </span>
+    </a>
   </div>
 
   <a class="scroll-cue" href="#insights" aria-label="Scroll to more insights">
@@ -346,6 +358,106 @@
     box-shadow: 0 18px 46px -30px rgba(0, 0, 0, 0.45);
   }
 
+  .sync-teaser {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    max-width: min(100%, 35rem);
+    margin-top: 0.25rem;
+    padding: 0.62rem 0.82rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.9rem;
+    font-weight: 650;
+    line-height: 1.25;
+    backdrop-filter: blur(18px) saturate(135%);
+    -webkit-backdrop-filter: blur(18px) saturate(135%);
+    transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      color 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .sync-teaser:hover {
+    border-color: rgba(255, 255, 255, 0.34);
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .sync-teaser strong {
+    color: #ffffff;
+    font-weight: 800;
+  }
+
+  .device-stack {
+    position: relative;
+    width: 2.75rem;
+    height: 1.72rem;
+    flex: none;
+  }
+
+  .device-phone,
+  .device-watch {
+    position: absolute;
+    display: block;
+    border: 1.5px solid rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .device-phone {
+    left: 0;
+    bottom: 0;
+    width: 0.98rem;
+    height: 1.55rem;
+    border-radius: 0.22rem;
+  }
+
+  .device-phone::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0.12rem;
+    width: 0.18rem;
+    height: 0.18rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.7);
+    transform: translateX(-50%);
+  }
+
+  .device-watch {
+    right: 0;
+    top: 0.32rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 0.36rem;
+  }
+
+  .device-watch::before,
+  .device-watch::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    width: 0.44rem;
+    height: 0.28rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.52);
+    transform: translateX(-50%);
+  }
+
+  .device-watch::before {
+    top: -0.32rem;
+  }
+
+  .device-watch::after {
+    bottom: -0.32rem;
+  }
+
   .scroll-cue {
     position: absolute;
     z-index: 2;
@@ -375,6 +487,7 @@
     .splash-answer,
     .splash-lede,
     .hero-cta,
+    .sync-teaser,
     .scroll-cue {
       opacity: 0;
       animation: splash-enter 0.82s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -403,6 +516,10 @@
 
     .hero-cta {
       animation-delay: 1.5s;
+    }
+
+    .sync-teaser {
+      animation-delay: 1.62s;
     }
 
     .scroll-cue {
@@ -716,6 +833,11 @@
     h1 {
       font-size: clamp(2.55rem, 11.6vw, 4.25rem);
     }
+
+    .sync-teaser {
+      border-radius: 18px;
+      font-size: 0.84rem;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -731,6 +853,7 @@
     .splash-answer,
     .splash-lede,
     .hero-cta,
+    .sync-teaser,
     .scroll-cue,
     .answer-word {
       animation: none;

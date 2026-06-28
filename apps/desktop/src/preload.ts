@@ -1,10 +1,14 @@
-import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
+import { contextBridge, type IpcRendererEvent, ipcRenderer } from "electron";
 
 import { Invoke, Send } from "./shared/channels";
 import type { ConfigPatch } from "./shared/schemas";
 import type {
-  AppConfig,
   AnalysisProject,
+  AppConfig,
+  CloudSyncDevice,
+  CloudSyncDeviceKind,
+  CloudSyncPairing,
+  CloudSyncStatus,
   DiscoveredProject,
   DreamReport,
   ReviewDecisions,
@@ -41,6 +45,19 @@ const api = {
     get: (): Promise<DreamReport | null> =>
       ipcRenderer.invoke(Invoke.ReportGet),
     list: (): Promise<DreamReport[]> => ipcRenderer.invoke(Invoke.ReportList),
+  },
+  cloudSync: {
+    status: (): Promise<CloudSyncStatus> =>
+      ipcRenderer.invoke(Invoke.CloudSyncStatus),
+    syncNow: (): Promise<CloudSyncStatus> =>
+      ipcRenderer.invoke(Invoke.CloudSyncNow),
+    pairDevice: (input?: {
+      deviceName?: string;
+      kind?: CloudSyncDeviceKind;
+    }): Promise<CloudSyncPairing> =>
+      ipcRenderer.invoke(Invoke.CloudSyncPairDevice, input),
+    removeDevice: (deviceId: string): Promise<CloudSyncDevice[]> =>
+      ipcRenderer.invoke(Invoke.CloudSyncRemoveDevice, deviceId),
   },
   projects: {
     discover: (): Promise<DiscoveredProject[]> =>
@@ -79,6 +96,8 @@ const api = {
       subscribe(Send.BroadcastState, cb),
     onReports: (cb: (reports: DreamReport[]) => void): Unsubscribe =>
       subscribe(Send.BroadcastReports, cb),
+    onCloudSync: (cb: (status: CloudSyncStatus) => void): Unsubscribe =>
+      subscribe(Send.BroadcastCloudSync, cb),
     onSelectReport: (cb: (id: string) => void): Unsubscribe =>
       subscribe(Send.SelectReport, cb),
   },

@@ -51,6 +51,11 @@ function fmtClock(ts: number): string {
   });
 }
 
+function compactChars(chars: number): string {
+  if (chars >= 1000) return `${Math.round(chars / 1000)}k`;
+  return `${chars}`;
+}
+
 /** A banner stating exactly what slice of activity this cycle reviewed. */
 export function CycleWindowBanner({
   info,
@@ -120,8 +125,18 @@ export function ProjectBreakdown({
         <div key={project.path} className="proj-ins">
           <div className="proj-ins-head">
             <span className="proj-ins-name">{project.name}</span>
-            <span className={`proj-ins-align ${band(project.alignment)}`}>
-              {project.alignment}
+            <span className="proj-ins-scores">
+              {project.contextHealth ? (
+                <span
+                  className={`proj-ins-context ${project.contextHealth.status}`}
+                  title={project.contextHealth.risks.join(" · ")}
+                >
+                  Context {project.contextHealth.score}
+                </span>
+              ) : null}
+              <span className={`proj-ins-align ${band(project.alignment)}`}>
+                {project.alignment}
+              </span>
             </span>
           </div>
           <div className="proj-ins-meta">
@@ -130,6 +145,11 @@ export function ProjectBreakdown({
             </span>
             <span>{project.turns} turns</span>
             <span>{project.corrections} corrections</span>
+            {project.contextHealth ? (
+              <span>
+                {compactChars(project.contextHealth.totalChars)} context chars
+              </span>
+            ) : null}
             {project.toolFailures > 0 ? (
               <span>{project.toolFailures} tool errors</span>
             ) : null}
@@ -142,9 +162,25 @@ export function ProjectBreakdown({
             <span className={`proj-tag ${project.hasClaudeMd ? "on" : "off"}`}>
               {project.hasClaudeMd ? "CLAUDE.md ✓" : "No CLAUDE.md"}
             </span>
+            <span className={`proj-tag ${project.hasRulesMd ? "on" : "off"}`}>
+              {project.hasRulesMd ? "rules.md ✓" : "No rules.md"}
+            </span>
             <span className="proj-tag">
               {project.skillCount} skill{project.skillCount === 1 ? "" : "s"}
             </span>
+            {project.contextHealth ? (
+              <>
+                <span className="proj-tag">
+                  {project.contextHealth.memoryFiles} memory
+                  {project.contextHealth.memoryFiles === 1 ? "" : " files"}
+                </span>
+                {project.contextHealth.risks.slice(0, 2).map((risk) => (
+                  <span key={risk} className="proj-risk">
+                    {risk}
+                  </span>
+                ))}
+              </>
+            ) : null}
             {project.topics.slice(0, 3).map((topic) => (
               <span key={topic} className="proj-topic">
                 {topic}
@@ -175,7 +211,7 @@ export function MeasuredGoals({
 }): ReactElement | null {
   const measured = experiments.filter(
     (experiment) =>
-      experiment.status === "running" || experiment.status === "concluded"
+      experiment.status === "running" || experiment.status === "concluded",
   );
   if (measured.length === 0) return null;
   return (

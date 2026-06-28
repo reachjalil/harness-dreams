@@ -62,6 +62,15 @@ const CATEGORY_LABEL: Record<ActionCategory, string> = {
   skill: "Skill routing",
 };
 
+function decisionsFromReport(report: DreamReport | null): Decisions {
+  return Object.fromEntries(
+    (report?.reviewDecisions ?? []).map((entry) => [
+      entry.findingId,
+      entry.state,
+    ])
+  );
+}
+
 /** Breadcrumb trail for the review wizard — depth grows as you go deeper, and
  *  "Cycle" is clickable to jump back to the overview. */
 function cycleCrumbs(
@@ -69,7 +78,7 @@ function cycleCrumbs(
   step: "overview" | "findings" | "queue",
   toList: () => void,
   toOverview: () => void,
-  queueCount: number
+  queueCount: number,
 ): Crumb[] {
   if (step === "overview") {
     return [
@@ -113,7 +122,7 @@ function longDate(ts: number): string {
 
 function listCycleStatus(
   report: DreamReport,
-  isLatest: boolean
+  isLatest: boolean,
 ): CycleReviewStatus {
   if (report.reviewStatus === "reviewed" || report.reviewedAt) {
     return "reviewed";
@@ -152,7 +161,10 @@ function fileName(file: string | undefined): string {
   return parts.at(-1) ?? file;
 }
 
-function decisionStats(report: DreamReport, decisions: Decisions): {
+function decisionStats(
+  report: DreamReport,
+  decisions: Decisions,
+): {
   accepted: number;
   rejected: number;
   open: number;
@@ -174,7 +186,7 @@ function decisionStats(report: DreamReport, decisions: Decisions): {
 }
 
 function reviewMetrics(report: DreamReport): Metric[] {
-  const preferred = ["reask", "tool_success", "tokens_per_change"];
+  const preferred = ["reask", "tool_success", "context_load"];
   const picked = preferred
     .map((key) => report.metrics.find((metric) => metric.key === key))
     .filter((metric): metric is Metric => Boolean(metric));
@@ -345,7 +357,7 @@ const RUN_PASSES = [
     done: 0.14,
     label: "Observe",
     title: "Collect traces",
-    text: "Session notes, project context, accepted goals, and tool outcomes are loaded into the run.",
+    text: "Session notes, Claude/Codex home context, project guidance, accepted goals, and tool outcomes are loaded into the run.",
   },
   {
     start: 0.14,
@@ -379,6 +391,7 @@ const RUN_PASSES = [
 
 const RUN_LOGS = [
   { at: 0.02, label: "Opened recent session trace window" },
+  { at: 0.1, label: "Scanned Claude/Codex home and project context" },
   { at: 0.14, label: "Replayed decision points across active projects" },
   { at: 0.28, label: "Grouped repeated corrections and re-asks" },
   { at: 0.42, label: "Compared accepted goals with observed behavior" },
@@ -391,7 +404,7 @@ const RUN_LOGS = [
 
 function runPassState(
   progress: number,
-  pass: (typeof RUN_PASSES)[number]
+  pass: (typeof RUN_PASSES)[number],
 ): "pending" | "active" | "done" {
   if (progress >= pass.done) return "done";
   if (progress >= pass.start) return "active";
@@ -571,7 +584,9 @@ function ReviewCompass({
   return (
     <div className="review-compass" aria-label="Sleep Cycle review progress">
       <div className="review-compass-line">
-        <span style={{ width: `${((stageIndex + 1) / stages.length) * 100}%` }} />
+        <span
+          style={{ width: `${((stageIndex + 1) / stages.length) * 100}%` }}
+        />
       </div>
       {stages.map((stage, index) => {
         const state =
@@ -672,10 +687,10 @@ function BranchPlan({
   decisions: Decisions;
 }): ReactElement {
   const acceptedFindings = report.findings.filter(
-    (finding) => decisions[finding.id] === "accepted"
+    (finding) => decisions[finding.id] === "accepted",
   );
   const repos = new Set(
-    acceptedFindings.map((finding) => finding.projectPath ?? finding.project)
+    acceptedFindings.map((finding) => finding.projectPath ?? finding.project),
   );
   return (
     <div className="branch-plan">
@@ -785,7 +800,7 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
   const findingCount = report.findings.length;
   const acceptedBranches =
     report.reviewDecisions?.filter(
-      (entry) => entry.state === "accepted" && entry.reviewBranch
+      (entry) => entry.state === "accepted" && entry.reviewBranch,
     ) ?? [];
 
   return (
@@ -820,7 +835,7 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
 
       {report.experiments.some(
         (experiment) =>
-          experiment.status === "running" || experiment.status === "concluded"
+          experiment.status === "running" || experiment.status === "concluded",
       ) ? (
         <Section
           title="Did your last changes help?"
@@ -883,7 +898,7 @@ function FrictionForFinding({
   findingId: string;
 }): ReactElement | null {
   const point = report.alignment?.friction.find(
-    (f) => f.findingId === findingId
+    (f) => f.findingId === findingId,
   );
   if (!point) return null;
   return (
@@ -1034,11 +1049,15 @@ function ReviewQueue({
     }, {});
 
   const CATEGORY_NEXT: Record<ActionCategory, string> = {
-    agentsmd: "A feature branch updates AGENTS.md and links you to a PR when pushed.",
-    claudemd: "A feature branch updates CLAUDE.md and links you to a PR when pushed.",
-    contextdoc: "A feature branch writes durable context future agents can cite.",
+    agentsmd:
+      "A feature branch updates AGENTS.md and links you to a PR when pushed.",
+    claudemd:
+      "A feature branch updates CLAUDE.md and links you to a PR when pushed.",
+    contextdoc:
+      "A feature branch writes durable context future agents can cite.",
     prompthabit: "A feature branch captures the prompt checkpoint for review.",
-    skill: "A feature branch scaffolds or updates the skill and links you to a PR when pushed.",
+    skill:
+      "A feature branch scaffolds or updates the skill and links you to a PR when pushed.",
   };
 
   return (
@@ -1152,16 +1171,16 @@ export default function Cycle({
 
   useEffect(() => {
     setActiveId("__overview");
-    setDecisions({});
-  }, [report?.id]);
+    setDecisions(decisionsFromReport(report));
+  }, [report]);
 
   const decisionCount = useMemo(
     () => Object.values(decisions).filter((s) => s !== "open").length,
-    [decisions]
+    [decisions],
   );
   const acceptedGoalCount = useMemo(
     () => Object.values(decisions).filter((s) => s === "accepted").length,
-    [decisions]
+    [decisions],
   );
 
   if (!state) return <p className="card-hint">Loading…</p>;
@@ -1233,7 +1252,7 @@ export default function Cycle({
           step,
           onBackToList,
           () => setActiveId("__overview"),
-          decisionCount
+          decisionCount,
         )}
         title={report.rangeLabel}
         subtitle={

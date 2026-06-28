@@ -2,6 +2,7 @@ import type {
   ActionQueueEntry,
   AlignmentBand,
   AlignmentDetail,
+  AnalysisProject,
   CycleReviewStatus,
   DreamReport,
   Experiment,
@@ -12,10 +13,33 @@ import type {
 } from "./types";
 
 /**
- * Mock Dream Reports. Stands in for the real Dream Engine until ingestion +
- * analysis land. `seedReports` builds a believable history; `makeReport` mints
- * a fresh one each time a dream completes, so the session list grows.
+ * Preview and demo reports. `seedReports` powers renderer-only preview mode;
+ * the explicit demo helpers below power persisted in-app Demo Mode.
  */
+
+export const DEMO_PROJECTS: AnalysisProject[] = [
+  {
+    path: "/Users/demo/work/atlas-notes",
+    name: "atlas-notes",
+    sources: ["codex", "claude-code"],
+    enabled: true,
+    addedAt: 1_798_460_800_000,
+  },
+  {
+    path: "/Users/demo/work/route-hopper",
+    name: "route-hopper",
+    sources: ["codex"],
+    enabled: true,
+    addedAt: 1_798_460_800_000,
+  },
+  {
+    path: "/Users/demo/work/launch-ledger",
+    name: "launch-ledger",
+    sources: ["claude-code"],
+    enabled: true,
+    addedAt: 1_798_460_800_000,
+  },
+];
 
 const DIGESTS = [
   "Solid day. Tokens-per-change dropped vs your two-week median, mostly in agent-fleet. One soft spot: re-ask rate ticked up on UI work.",
@@ -362,6 +386,445 @@ const PROJECT_INSIGHTS: ProjectInsight[] = [
   },
 ];
 
+const DEMO_FINDINGS: Finding[] = [
+  {
+    id: "demo_agents_validation",
+    type: "mistake",
+    title: "Validation command was discovered through re-asks",
+    body: "The agent tried npm test, then pnpm test, before the user corrected it to the repo's fixture-backed command.",
+    improvement:
+      "Add the canonical validation command to AGENTS.md so the agent starts with the right proof path.",
+    agentBenefit:
+      "The agent can verify changes without guessing package scripts.",
+    userBenefit:
+      "The user avoids repeated redirects before a change is considered done.",
+    reflection:
+      "Watch whether future atlas-notes sessions need fewer test-command corrections.",
+    confidence: "high",
+    project: "atlas-notes",
+    evidence:
+      "actually use `pnpm test:fixtures`, that is the command this repo trusts",
+    evidenceFile:
+      "/Users/demo/.codex/sessions/atlas-notes/2026-06-26-validation.jsonl",
+    configGap:
+      "AGENTS.md named the package manager but not the repo's trusted fixture validation command.",
+    action: "Add fixture validation rule to AGENTS.md",
+    category: "agentsmd",
+    frictionType: "config-conflict",
+    projectPath: "/Users/demo/work/atlas-notes",
+    patch: {
+      target: "agentsmd",
+      file: "/Users/demo/work/atlas-notes/AGENTS.md",
+      label: "AGENTS.md · atlas-notes",
+      snippet:
+        "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\n- Run `pnpm test:fixtures` before claiming parser or import changes are complete.\n<!-- harness-dreams:end -->\n",
+      creates: false,
+    },
+  },
+  {
+    id: "demo_skill_routing",
+    type: "opportunity",
+    title: "Support triage prompts repeat the same manual checklist",
+    body: "Three route-hopper sessions rebuilt the same issue-classification checklist before editing labels.",
+    improvement:
+      "Scaffold a small triage skill that lists label definitions, escalation rules, and the expected evidence summary.",
+    agentBenefit:
+      "The agent can route support issues consistently instead of recreating the checklist from memory.",
+    userBenefit:
+      "The user gets cleaner triage output and spends less time correcting label choices.",
+    reflection:
+      "Track whether support-routing sessions reuse the skill and reduce wrong-label corrections.",
+    confidence: "medium",
+    project: "route-hopper",
+    evidence:
+      "we already wrote this triage checklist yesterday; please stop rebuilding it",
+    evidenceFile:
+      "/Users/demo/.claude/projects/route-hopper/2026-06-27-triage.jsonl",
+    configGap:
+      "No reusable skill captured the repo's support-routing checklist.",
+    action: "Scaffold route triage skill",
+    category: "skill",
+    frictionType: "missing-skill",
+    projectPath: "/Users/demo/work/route-hopper",
+    patch: {
+      target: "skill",
+      file: "/Users/demo/work/route-hopper/.codex/skills/route-triage/SKILL.md",
+      label: "New skill · route-triage",
+      snippet:
+        "# route-triage\n\nUse when support issues need product-area labels.\n\n- Read the issue body and linked logs before changing labels.\n- Apply exactly one product-area label and one urgency label.\n- Return the evidence sentence that justified the label choice.\n",
+      creates: true,
+    },
+  },
+  {
+    id: "demo_claude_release_notes",
+    type: "risk",
+    title: "Release-note style changes by agent",
+    body: "Launch-ledger alternated between terse changelog bullets and customer-facing release notes in adjacent sessions.",
+    improvement:
+      "Add the release-note audience and format to CLAUDE.md so generated notes match the product voice.",
+    agentBenefit:
+      "The agent gets a stable style target before drafting release copy.",
+    userBenefit:
+      "The user spends less time rewriting notes after the implementation work is done.",
+    reflection:
+      "Compare release-note rewrites after adding the CLAUDE.md style rule.",
+    confidence: "medium",
+    project: "launch-ledger",
+    evidence:
+      "this reads like an internal changelog; make it customer-facing and mention the migration risk",
+    evidenceFile:
+      "/Users/demo/.claude/projects/launch-ledger/2026-06-27-release-copy.jsonl",
+    configGap:
+      "CLAUDE.md did not specify release-note audience, tone, or required risk callout.",
+    action: "Add release-note rule to CLAUDE.md",
+    category: "claudemd",
+    frictionType: "wrong-domain",
+    projectPath: "/Users/demo/work/launch-ledger",
+    patch: {
+      target: "claudemd",
+      file: "/Users/demo/work/launch-ledger/CLAUDE.md",
+      label: "CLAUDE.md · launch-ledger",
+      snippet:
+        "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\n- Draft release notes for customers, not maintainers; include migration risk when data shape changes.\n<!-- harness-dreams:end -->\n",
+      creates: false,
+    },
+  },
+  {
+    id: "demo_api_contract",
+    type: "mistake",
+    title: "API changes landed without contract examples",
+    body: "The agent updated the billing endpoint but left the OpenAPI example and fixture response in the old shape.",
+    improvement:
+      "Add an AGENTS.md rule that API changes must update fixtures and the OpenAPI example in the same branch.",
+    agentBenefit:
+      "The agent checks the contract surface before calling an API change complete.",
+    userBenefit:
+      "The user catches fewer frontend/backend mismatches during review.",
+    reflection:
+      "Watch whether API sessions update fixtures before the user asks for it.",
+    confidence: "high",
+    project: "launch-ledger",
+    evidence:
+      "the endpoint changed but the OpenAPI example is still returning `invoice_total_cents`",
+    evidenceFile:
+      "/Users/demo/.codex/sessions/launch-ledger/2026-06-28-api-contract.jsonl",
+    configGap:
+      "AGENTS.md did not define the repo's contract-update checklist for API changes.",
+    action: "Add API contract checklist to AGENTS.md",
+    category: "agentsmd",
+    frictionType: "config-conflict",
+    projectPath: "/Users/demo/work/launch-ledger",
+    patch: {
+      target: "agentsmd",
+      file: "/Users/demo/work/launch-ledger/AGENTS.md",
+      label: "AGENTS.md · launch-ledger",
+      snippet:
+        "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\n- When API response shapes change, update the OpenAPI example and fixture response in the same branch.\n<!-- harness-dreams:end -->\n",
+      creates: false,
+    },
+  },
+  {
+    id: "demo_scope_creep",
+    type: "risk",
+    title: "Small UI asks turned into broad rewrites",
+    body: "Two atlas-notes sessions changed surrounding navigation and spacing while the user only asked for the import review panel.",
+    improvement:
+      "Add a prompt habit that asks the agent to name the intended files before editing compact UI requests.",
+    agentBenefit:
+      "The agent holds a smaller edit boundary and avoids unrelated churn.",
+    userBenefit:
+      "The user reviews focused patches instead of backing out opportunistic cleanup.",
+    reflection:
+      "Measure whether compact UI sessions touch fewer unrelated files.",
+    confidence: "medium",
+    project: "atlas-notes",
+    evidence:
+      "please stop changing the sidebar; this was only about the import review panel",
+    evidenceFile:
+      "/Users/demo/.claude/projects/atlas-notes/2026-06-28-ui-scope.jsonl",
+    configGap:
+      "No prompt habit tells the agent to restate scope before compact UI edits.",
+    action: "Track a narrow-scope prompt habit",
+    category: "prompthabit",
+    frictionType: "unclear-prompt",
+    projectPath: "/Users/demo/work/atlas-notes",
+  },
+  {
+    id: "demo_accessibility_review",
+    type: "opportunity",
+    title: "Accessibility review happens after visual approval",
+    body: "Route-hopper shipped a clean keyboard filter UI only after a second pass added labels and focus states.",
+    improvement:
+      "Scaffold a UI accessibility review skill for keyboard, labels, focus, and reduced-motion checks.",
+    agentBenefit:
+      "The agent can run the UI quality checklist before returning a visual change.",
+    userBenefit:
+      "The user gets fewer late accessibility corrections after the layout already looks done.",
+    reflection:
+      "Track whether UI sessions include keyboard/focus evidence on the first handoff.",
+    confidence: "medium",
+    project: "route-hopper",
+    evidence:
+      "looks good visually, but the filter chips still need keyboard focus and labels",
+    evidenceFile:
+      "/Users/demo/.codex/sessions/route-hopper/2026-06-29-a11y-review.jsonl",
+    configGap:
+      "No skill captured the UI review checklist the user repeats after visual approval.",
+    action: "Scaffold UI accessibility review skill",
+    category: "skill",
+    frictionType: "missing-skill",
+    projectPath: "/Users/demo/work/route-hopper",
+    patch: {
+      target: "skill",
+      file: "/Users/demo/work/route-hopper/.codex/skills/ui-a11y-review/SKILL.md",
+      label: "New skill · ui-a11y-review",
+      snippet:
+        "# ui-a11y-review\n\nUse before handing off UI changes.\n\n- Check keyboard reachability for new controls.\n- Confirm visible labels or aria-labels for icon-only controls.\n- Verify focus states and reduced-motion behavior.\n- Report the evidence checked in the final response.\n",
+      creates: true,
+    },
+  },
+];
+
+const DEMO_SCENARIOS = [
+  {
+    label: "Demo: onboarding parser work",
+    digest:
+      "The team spent the day importing customer notes. The same validation command was corrected twice, while support triage kept rebuilding a checklist that should be reusable.",
+    findingIds: ["demo_agents_validation", "demo_skill_routing"],
+    alignment: 58,
+    reask: 31,
+    sessions: 6,
+    turns: 52,
+    humanMood: "frustrated",
+    humanQuestion: "Why do I keep repeating repo-specific rules?",
+    humanSignals: [
+      "2 test-command corrections",
+      "1 repeated triage checklist",
+      "1 late fixture request",
+    ],
+    agentMood: "uncertain",
+    agentQuestion: "Which local rule should I trust first?",
+    agentSignals: [
+      "guessed test script",
+      "rebuilt checklist",
+      "missed fixture proof",
+    ],
+  },
+  {
+    label: "Demo: release and billing polish",
+    digest:
+      "Release work moved fast, but copy style and API contract updates drifted from what the repos expect. Two accepted guidance changes are now being measured.",
+    findingIds: ["demo_claude_release_notes", "demo_api_contract"],
+    alignment: 69,
+    reask: 22,
+    sessions: 7,
+    turns: 61,
+    humanMood: "exploratory",
+    humanQuestion:
+      "Can the agent keep release quality without extra rewrite passes?",
+    humanSignals: [
+      "1 customer-copy rewrite",
+      "1 stale OpenAPI example",
+      "accepted AGENTS.md branch under review",
+    ],
+    agentMood: "confident",
+    agentQuestion: "Which surfaces prove this release is done?",
+    agentSignals: ["read guidance", "updated code first", "missed doc fixture"],
+  },
+  {
+    label: "Demo: focused UI iteration",
+    digest:
+      "UI work improved after the validation rule, but compact requests still expanded beyond scope and accessibility checks arrived late.",
+    findingIds: ["demo_scope_creep", "demo_accessibility_review"],
+    alignment: 74,
+    reask: 18,
+    sessions: 8,
+    turns: 64,
+    humanMood: "deep-focus",
+    humanQuestion:
+      "Can the agent keep patches tight without me policing scope?",
+    humanSignals: [
+      "1 unrelated sidebar edit",
+      "1 late keyboard-focus request",
+      "fixture command used correctly",
+    ],
+    agentMood: "overloaded",
+    agentQuestion: "Should I clean nearby UI while I am here?",
+    agentSignals: [
+      "expanded touched files",
+      "missed labels first pass",
+      "used prior AGENTS.md",
+    ],
+  },
+  {
+    label: "Demo: measured follow-through",
+    digest:
+      "Accepted guidance is paying off: validation and contract misses dropped, while the next best improvement is a reusable UI review skill.",
+    findingIds: [
+      "demo_accessibility_review",
+      "demo_scope_creep",
+      "demo_skill_routing",
+    ],
+    alignment: 83,
+    reask: 11,
+    sessions: 9,
+    turns: 67,
+    humanMood: "deep-focus",
+    humanQuestion: "Which guidance should become a durable workflow habit?",
+    humanSignals: [
+      "0 validation-command corrections",
+      "1 scoped UI redirect",
+      "2 guidance branches measured",
+    ],
+    agentMood: "confident",
+    agentQuestion: "Which accepted changes are now proven?",
+    agentSignals: [
+      "used fixture rule",
+      "updated contract example",
+      "reported verdict",
+    ],
+  },
+] as const;
+
+const DEMO_PROJECT_INSIGHTS: ProjectInsight[] = [
+  {
+    name: "atlas-notes",
+    path: "/Users/demo/work/atlas-notes",
+    sources: ["codex", "claude-code"],
+    sessions: 5,
+    turns: 38,
+    corrections: 4,
+    toolFailures: 1,
+    hedges: 1,
+    alignment: 63,
+    topics: ["fixtures", "imports", "parser"],
+    hasAgentsMd: true,
+    hasClaudeMd: false,
+    skillCount: 1,
+  },
+  {
+    name: "route-hopper",
+    path: "/Users/demo/work/route-hopper",
+    sources: ["codex"],
+    sessions: 3,
+    turns: 21,
+    corrections: 2,
+    toolFailures: 0,
+    hedges: 2,
+    alignment: 68,
+    topics: ["triage", "labels", "support"],
+    hasAgentsMd: false,
+    hasClaudeMd: false,
+    skillCount: 0,
+  },
+  {
+    name: "launch-ledger",
+    path: "/Users/demo/work/launch-ledger",
+    sources: ["claude-code"],
+    sessions: 2,
+    turns: 16,
+    corrections: 2,
+    toolFailures: 0,
+    hedges: 1,
+    alignment: 59,
+    topics: ["release notes", "migration", "copy"],
+    hasAgentsMd: false,
+    hasClaudeMd: true,
+    skillCount: 0,
+  },
+];
+
+function demoReviewBranch(finding: Finding, index: number) {
+  const slug = finding.project.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  return {
+    branch: `demo/harness-dreams-${slug}-${index + 1}`,
+    baseBranch: "main",
+    worktreePath: `/Users/demo/Library/Application Support/Harness Dreams/recommendation-worktrees/${slug}`,
+    commit: `demo${index + 17}c${finding.id.length}`,
+    remote: "origin",
+    prUrl: `https://github.com/demo-org/${slug}/compare/main...demo/harness-dreams-${slug}-${index + 1}?expand=1`,
+    pushed: true,
+  };
+}
+
+function demoScenario(cycleNumber: number) {
+  return DEMO_SCENARIOS[Math.abs(cycleNumber) % DEMO_SCENARIOS.length];
+}
+
+function demoFindings(cycleNumber: number): Finding[] {
+  const ids = new Set<string>(demoScenario(cycleNumber).findingIds);
+  return DEMO_FINDINGS.filter((finding) => ids.has(finding.id));
+}
+
+function demoVerdictFor(entry: ActionQueueEntry, cycleNumber: number) {
+  if (entry.category === "prompthabit") return "no-change" as const;
+  if (entry.category === "claudemd" && cycleNumber % 3 === 0) {
+    return "worse" as const;
+  }
+  return "helped" as const;
+}
+
+function concludeDemoExperiments(
+  experiments: Experiment[],
+  cycleNumber: number,
+  previous?: DreamReport | null
+): Experiment[] {
+  const accepted = previous?.reviewDecisions?.filter(
+    (entry) => entry.state === "accepted"
+  );
+  if (!accepted?.length) return experiments;
+  const existing = new Map(
+    experiments.map((experiment) => [experiment.id, experiment])
+  );
+  accepted.forEach((entry, index) => {
+    const prior = previous?.findings.find(
+      (finding) => finding.id === entry.findingId
+    );
+    const baseline = previous?.projectInsights?.find(
+      (project) => project.path === entry.projectPath
+    );
+    const nextAlignment = Math.min(
+      94,
+      (baseline?.alignment ?? 64) +
+        (entry.category === "prompthabit" ? 2 : 14 - index * 3)
+    );
+    const verdict = demoVerdictFor(entry, cycleNumber);
+    const baselineAlignment = baseline?.alignment ?? 64;
+    existing.set(`accepted_${entry.findingId}`, {
+      id: `accepted_${entry.findingId}`,
+      title: entry.action,
+      hypothesis:
+        prior?.improvement ??
+        "Accepted guidance should reduce repeated correction.",
+      agentBenefit:
+        prior?.agentBenefit ?? "The agent starts from clearer local guidance.",
+      userBenefit:
+        prior?.userBenefit ??
+        "The user spends fewer prompts correcting the agent.",
+      reflection:
+        prior?.reflection ??
+        "The next cycle compares alignment and corrections.",
+      metric: "alignment · corrections · tool success",
+      status: "concluded",
+      progress: 1,
+      progressLabel: "1 / 1 demo cycle measured",
+      verdict,
+      verdictNote:
+        verdict === "helped"
+          ? `Alignment ${baselineAlignment} -> ${nextAlignment} (+${nextAlignment - baselineAlignment})`
+          : verdict === "worse"
+            ? `Alignment ${baselineAlignment} -> ${Math.max(40, baselineAlignment - 3)} (-3); release copy still needed a rewrite.`
+            : "No repeated friction observed yet; keep watching one more cycle.",
+      projectPath: entry.projectPath,
+      category: entry.category,
+      baseline: baseline
+        ? { alignment: baseline.alignment, corrections: baseline.corrections }
+        : undefined,
+    });
+  });
+  return Array.from(existing.values());
+}
+
 /** Deterministically pick one option from a list using the seed. */
 function pick<T>(options: T[], seed: number, salt = 0): T {
   const idx = Math.floor(((noise(seed, salt) + 1) / 2) * options.length);
@@ -447,5 +910,167 @@ export function seedReports(now: number): DreamReport[] {
   const DAY = 86_400_000;
   return [0, 1, 2, 3, 4].map((i) =>
     makeReport(now - i * DAY, 97 - i * 11, i === 0 ? "unreviewed" : "reviewed")
+  );
+}
+
+export function makeDemoReport(
+  timestamp: number,
+  cycleNumber: number,
+  reviewStatus: CycleReviewStatus = "unreviewed",
+  previous?: DreamReport | null
+): DreamReport {
+  const seed = 240 + cycleNumber * 19;
+  const base = makeReport(timestamp, seed, reviewStatus);
+  const scenario = demoScenario(cycleNumber);
+  const alignmentScore = Math.min(92, scenario.alignment + cycleNumber);
+  const sessions = scenario.sessions + Math.floor(cycleNumber / 4);
+  const turns = scenario.turns + Math.floor(cycleNumber / 4) * 5;
+  const findings = demoFindings(cycleNumber);
+  const reviewedDecisions =
+    reviewStatus === "reviewed"
+      ? findings.slice(0, 2).map(
+          (finding, index): ActionQueueEntry => ({
+            findingId: finding.id,
+            category: finding.category ?? "contextdoc",
+            action: finding.action,
+            project: finding.project,
+            state: index === 0 ? "accepted" : "queued",
+            projectPath: finding.projectPath,
+            patch: finding.patch,
+            reviewBranch:
+              index === 0 ? demoReviewBranch(finding, index) : undefined,
+          })
+        )
+      : undefined;
+  const experiments = concludeDemoExperiments(
+    previous?.experiments ?? [],
+    cycleNumber,
+    previous
+  );
+  return {
+    ...base,
+    id: `demo_cycle_${timestamp}_${cycleNumber}`,
+    timestamp,
+    reviewStatus,
+    reviewedAt: reviewStatus === "reviewed" ? timestamp + 1_200_000 : undefined,
+    rangeLabel: `${dateLabel(timestamp)} · Demo cycle ${cycleNumber + 1}`,
+    sessions,
+    projects: DEMO_PROJECTS.length,
+    harness: "Codex + Claude Code demo",
+    digest: scenario.digest,
+    rings: base.rings.map((ring) =>
+      ring.key === "alignment"
+        ? { ...ring, score: alignmentScore, delta: cycleNumber === 0 ? -6 : 14 }
+        : ring.key === "efficiency"
+          ? { ...ring, score: Math.min(90, ring.score + cycleNumber * 5) }
+          : ring
+    ),
+    metrics: base.metrics.map((metric) =>
+      metric.key === "sessions"
+        ? { ...metric, value: `${sessions}`, delta: cycleNumber + 1 }
+        : metric.key === "reask"
+          ? {
+              ...metric,
+              value: `${scenario.reask}%`,
+              delta: scenario.reask > 24 ? 9 : -8,
+              trend: scenario.reask > 24 ? "up" : "down",
+              good: scenario.reask <= 22,
+            }
+          : metric
+    ),
+    findings,
+    experiments,
+    reviewDecisions: reviewedDecisions,
+    alignment: {
+      score: alignmentScore,
+      band: bandFor(alignmentScore),
+      human: {
+        mood: scenario.humanMood,
+        question: scenario.humanQuestion,
+        signals: [...scenario.humanSignals],
+      },
+      agent: {
+        mood: scenario.agentMood,
+        question: scenario.agentQuestion,
+        signals: [...scenario.agentSignals],
+      },
+      friction: findings.map((finding) => ({
+        type: finding.frictionType ?? "unclear-prompt",
+        example: finding.evidence,
+        findingId: finding.id,
+      })),
+    },
+    window: {
+      start: timestamp - 7_200_000,
+      end: timestamp,
+      basis: cycleNumber === 0 ? "last-24h" : "since-last-cycle",
+      label: scenario.label,
+      sessionsInWindow: sessions,
+      turnsInWindow: turns,
+    },
+    projectInsights: DEMO_PROJECT_INSIGHTS.map((project, index) => ({
+      ...project,
+      sessions: Math.max(1, project.sessions + cycleNumber - index),
+      turns: Math.max(5, project.turns + cycleNumber * 4 - index),
+      corrections: Math.max(
+        0,
+        project.corrections + (scenario.reask > 24 ? 1 : 0) - cycleNumber
+      ),
+      alignment: Math.min(
+        94,
+        project.alignment +
+          Math.floor(cycleNumber / 2) * (8 - index * 2) +
+          (scenario.reask <= 18 ? 4 : 0)
+      ),
+      hasAgentsMd:
+        project.path === "/Users/demo/work/atlas-notes" ||
+        (project.path === "/Users/demo/work/launch-ledger" && cycleNumber > 1)
+          ? true
+          : project.hasAgentsMd,
+      skillCount:
+        project.path === "/Users/demo/work/route-hopper"
+          ? project.skillCount + (cycleNumber > 2 ? 1 : 0)
+          : project.skillCount,
+    })),
+    cloudRedactionPreview:
+      cycleNumber === 0
+        ? {
+            runner: "demo",
+            model: "demo-rem",
+            redactions: 4,
+            payloadChars: 4_860,
+            projects: DEMO_PROJECTS.length,
+          }
+        : undefined,
+  };
+}
+
+export function seedDemoReports(now: number): DreamReport[] {
+  const DAY = 86_400_000;
+  const oldest = makeDemoReport(now - DAY * 4, 0, "reviewed");
+  const second = makeDemoReport(now - DAY * 3, 1, "reviewed", oldest);
+  const third = makeDemoReport(now - DAY * 2, 2, "reviewed", second);
+  const fourth = makeDemoReport(now - DAY, 3, "reviewed", third);
+  return [
+    makeDemoReport(now, 4, "unreviewed", fourth),
+    fourth,
+    third,
+    second,
+    oldest,
+  ];
+}
+
+export function nextDemoReport(
+  now: number,
+  previous?: DreamReport | null
+): DreamReport {
+  const count = previous?.id.startsWith("demo_cycle_")
+    ? Number(previous.id.split("_").at(-1) ?? 0) + 1
+    : 1;
+  return makeDemoReport(
+    now,
+    Number.isFinite(count) ? count : 1,
+    "unreviewed",
+    previous
   );
 }

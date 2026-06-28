@@ -13,6 +13,7 @@ import type {
 import {
   agentsPatch,
   claudePatch,
+  contextRulesPatch,
   readProjectConfig,
   skillPatch,
 } from "./agentConfig";
@@ -30,6 +31,23 @@ interface RemProjectPayload {
     agentsMd: string;
     claudeMd: string;
     skills: Array<{ name: string; file: string; content: string }>;
+    contextHealth: {
+      score: number;
+      status: string;
+      totalChars: number;
+      projectChars: number;
+      globalChars: number;
+      memoryFiles: number;
+      skillCount: number;
+      risks: string[];
+      suggestions: string[];
+      sources: Array<{
+        kind: string;
+        label: string;
+        chars: number;
+        lines: number;
+      }>;
+    };
   };
   turns: Array<{
     sessionId: string;
@@ -45,7 +63,7 @@ interface RemJsonFinding {
   body?: string;
   evidenceQuote?: string;
   configGap?: string;
-  target?: "agentsmd" | "claudemd" | "skill";
+  target?: "agentsmd" | "claudemd" | "contextdoc" | "skill";
   ruleOrDescription?: string;
   skillName?: string;
 }
@@ -80,7 +98,7 @@ function redact(text: string, count: { value: number }): string {
 
 function resolveBinary(
   provider: RemRunnerConfig["provider"],
-  configured: string
+  configured: string,
 ): string {
   if (
     configured &&
@@ -101,7 +119,7 @@ function resolveBinary(
             "standalone",
             "current",
             "bin",
-            "codex"
+            "codex",
           ),
           path.join(home, ".local", "bin", "codex"),
           process.platform === "darwin"
@@ -128,15 +146,16 @@ function promptFor(payload: RemProjectPayload[], depth: AnalysisDepth): string {
   return [
     "You are the Harness Dreams REM analyzer. Return only valid JSON.",
     "Analyze real windowed coding-agent turns plus project AGENTS.md, CLAUDE.md, and skills.",
-    "Find config-versus-behavior gaps where a durable rule or skill would reduce future friction.",
+    "Also inspect contextHealth, which summarizes project files, Claude home memory, Codex home context, rules.md, and skill counts.",
+    "Find config-versus-behavior gaps where a durable rule, context doc, or skill would reduce future friction.",
     "Requirements:",
     "- Return at most 3 findings.",
     "- Every finding must include evidenceQuote copied verbatim from a provided turn.",
     "- Name the specific configGap.",
-    "- target must be agentsmd, claudemd, or skill.",
+    "- target must be agentsmd, claudemd, contextdoc, or skill.",
     "- ruleOrDescription must be an exact apply-ready rule/description, not generic advice.",
     `Analysis depth: ${depth}.`,
-    'JSON shape: {"findings":[{"title":"","body":"","evidenceQuote":"","configGap":"","target":"agentsmd|claudemd|skill","ruleOrDescription":"","skillName":""}]}',
+    'JSON shape: {"findings":[{"title":"","body":"","evidenceQuote":"","configGap":"","target":"agentsmd|claudemd|contextdoc|skill","ruleOrDescription":"","skillName":""}]}',
     "",
     JSON.stringify({ projects: payload }),
   ].join("\n");
@@ -176,13 +195,14 @@ function parseJson(stdout: string): RemJson | null {
 
 function categoryFor(target: RemJsonFinding["target"]): ActionCategory {
   if (target === "claudemd") return "claudemd";
+  if (target === "contextdoc") return "contextdoc";
   if (target === "skill") return "skill";
   return "agentsmd";
 }
 
 function makePayload(
   projects: AnalysisProject[],
-  sessions: LocalSession[]
+  sessions: LocalSession[],
 ): { payload: RemProjectPayload[]; redactions: number } {
   const count = { value: 0 };
   const byProject = new Map<string, LocalSession[]>();
@@ -206,7 +226,7 @@ function makePayload(
               kind: turn.kind,
               timestamp: new Date(turn.timestamp).toISOString(),
               content: redact(short(turn.content, MAX_TURN_CHARS), count),
-            }))
+            })),
         )
         .slice(-MAX_TURNS_PER_PROJECT);
       return {
@@ -220,6 +240,23 @@ function makePayload(
             file: skill.file,
             content: redact(short(skill.content, 3000), count),
           })),
+          contextHealth: {
+            score: config.contextHealth.score,
+            status: config.contextHealth.status,
+            totalChars: config.contextHealth.totalChars,
+            projectChars: config.contextHealth.projectChars,
+            globalChars: config.contextHealth.globalChars,
+            memoryFiles: config.contextHealth.memoryFiles,
+            skillCount: config.contextHealth.skillCount,
+            risks: config.contextHealth.risks,
+            suggestions: config.contextHealth.suggestions,
+            sources: config.contextFiles.slice(0, 24).map((source) => ({
+              kind: source.kind,
+              label: source.label,
+              chars: source.chars,
+              lines: source.lines,
+            })),
+          },
         },
         turns,
       };
@@ -229,7 +266,7 @@ function makePayload(
 
 function findEvidence(
   quote: string,
-  sessions: LocalSession[]
+  sessions: LocalSession[],
 ): { projectPath: string; project: string; file: string } | null {
   const needle = quote.trim();
   if (!needle) return null;
@@ -247,7 +284,7 @@ function findEvidence(
 
 function findingsFromJson(
   parsed: RemJson,
-  sessions: LocalSession[]
+  sessions: LocalSession[],
 ): Finding[] {
   const out: Finding[] = [];
   for (const [index, item] of (parsed.findings ?? []).entries()) {
@@ -266,11 +303,13 @@ function findingsFromJson(
             config,
             item.skillName?.trim() || item.title?.trim() || "rem-analysis",
             rule,
-            evidence.project
+            evidence.project,
           )
-        : category === "claudemd"
-          ? claudePatch(config, rule, evidence.project)
-          : agentsPatch(config, "agentsmd", rule, evidence.project);
+        : category === "contextdoc"
+          ? contextRulesPatch(config, rule, evidence.project)
+          : category === "claudemd"
+            ? claudePatch(config, rule, evidence.project)
+            : agentsPatch(config, "agentsmd", rule, evidence.project);
     out.push({
       id: `rem-${index + 1}-${Buffer.from(evidence.projectPath).toString("hex").slice(0, 8)}`,
       type: category === "skill" ? "opportunity" : "mistake",
@@ -306,7 +345,7 @@ export function runRemAnalysis(
   projects: AnalysisProject[],
   sessions: LocalSession[],
   depth: AnalysisDepth,
-  config: RemRunnerConfig
+  config: RemRunnerConfig,
 ): RemAnalysisResult | null {
   if (sessions.length === 0) return null;
   const { payload, redactions } = makePayload(projects, sessions);
@@ -314,7 +353,7 @@ export function runRemAnalysis(
   const prompt = promptFor(payload, depth);
   const bin = resolveBinary(
     config.provider,
-    config.provider === "codex" ? config.codexPath : config.claudePath
+    config.provider === "codex" ? config.codexPath : config.claudePath,
   );
   const args = argvFor(config, prompt);
   const proc = spawnSync(bin, args, {

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { makeReport, seedReports } from "../shared/mock";
+import { DEMO_PROJECTS, nextDemoReport, seedDemoReports } from "../shared/mock";
 import type { ConfigPatch } from "../shared/schemas";
 import { stageForProgress } from "../shared/stages";
 import type {
   AnalysisProject,
   AppConfig,
+  CloudSyncDevice,
+  CloudSyncStatus,
   DiscoveredProject,
   DreamReport,
   RuntimeState,
@@ -18,13 +20,16 @@ export interface HarnessDreams {
   report: DreamReport | null;
   /** Full session history, newest first. */
   reports: DreamReport[];
+  cloudSyncStatus: CloudSyncStatus | null;
   patch: (patch: ConfigPatch) => void;
+  cloudSync: Window["hd"]["cloudSync"];
   projects: Window["hd"]["projects"];
   actions: Window["hd"]["actions"];
 }
 
 const PREVIEW_CONFIG: AppConfig = {
   onboarded: true,
+  demoMode: true,
   showOnboardingOnLaunch: false,
   privacyMode: "local",
   schedule: { mode: "nightly", time: "03:00" },
@@ -39,9 +44,48 @@ const PREVIEW_CONFIG: AppConfig = {
   },
   launchAtLogin: false,
   reduceMotion: false,
+  cloudSync: {
+    enabled: false,
+    paidPlan: false,
+    devBypassPaidPlan: true,
+    atlasUri: "",
+    databaseName: "harness_dreams",
+    userId: "preview-user",
+    jwtSecret: "preview-secret",
+    deviceId: "preview-desktop",
+    deviceName: "Preview Desktop",
+    syncIntervalMs: 30_000,
+    devices: [],
+  },
   cloudSyncInterest: false,
   connectors: { claudeCode: true, codex: false, cursor: false },
-  projects: [],
+  projects: DEMO_PROJECTS,
+};
+
+const PREVIEW_CLOUD_STATUS: CloudSyncStatus = {
+  enabled: false,
+  paidPlan: false,
+  devBypassPaidPlan: true,
+  allowedByPlan: true,
+  configured: false,
+  state: "disabled",
+  message: "Cloud Sync is off.",
+  userId: "",
+  deviceId: "preview-desktop",
+  databaseName: "harness_dreams",
+  collections: {
+    cycles: "sleep_cycles",
+    decisions: "sleep_cycle_decisions",
+    devices: "sync_devices",
+  },
+  lastSyncedAt: null,
+  lastPulledAt: null,
+  lastPushedAt: null,
+  nextSyncAt: null,
+  localSyncUrl: "http://127.0.0.1:39391",
+  cyclesPushed: 0,
+  decisionsPushed: 0,
+  remoteDecisionsApplied: 0,
 };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -79,6 +123,8 @@ export function useHarnessDreams(): HarnessDreams {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [state, setState] = useState<RuntimeState | null>(null);
   const [reports, setReports] = useState<DreamReport[]>([]);
+  const [cloudSyncStatus, setCloudSyncStatus] =
+    useState<CloudSyncStatus | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -93,7 +139,8 @@ export function useHarnessDreams(): HarnessDreams {
         lastDreamAt: now,
         hasUnreviewed: true,
       });
-      setReports(normalizeReports(seedReports(now)));
+      setReports(normalizeReports(seedDemoReports(now)));
+      setCloudSyncStatus(PREVIEW_CLOUD_STATUS);
       return () => {
         active = false;
       };
@@ -104,11 +151,15 @@ export function useHarnessDreams(): HarnessDreams {
     void window.hd.report
       .list()
       .then((r) => active && setReports(normalizeReports(r)));
+    void window.hd.cloudSync
+      .status()
+      .then((s) => active && setCloudSyncStatus(s));
 
     const unsubs = [
       window.hd.events.onConfig(setConfig),
       window.hd.events.onState(setState),
       window.hd.events.onReports((r) => setReports(normalizeReports(r))),
+      window.hd.events.onCloudSync(setCloudSyncStatus),
     ];
     return () => {
       active = false;
@@ -149,22 +200,18 @@ export function useHarnessDreams(): HarnessDreams {
                 hasUnreviewed: false,
               });
             },
-            300 + index * 280
+            300 + index * 280,
           );
         });
         window.setTimeout(() => {
           const now = Date.now();
-          const nextReport = makeReport(
-            now,
-            Math.floor(now / 997) % 1000,
-            "unreviewed"
-          );
+          const nextReport = nextDemoReport(now, reports[0] ?? null);
           setReports((current) => [
             nextReport,
             ...normalizeReports(current).map((report) =>
               report.reviewStatus === "unreviewed"
                 ? { ...report, reviewStatus: "expired" as const }
-                : report
+                : report,
             ),
           ]);
           setState({
@@ -236,14 +283,14 @@ export function useHarnessDreams(): HarnessDreams {
                 };
               })
               .filter((entry): entry is NonNullable<typeof entry> =>
-                Boolean(entry)
+                Boolean(entry),
               ) ?? [];
           const acceptedExperiments =
             latest?.findings
               .filter((finding) => decisions[finding.id] === "accepted")
               .map((finding) => {
                 const insight = latest.projectInsights?.find(
-                  (project) => project.path === finding.projectPath
+                  (project) => project.path === finding.projectPath,
                 );
                 return {
                   id: `accepted_${finding.id}`,
@@ -262,6 +309,7 @@ export function useHarnessDreams(): HarnessDreams {
                     ? {
                         alignment: insight.alignment,
                         corrections: insight.corrections,
+                        contextScore: insight.contextHealth?.score,
                       }
                     : undefined,
                 };
@@ -284,7 +332,7 @@ export function useHarnessDreams(): HarnessDreams {
               : normalized;
           hasUnreviewed = next.some(
             (report, index) =>
-              index === 0 && report.reviewStatus === "unreviewed"
+              index === 0 && report.reviewStatus === "unreviewed",
           );
           return next;
         });
@@ -313,20 +361,19 @@ export function useHarnessDreams(): HarnessDreams {
       openMain: async () => undefined,
       quit: async () => undefined,
     }),
-    [config, state]
+    [config, reports, state],
   );
 
   const previewProjects = useMemo<Window["hd"]["projects"]>(
     () => ({
-      discover: async (): Promise<DiscoveredProject[]> => [
-        {
-          path: "/Users/example/project",
-          name: "project",
-          sources: ["claude-code"],
-          sessionCount: 12,
-          lastActivityAt: Date.now(),
-        },
-      ],
+      discover: async (): Promise<DiscoveredProject[]> =>
+        DEMO_PROJECTS.map((project, index) => ({
+          path: project.path,
+          name: project.name,
+          sources: project.sources,
+          sessionCount: 8 - index * 2,
+          lastActivityAt: Date.now() - index * 3_600_000,
+        })),
       add: async (projectPath: string): Promise<AnalysisProject | null> => {
         const next: AnalysisProject = {
           path: projectPath,
@@ -340,14 +387,86 @@ export function useHarnessDreams(): HarnessDreams {
           projects: [
             next,
             ...((current ?? PREVIEW_CONFIG).projects ?? []).filter(
-              (project) => project.path !== projectPath
+              (project) => project.path !== projectPath,
             ),
           ],
         }));
         return next;
       },
     }),
-    []
+    [],
+  );
+
+  const previewCloudSync = useMemo<Window["hd"]["cloudSync"]>(
+    () => ({
+      status: async () => cloudSyncStatus ?? PREVIEW_CLOUD_STATUS,
+      syncNow: async () => {
+        const next: CloudSyncStatus = {
+          ...(cloudSyncStatus ?? PREVIEW_CLOUD_STATUS),
+          lastSyncedAt: Date.now(),
+          state:
+            (config ?? PREVIEW_CONFIG).cloudSync.enabled &&
+            (config ?? PREVIEW_CONFIG).cloudSync.userId
+              ? "watching"
+              : "disabled",
+          message: (config ?? PREVIEW_CONFIG).cloudSync.enabled
+            ? "Preview sync completed."
+            : "Cloud Sync is off.",
+        };
+        setCloudSyncStatus(next);
+        return next;
+      },
+      pairDevice: async (input) => {
+        const now = Date.now();
+        const kind = input?.kind ?? "iphone";
+        const device: CloudSyncDevice = {
+          deviceId: `preview-${kind}-${now}`,
+          deviceName:
+            input?.deviceName ||
+            (kind === "watch"
+              ? "Apple Watch"
+              : kind === "ipad"
+                ? "iPad"
+                : "iPhone"),
+          kind,
+          status: "pending",
+          tokenHash: "preview-token-hash",
+          createdAt: now,
+          lastTokenIssuedAt: now,
+        };
+        setConfig((current) => ({
+          ...(current ?? PREVIEW_CONFIG),
+          cloudSync: {
+            ...(current ?? PREVIEW_CONFIG).cloudSync,
+            enabled: true,
+            devices: [
+              device,
+              ...((current ?? PREVIEW_CONFIG).cloudSync.devices ?? []),
+            ],
+          },
+        }));
+        return {
+          token: "preview.jwt.token",
+          pairingUrl: "harnessdreams://pair?token=preview.jwt.token",
+          qrDataUrl:
+            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' fill='white'/%3E%3Cpath d='M20 20h50v50H20zM110 20h50v50h-50zM20 110h50v50H20zM92 92h18v18H92zM122 92h38v18h-38zM92 122h18v38H92zM122 122h18v18h-18zM146 146h14v14h-14z' fill='black'/%3E%3C/svg%3E",
+          expiresAt: now + 10 * 60 * 1000,
+          device,
+        };
+      },
+      removeDevice: async (deviceId) => {
+        const current = config ?? PREVIEW_CONFIG;
+        const devices = current.cloudSync.devices.filter(
+          (device) => device.deviceId !== deviceId,
+        );
+        setConfig({
+          ...current,
+          cloudSync: { ...current.cloudSync, devices },
+        });
+        return devices;
+      },
+    }),
+    [cloudSyncStatus, config],
   );
 
   return {
@@ -355,7 +474,9 @@ export function useHarnessDreams(): HarnessDreams {
     state,
     report: reports[0] ?? null,
     reports,
+    cloudSyncStatus,
     patch,
+    cloudSync: window.hd?.cloudSync ?? previewCloudSync,
     projects: window.hd?.projects ?? previewProjects,
     actions: window.hd?.actions ?? previewActions,
   };

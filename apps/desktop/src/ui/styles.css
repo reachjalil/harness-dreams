@@ -464,7 +464,7 @@ button {
   font-size: var(--t-eyebrow);
 }
 
-/* Always-present "Upgrade to Cloud Sync" call-to-action (bottom-left).
+/* Always-present Cloud Sync call-to-action (bottom-left).
    Compact: small icon, single title line with the price baked in, no subtitle. */
 .cloud-cta {
   display: flex;
@@ -1899,6 +1899,21 @@ button {
   flex-wrap: wrap;
   gap: var(--s-2);
 }
+.demo-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border: 1px solid var(--blue-weak);
+  border-radius: var(--radius-sm);
+  background: var(--ink-850);
+  color: var(--text-2);
+  font-size: var(--t-label);
+}
+.demo-banner svg {
+  flex: 0 0 auto;
+  color: var(--blue);
+}
 .status-chip {
   display: inline-flex;
   align-items: center;
@@ -1982,6 +1997,21 @@ button {
   color: var(--muted);
   margin-top: 2px;
 }
+.demo-callout {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: var(--s-2);
+  padding: var(--s-3);
+  border: 1px solid var(--blue-weak);
+  border-radius: var(--radius-sm);
+  background: var(--ink-850);
+  color: var(--text-2);
+  font-size: var(--t-label);
+}
+.demo-callout b {
+  color: var(--text);
+}
 
 .connector-row {
   display: flex;
@@ -2060,6 +2090,97 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.mono-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--ink-850);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+}
+
+.device-pairing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.device-pairing-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.pairing-controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.pairing-card {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--blue-weak);
+  border-radius: var(--radius-sm);
+  background: var(--ink-850);
+}
+
+.pairing-qr {
+  width: 132px;
+  height: 132px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.pairing-card-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.pairing-url {
+  max-height: 4.5rem;
+  overflow: auto;
+  padding: var(--s-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--ink-900);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  overflow-wrap: anywhere;
+}
+
+.device-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.device-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--ink-850);
+}
+
+.device-row-main {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── 16. Atoms — pill / seg / toggle / button / field ─────────────────────── */
@@ -2413,7 +2534,7 @@ button {
   font-weight: var(--w-semi);
   font-variant-numeric: tabular-nums;
 }
-/* "Coming soon" reassurance shown when Cloud Sync is picked during setup. */
+/* Atlas setup note shown when Cloud Sync is picked during setup. */
 .onb-soon {
   width: 100%;
   margin-top: var(--s-1);
@@ -2609,7 +2730,7 @@ button {
   font-size: var(--t-label);
   color: var(--text-2);
 }
-/* Keep the "Coming soon" pill from being squeezed/ellipsized by the text. */
+/* Keep the status pill from being squeezed/ellipsized by the text. */
 .cloudsync-soon .pill {
   flex: 0 0 auto;
 }
@@ -4645,7 +4766,7 @@ body {
 
 .rec-map {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: var(--s-2);
 }
 .rec-map-cell {
@@ -4713,12 +4834,37 @@ body {
   font-weight: var(--w-semi);
   color: var(--text);
 }
+.proj-ins-scores {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
 .proj-ins-align {
   font-family: var(--font-num);
   font-weight: var(--w-bold);
   font-size: var(--t-label);
   padding: 2px 9px;
   border-radius: var(--r-pill);
+}
+.proj-ins-context {
+  font-family: var(--font-num);
+  font-weight: var(--w-bold);
+  font-size: var(--t-label);
+  padding: 2px 9px;
+  border-radius: var(--r-pill);
+}
+.proj-ins-context.clear {
+  color: var(--teal);
+  background: var(--teal-weak);
+}
+.proj-ins-context.watch {
+  color: var(--violet);
+  background: var(--violet-weak);
+}
+.proj-ins-context.overloaded {
+  color: var(--negative);
+  background: var(--negative-weak);
 }
 .proj-ins-align.collaborating {
   color: var(--teal);
@@ -4767,6 +4913,14 @@ body {
   border-radius: var(--r-pill);
   color: var(--violet);
   background: var(--violet-weak);
+}
+.proj-risk {
+  font-size: var(--t-eyebrow);
+  font-weight: var(--w-med);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  color: var(--negative);
+  background: var(--negative-weak);
 }
 
 .patch-preview {
