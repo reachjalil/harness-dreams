@@ -407,6 +407,7 @@ type VoiceStatus =
 function VoiceMode(): ReactElement {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [muted, setMuted] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const roomRef = useRef<Room | null>(null);
   const audioElemsRef = useRef<HTMLAudioElement[]>([]);
@@ -489,6 +490,23 @@ function VoiceMode(): ReactElement {
     };
   }, []);
 
+  async function togglePause(): Promise<void> {
+    const room = roomRef.current;
+    if (!room) return;
+    const next = !paused;
+    // Freeze/unfreeze mic
+    const pub = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+    if (pub) {
+      if (next) await pub.mute();
+      else if (!muted) await pub.unmute();
+    }
+    // Freeze/unfreeze agent audio
+    for (const el of audioElemsRef.current) {
+      el.muted = next;
+    }
+    setPaused(next);
+  }
+
   async function toggleMute(): Promise<void> {
     const room = roomRef.current;
     if (!room) return;
@@ -500,7 +518,7 @@ function VoiceMode(): ReactElement {
     if (next) {
       await pub.mute();
     } else {
-      await pub.unmute();
+      if (!paused) await pub.unmute();
     }
     setMuted(next);
   }
@@ -508,58 +526,78 @@ function VoiceMode(): ReactElement {
   const statusLabel: Record<VoiceStatus, string> = {
     idle: "Starting…",
     connecting: "Connecting…",
-    connected: "Listening",
-    "agent-speaking": "Dream is speaking",
+    connected: paused ? "Paused" : "Listening",
+    "agent-speaking": paused ? "Paused" : "Dream is speaking",
     error: errorMsg ?? "Error",
   };
 
   return (
     <div className="voice-shell">
       <div
-        className={`voice-orb${status === "agent-speaking" ? " voice-orb-active" : ""}`}
+        className={`voice-orb${status === "agent-speaking" && !paused ? " voice-orb-active" : ""}${paused ? " voice-orb-paused" : ""}`}
       >
         <AssistantIcon />
       </div>
       <p className="voice-status">{statusLabel[status]}</p>
       {status !== "error" && status !== "idle" && (
-        <button
-          type="button"
-          className={`voice-mic-btn${muted ? " voice-mic-muted" : ""}`}
-          onClick={() => void toggleMute()}
-          aria-label={muted ? "Unmute" : "Mute"}
-        >
-          {muted ? (
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <line x1="1" y1="1" x2="23" y2="23" />
-              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-              <path
-                d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"
-                strokeLinecap="round"
-              />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
-            </svg>
-          ) : (
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" strokeLinecap="round" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
-            </svg>
-          )}
-        </button>
+        <div className="voice-controls">
+          <button
+            type="button"
+            className={`voice-mic-btn${muted ? " voice-mic-muted" : ""}`}
+            onClick={() => void toggleMute()}
+            disabled={paused}
+            aria-label={muted ? "Unmute" : "Mute"}
+          >
+            {muted ? (
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="1" y1="1" x2="23" y2="23" />
+                <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                <path
+                  d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"
+                  strokeLinecap="round"
+                />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            ) : (
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" strokeLinecap="round" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            )}
+          </button>
+          <button
+            type="button"
+            className={`voice-pause-btn${paused ? " voice-paused" : ""}`}
+            onClick={() => void togglePause()}
+            aria-label={paused ? "Resume" : "Pause"}
+          >
+            {paused ? (
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            ) : (
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" rx="1" />
+                <rect x="14" y="4" width="4" height="16" rx="1" />
+              </svg>
+            )}
+          </button>
+        </div>
       )}
       {status === "error" && (
         <p className="chat-error" style={{ marginTop: "1rem" }}>

@@ -6024,6 +6024,47 @@ body {
   border-color: var(--negative, #ff5050);
   color: var(--negative, #ff5050);
 }
+.voice-mic-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.voice-orb-paused {
+  opacity: 0.5;
+}
+.voice-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+.voice-pause-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--ink-800);
+  border: 1px solid var(--border-strong);
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background var(--dur-1),
+    border-color var(--dur-1),
+    color var(--dur-1);
+}
+.voice-pause-btn:hover {
+  background: var(--ink-750);
+  color: var(--text);
+}
+.voice-pause-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.voice-paused {
+  background: var(--violet-weak);
+  border-color: var(--violet);
+  color: var(--violet);
+}
 
 /* ── Welcoming nudge — a flat banner integrated into the dashboard body ────── */
 .moment {
