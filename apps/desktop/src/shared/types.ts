@@ -2,9 +2,8 @@
  * Shared domain types for Harness Dreams.
  *
  * Vocabulary mirrors the product spec in `md/`: a harness "sleeps", a Dream
- * Session produces a Dream Report (vitals + findings + suggested improvements), and the
- * user "reflects" each morning. This build is mock-data only — no real
- * ingestion or LLM yet.
+ * Session produces a Dream Report (vitals + findings + suggested improvements),
+ * and the user "reflects" each morning.
  */
 
 /** Where the overnight reflection currently is. Drives the menu-bar icon. */
@@ -13,7 +12,7 @@ export type DreamPhase = "resting" | "dreaming" | "ready";
 /** Local-first by default; cloud analysis is an explicit opt-in. */
 export type PrivacyMode = "local" | "cloud";
 
-/** How deep the (future) REM analysis pass goes. */
+/** How deep the opt-in REM analysis pass goes. */
 export type AnalysisDepth = "light" | "standard" | "deep";
 
 /** When dreams run. */
@@ -93,7 +92,7 @@ export interface RuntimeState {
   hasUnreviewed: boolean;
 }
 
-// ── Dream Report (mock) ──────────────────────────────────────────────────────
+// ── Dream Report ─────────────────────────────────────────────────────────────
 
 export type RingKey = "efficiency" | "effectiveness" | "alignment";
 
@@ -139,7 +138,7 @@ export interface Finding {
   reflection: string;
   confidence: Confidence;
   project: string;
-  /** One-line pointer to the evidence (mock). */
+  /** One-line pointer to the evidence. */
   evidence: string;
   /** Absolute transcript path containing the evidence, when available. */
   evidenceFile?: string;
@@ -246,6 +245,17 @@ export interface ActionQueueEntry {
   projectPath?: string;
   /** The concrete file change this entry applies if accepted. */
   patch?: ConfigPatchPreview;
+  /** Feature branch / PR metadata created when the recommendation is accepted. */
+  reviewBranch?: {
+    branch: string;
+    baseBranch?: string;
+    worktreePath?: string;
+    commit?: string;
+    remote?: string;
+    prUrl?: string;
+    pushed: boolean;
+    error?: string;
+  };
 }
 
 /** Basis for the activity window a Sleep Cycle reviewed. */

@@ -1,8 +1,8 @@
 import type { RuntimeState } from "../shared/types";
 
 /**
- * Live runtime state (never persisted). The mock build starts with a fresh,
- * unreviewed dream waiting so the first launch lands on a populated report.
+ * Live runtime state (never persisted). First launch starts ready so the app
+ * can surface the most recent real or seeded report immediately.
  */
 
 type Listener = (state: RuntimeState) => void;

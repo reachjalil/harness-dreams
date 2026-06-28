@@ -11,6 +11,10 @@ const config: ForgeConfig = {
     appBundleId: "com.reachjalil.harnessdreams",
     appCategoryType: "public.app-category.developer-tools",
     asar: true,
+    osxSign: {
+      identity: "-",
+      identityValidation: false,
+    },
     // Menu-bar-only app: no Dock icon.
     extendInfo: {
       LSUIElement: true,

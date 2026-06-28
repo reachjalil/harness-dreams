@@ -12,7 +12,7 @@ import {
   CLOUD_SYNC_PRICE,
   CLOUD_SYNC_TAGLINE,
 } from "./cloudSync";
-import { BrandMark, Button } from "./components";
+import { BrandMark, Button, Field } from "./components";
 import { Icon } from "./icons";
 import type { HarnessDreams } from "./useHarnessDreams";
 
@@ -53,6 +53,18 @@ export default function Onboarding({
   const [privacy, setPrivacy] = useState<PrivacyMode>("local");
   const [remProvider, setRemProvider] =
     useState<RemRunnerProvider>("claude-code");
+  const [remModel, setRemModel] = useState(
+    hd.config?.remRunner.model ?? "opus"
+  );
+  const [remClaudePath, setRemClaudePath] = useState(
+    hd.config?.remRunner.claudePath ?? "claude"
+  );
+  const [remCodexPath, setRemCodexPath] = useState(
+    hd.config?.remRunner.codexPath ?? "codex"
+  );
+  const [remTimeoutSeconds, setRemTimeoutSeconds] = useState(
+    Math.round((hd.config?.remRunner.timeoutMs ?? 180_000) / 1000)
+  );
   const [schedule, setSchedule] = useState<ScheduleMode>("nightly");
   const [cloudSync, setCloudSync] = useState(false);
   const [discovered, setDiscovered] = useState<DiscoveredProject[]>([]);
@@ -90,7 +102,13 @@ export default function Onboarding({
     }));
     patch({
       privacyMode: privacy,
-      remRunner: { provider: remProvider },
+      remRunner: {
+        provider: remProvider,
+        model: remModel.trim() || "opus",
+        claudePath: remClaudePath.trim() || "claude",
+        codexPath: remCodexPath.trim() || "codex",
+        timeoutMs: Math.max(1, Math.round(remTimeoutSeconds)) * 1000,
+      },
       schedule: { mode: schedule },
       cloudSyncInterest: cloudSync,
       projects: added,
@@ -216,28 +234,71 @@ export default function Onboarding({
               ))}
             </div>
             {privacy === "cloud" ? (
-              <div className="choices">
-                <button
-                  type="button"
-                  className={`choice${remProvider === "claude-code" ? " selected" : ""}`}
-                  onClick={() => setRemProvider("claude-code")}
-                >
-                  <div className="choice-title">Claude Code CLI</div>
-                  <div className="choice-sub">
-                    Runs `claude -p` locally with the redacted REM payload.
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  className={`choice${remProvider === "codex" ? " selected" : ""}`}
-                  onClick={() => setRemProvider("codex")}
-                >
-                  <div className="choice-title">Codex CLI</div>
-                  <div className="choice-sub">
-                    Runs `codex exec` locally with the redacted REM payload.
-                  </div>
-                </button>
-              </div>
+              <>
+                <div className="choices">
+                  <button
+                    type="button"
+                    className={`choice${remProvider === "claude-code" ? " selected" : ""}`}
+                    onClick={() => setRemProvider("claude-code")}
+                  >
+                    <div className="choice-title">Claude Code CLI</div>
+                    <div className="choice-sub">
+                      Runs `claude -p` locally with the redacted REM payload.
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className={`choice${remProvider === "codex" ? " selected" : ""}`}
+                    onClick={() => setRemProvider("codex")}
+                  >
+                    <div className="choice-title">Codex CLI</div>
+                    <div className="choice-sub">
+                      Runs `codex exec` locally with the redacted REM payload.
+                    </div>
+                  </button>
+                </div>
+                <div className="onb-rem-fields">
+                  <Field
+                    label={
+                      remProvider === "codex"
+                        ? "Codex command"
+                        : "Claude command"
+                    }
+                  >
+                    <input
+                      type="text"
+                      value={
+                        remProvider === "codex"
+                          ? remCodexPath
+                          : remClaudePath
+                      }
+                      onChange={(e) =>
+                        remProvider === "codex"
+                          ? setRemCodexPath(e.target.value)
+                          : setRemClaudePath(e.target.value)
+                      }
+                    />
+                  </Field>
+                  <Field label="REM model">
+                    <input
+                      type="text"
+                      value={remModel}
+                      onChange={(e) => setRemModel(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Timeout seconds">
+                    <input
+                      type="number"
+                      min={1}
+                      value={remTimeoutSeconds}
+                      onChange={(e) => {
+                        const next = Number(e.target.value);
+                        if (Number.isFinite(next)) setRemTimeoutSeconds(next);
+                      }}
+                    />
+                  </Field>
+                </div>
+              </>
             ) : null}
           </>
         ) : null}

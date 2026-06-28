@@ -74,7 +74,7 @@ function normalizeReports(reports: DreamReport[]): DreamReport[] {
   });
 }
 
-/** Subscribes the UI to live config/state and the (mock) session history. */
+/** Subscribes the UI to live config/state and report history. */
 export function useHarnessDreams(): HarnessDreams {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [state, setState] = useState<RuntimeState | null>(null);
@@ -231,6 +231,8 @@ export function useHarnessDreams(): HarnessDreams {
                   action: finding.action,
                   project: finding.project,
                   state,
+                  projectPath: finding.projectPath,
+                  patch: finding.patch,
                 };
               })
               .filter((entry): entry is NonNullable<typeof entry> =>
@@ -239,18 +241,31 @@ export function useHarnessDreams(): HarnessDreams {
           const acceptedExperiments =
             latest?.findings
               .filter((finding) => decisions[finding.id] === "accepted")
-              .map((finding) => ({
-                id: `accepted_${finding.id}`,
-                title: finding.action,
-                hypothesis: finding.improvement,
-                agentBenefit: finding.agentBenefit,
-                userBenefit: finding.userBenefit,
-                reflection: finding.reflection,
-                metric: "alignment · re-ask rate · tool success",
-                status: "running" as const,
-                progress: 0,
-                progressLabel: "0 / 5 cycles",
-              })) ?? [];
+              .map((finding) => {
+                const insight = latest.projectInsights?.find(
+                  (project) => project.path === finding.projectPath
+                );
+                return {
+                  id: `accepted_${finding.id}`,
+                  title: finding.action,
+                  hypothesis: finding.improvement,
+                  agentBenefit: finding.agentBenefit,
+                  userBenefit: finding.userBenefit,
+                  reflection: finding.reflection,
+                  metric: "alignment · re-ask rate · tool success",
+                  status: "running" as const,
+                  progress: 0,
+                  progressLabel: "0 / 3 cycles measured",
+                  projectPath: finding.projectPath,
+                  category: finding.category,
+                  baseline: insight
+                    ? {
+                        alignment: insight.alignment,
+                        corrections: insight.corrections,
+                      }
+                    : undefined,
+                };
+              }) ?? [];
           const next =
             latest?.id === targetId && latest.reviewStatus === "unreviewed"
               ? [
