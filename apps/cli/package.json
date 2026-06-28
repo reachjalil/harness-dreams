@@ -1,0 +1,22 @@
+{
+  "name": "@harness-dreams/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "hd": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "check": "tsc --noEmit",
+    "lint": "biome check --assist-enabled=false src"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.106.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}
