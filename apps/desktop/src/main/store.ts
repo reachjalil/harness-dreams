@@ -29,8 +29,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   notifications: true,
   analysisDepth: "standard",
   remRunner: {
-    provider: "claude-code",
-    model: "opus",
+    provider: "codex",
+    model: "gpt-5.5",
     claudePath: "claude",
     codexPath: "codex",
     timeoutMs: 180_000,

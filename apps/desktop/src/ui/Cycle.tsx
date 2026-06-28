@@ -193,6 +193,33 @@ function reviewMetrics(report: DreamReport): Metric[] {
   return picked.length > 0 ? picked : report.metrics.slice(0, 3);
 }
 
+function provenanceSummary(report: DreamReport): {
+  value: string;
+  sublabel: string;
+} {
+  const provenance = report.provenance;
+  if (!provenance) {
+    return { value: "Unknown", sublabel: "No run provenance recorded" };
+  }
+  if (provenance.mode === "demo") {
+    return { value: "Demo", sublabel: "Fixture data" };
+  }
+  const cli = provenance.cli;
+  const cliLabel =
+    cli.status === "executed"
+      ? "CLI executed"
+      : cli.status === "failed"
+        ? "CLI failed"
+        : cli.status === "skipped"
+          ? "CLI skipped"
+          : "CLI not required";
+  const sampleLabel = provenance.usedSampleData ? "sample data" : "no samples";
+  return {
+    value: "Real",
+    sublabel: `${sampleLabel} · ${cliLabel}`,
+  };
+}
+
 function formatSchedule(time: string | undefined): string {
   if (!time) return "tonight";
   const [hourRaw, minute = "00"] = time.split(":");
@@ -733,6 +760,12 @@ function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
   const topFindings = report.findings.slice(0, 3);
   const friction = report.alignment?.friction.slice(0, 3) ?? [];
   const metrics = reviewMetrics(report);
+  const emptyReason =
+    report.provenance?.generator === "no-data"
+      ? "No projects are selected, so the run has no local sessions to inspect."
+      : report.sessions === 0
+        ? "No matching local sessions were found in this Sleep Cycle window."
+        : "No suggested goals were produced from this run.";
 
   return (
     <div className="report-grid">
@@ -748,39 +781,49 @@ function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
 
       <div className="report-panel">
         <span className="report-kicker">Suggested goals prepared</span>
-        <div className="report-list">
-          {topFindings.map((finding) => {
-            const category = categorize(finding);
-            return (
-              <div key={finding.id} className="report-list-item">
-                <Icon
-                  name={CATEGORY_ICON[category]}
-                  size={15}
-                  className="report-list-icon"
-                />
-                <span>
-                  <b>{finding.title}</b>
-                  <small>{CATEGORY_LABEL[category]}</small>
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        {topFindings.length > 0 ? (
+          <div className="report-list">
+            {topFindings.map((finding) => {
+              const category = categorize(finding);
+              return (
+                <div key={finding.id} className="report-list-item">
+                  <Icon
+                    name={CATEGORY_ICON[category]}
+                    size={15}
+                    className="report-list-icon"
+                  />
+                  <span>
+                    <b>{finding.title}</b>
+                    <small>{CATEGORY_LABEL[category]}</small>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="muted">{emptyReason}</p>
+        )}
       </div>
 
       <div className="report-panel">
         <span className="report-kicker">Friction evidence</span>
-        <div className="report-list">
-          {friction.map((point) => (
-            <div key={point.findingId} className="report-list-item">
-              <Icon name="cycle" size={15} className="report-list-icon" />
-              <span>
-                <b>{point.example}</b>
-                <small>{point.type}</small>
-              </span>
-            </div>
-          ))}
-        </div>
+        {friction.length > 0 ? (
+          <div className="report-list">
+            {friction.map((point) => (
+              <div key={point.findingId} className="report-list-item">
+                <Icon name="cycle" size={15} className="report-list-icon" />
+                <span>
+                  <b>{point.example}</b>
+                  <small>{point.type}</small>
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="muted">
+            No friction evidence was found for this cycle.
+          </p>
+        )}
       </div>
 
       <div className="report-panel">
@@ -802,6 +845,7 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
   const split = alignmentSplit(report);
   const alignmentRing = report.rings.find((ring) => ring.key === "alignment");
   const findingCount = report.findings.length;
+  const provenance = provenanceSummary(report);
   const acceptedBranches =
     report.reviewDecisions?.filter(
       (entry) => entry.state === "accepted" && entry.reviewBranch
@@ -834,6 +878,11 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
           value={report.alignment?.friction.length ?? 0}
           sublabel="Where your intent and the agent diverged"
           tip={TERM.frictionPoints}
+        />
+        <SummaryCard
+          eyebrow="Run source"
+          value={provenance.value}
+          sublabel={provenance.sublabel}
         />
       </div>
 
@@ -1103,14 +1152,17 @@ function ReviewQueue({
       {entries.length === 0 ? (
         <div className="empty">
           <p className="muted">
-            No decisions yet. Step through the suggested goals to accept or
-            reject them.
+            {report.findings.length === 0
+              ? "No suggested goals were produced from this cycle."
+              : "No decisions yet. Step through the suggested goals to accept or reject them."}
           </p>
-          <div className="row">
-            <Button variant="accent" onClick={onBackToFindings}>
-              Review suggested goals
-            </Button>
-          </div>
+          {report.findings.length > 0 ? (
+            <div className="row">
+              <Button variant="accent" onClick={onBackToFindings}>
+                Review suggested goals
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="action-queue">
@@ -1243,9 +1295,16 @@ export default function Cycle({
   const onOverview = activeId === "__overview";
   const isLatest = report.id === reports[0]?.id;
   const status = listCycleStatus(report, isLatest);
+  const hasFindings = report.findings.length > 0;
 
   // One step is on screen at a time so the page never grows into a long scroll.
-  const step = onOverview ? "overview" : onQueue ? "queue" : "findings";
+  const step = !hasFindings
+    ? "overview"
+    : onOverview
+      ? "overview"
+      : onQueue
+        ? "queue"
+        : "findings";
   const canMarkReviewed = status === "unreviewed";
 
   return (
@@ -1277,14 +1336,23 @@ export default function Cycle({
                   Mark reviewed
                 </Button>
               ) : null}
-              <Button
-                variant="accent"
-                onClick={() => setActiveId(report.findings[0]?.id ?? QUEUE_ID)}
-              >
-                <Icon name="cycle" size={16} />
-                Review {report.findings.length} suggested goals
-                <Icon name="chevron" size={16} />
-              </Button>
+              {hasFindings ? (
+                <Button
+                  variant="accent"
+                  onClick={() =>
+                    setActiveId(report.findings[0]?.id ?? QUEUE_ID)
+                  }
+                >
+                  <Icon name="cycle" size={16} />
+                  Review {report.findings.length} suggested goals
+                  <Icon name="chevron" size={16} />
+                </Button>
+              ) : (
+                <Button variant="accent" onClick={onRunSleepCycle}>
+                  <Icon name="dream" size={16} />
+                  Run another cycle
+                </Button>
+              )}
             </>
           ) : canMarkReviewed ? (
             <Button
@@ -1298,14 +1366,16 @@ export default function Cycle({
         }
       />
 
-      <ReviewCompass
-        report={report}
-        decisions={decisions}
-        step={step}
-        onOverview={() => setActiveId("__overview")}
-        onFindings={() => setActiveId(report.findings[0]?.id ?? QUEUE_ID)}
-        onQueue={() => setActiveId(QUEUE_ID)}
-      />
+      {hasFindings ? (
+        <ReviewCompass
+          report={report}
+          decisions={decisions}
+          step={step}
+          onOverview={() => setActiveId("__overview")}
+          onFindings={() => setActiveId(report.findings[0]?.id ?? QUEUE_ID)}
+          onQueue={() => setActiveId(QUEUE_ID)}
+        />
+      ) : null}
 
       <div className="review-step" key={step}>
         {onOverview ? <ReviewOverview report={report} /> : null}

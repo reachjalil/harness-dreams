@@ -41,8 +41,8 @@ const PREVIEW_CONFIG: AppConfig = {
   notifications: true,
   analysisDepth: "standard",
   remRunner: {
-    provider: "claude-code",
-    model: "opus",
+    provider: "codex",
+    model: "gpt-5.5",
     claudePath: "claude",
     codexPath: "codex",
     timeoutMs: 180_000,
@@ -402,6 +402,40 @@ export function useHarnessDreams(): HarnessDreams {
         } as RuntimeState;
         setState(next);
         return next;
+      },
+      setGoalDisposition: async (reportId, experimentId, disposition) => {
+        setReports((current) =>
+          current.map((report) => {
+            if (report.id !== reportId) return report;
+            return {
+              ...report,
+              experiments: report.experiments.map((experiment) => {
+                if (experiment.id !== experimentId) return experiment;
+                if (disposition === null) {
+                  const next = { ...experiment };
+                  delete next.disposition;
+                  return next;
+                }
+                return { ...experiment, disposition };
+              }),
+            };
+          })
+        );
+        return reports.map((report) => {
+          if (report.id !== reportId) return report;
+          return {
+            ...report,
+            experiments: report.experiments.map((experiment) => {
+              if (experiment.id !== experimentId) return experiment;
+              if (disposition === null) {
+                const next = { ...experiment };
+                delete next.disposition;
+                return next;
+              }
+              return { ...experiment, disposition };
+            }),
+          };
+        });
       },
       setLaunchAtLogin: async (launchAtLogin) => {
         const next = { ...(config ?? PREVIEW_CONFIG), launchAtLogin };

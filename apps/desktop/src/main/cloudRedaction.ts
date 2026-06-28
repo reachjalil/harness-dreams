@@ -181,5 +181,16 @@ export function sanitizeReportForCloud(report: DreamReport): unknown {
     cloudRedactionPreview: sanitizeRedactionPreview(
       report.cloudRedactionPreview
     ),
+    provenance: report.provenance
+      ? {
+          ...report.provenance,
+          cli: {
+            ...report.provenance.cli,
+            runner: safeText(report.provenance.cli.runner),
+            model: safeText(report.provenance.cli.model),
+            error: safeText(report.provenance.cli.error),
+          },
+        }
+      : undefined,
   };
 }

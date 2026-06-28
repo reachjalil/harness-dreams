@@ -778,6 +778,7 @@ function concludeDemoExperiments(
     experiments.map((experiment) => [experiment.id, experiment])
   );
   accepted.forEach((entry, index) => {
+    const existingExperiment = existing.get(`accepted_${entry.findingId}`);
     const prior = previous?.findings.find(
       (finding) => finding.id === entry.findingId
     );
@@ -818,6 +819,9 @@ function concludeDemoExperiments(
             : "No repeated friction observed yet; keep watching one more cycle.",
       projectPath: entry.projectPath,
       category: entry.category,
+      ...(existingExperiment?.disposition
+        ? { disposition: existingExperiment.disposition }
+        : {}),
       baseline: baseline
         ? { alignment: baseline.alignment, corrections: baseline.corrections }
         : undefined,
@@ -903,6 +907,14 @@ export function makeReport(
     reviewDecisions: reviewStatus === "reviewed" ? REVIEW_DECISIONS : undefined,
     alignment: alignment(seed, alignScore),
     projectInsights: PROJECT_INSIGHTS,
+    provenance: {
+      mode: "demo",
+      generator: "demo-fixture",
+      usedSampleData: true,
+      sources: ["claude-code"],
+      generatedAt: timestamp,
+      cli: { invoked: false, status: "not-required" },
+    },
   };
 }
 
@@ -974,7 +986,7 @@ export function makeDemoReport(
         )
       : undefined;
   const experiments = concludeDemoExperiments(
-    previous?.experiments ?? [],
+    previous?.experiments ?? EXPERIMENTS,
     cycleNumber,
     previous
   );
@@ -1073,6 +1085,16 @@ export function makeDemoReport(
             projects: DEMO_PROJECTS.length,
           }
         : undefined,
+    provenance: {
+      mode: "demo",
+      generator: "demo-fixture",
+      usedSampleData: true,
+      sources: [
+        ...new Set(DEMO_PROJECTS.flatMap((project) => project.sources)),
+      ],
+      generatedAt: timestamp,
+      cli: { invoked: false, status: "not-required" },
+    },
   };
   return kind === "nap" ? napifyDemo(report) : report;
 }

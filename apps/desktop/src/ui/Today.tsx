@@ -1,5 +1,6 @@
-import type { ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 
+import { demoActivityFor, timeOfDay } from "../shared/timeOfDay";
 import type {
   ActionQueueEntry,
   DreamReport,
@@ -15,15 +16,25 @@ import {
   Contributors,
   GroupedBars,
   MetricCell,
+  type Option,
   PageHeader,
   Pill,
   RingChip,
   ScoreRing,
   Section,
+  Segmented,
   SummaryCard,
 } from "./components";
-import { RING_TIP, TERM } from "./explainers";
-import { Icon } from "./icons";
+import {
+  GREETING,
+  LOOP_WHISPER,
+  type MomentContext,
+  momentCopy,
+  RING_TIP,
+  TERM,
+} from "./explainers";
+import { Icon, type IconName } from "./icons";
+import { decideMoment, type Moment } from "./moment";
 import type { HarnessDreams } from "./useHarnessDreams";
 
 function composite(report: DreamReport): number {
@@ -53,6 +64,16 @@ function shortDate(ts: number): string {
   });
 }
 
+function scheduleTimeLabel(time: string | undefined): string {
+  if (!time) return "3:00 AM";
+  const [hourRaw, minute = "00"] = time.split(":");
+  const hour = Number.parseInt(hourRaw ?? "0", 10);
+  if (!Number.isFinite(hour)) return "3:00 AM";
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${displayHour}:${minute} ${period}`;
+}
+
 function ringScore(report: DreamReport, key: string): number {
   return report.rings.find((r) => r.key === key)?.score ?? 0;
 }
@@ -65,10 +86,6 @@ function trendTone(delta: number): "positive" | "negative" | "neutral" {
 
 function signed(value: number): string {
   return `${value > 0 ? "+" : ""}${value}`;
-}
-
-function plural(count: number, label: string): string {
-  return `${count} ${label}${count === 1 ? "" : "s"}`;
 }
 
 function verdictTone(verdict?: ExperimentVerdict): "good" | "warn" | "danger" {
@@ -84,6 +101,154 @@ function parseAlignmentDelta(note?: string): number | null {
   const parsed = Number(match[1]);
   return Number.isFinite(parsed) ? parsed : null;
 }
+
+// ── The welcoming layer — greeting nudge + demo time travel ───────────────────
+
+const CTA_ICON: Record<string, IconName> = {
+  review: "cycle",
+  nap: "play",
+  sleep: "dream",
+};
+
+const DEMO_TIME_OPTIONS: Option<string>[] = [
+  { value: "live", label: "Live" },
+  { value: "morning", label: "Morning" },
+  { value: "midday", label: "Midday" },
+  { value: "evening", label: "Evening" },
+];
+
+/** Demo-only control to walk the day: morning → midday → evening, or live clock. */
+function DemoTimeSwitcher({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: HarnessDreams["setDemoTimeOfDay"];
+}): ReactElement {
+  return (
+    <Segmented<string>
+      value={value ?? "live"}
+      options={DEMO_TIME_OPTIONS}
+      ariaLabel="Demo time of day"
+      onChange={(next) =>
+        onChange(
+          next === "live" ? null : (next as "morning" | "midday" | "evening")
+        )
+      }
+    />
+  );
+}
+
+/** A flat, body-integrated nudge — the one contextual thing to do right now. */
+function DailyMoment({
+  moment,
+  eyebrow,
+  title,
+  subtitle,
+  cta,
+  progress,
+  onAct,
+}: {
+  moment: Moment;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  cta?: string;
+  progress: number;
+  onAct: () => void;
+}): ReactElement {
+  const running = moment.kind === "running";
+  const calm = moment.kind === "rest" || moment.kind === "standby";
+  return (
+    <section className={`moment moment-${moment.kind}`}>
+      <div className="moment-text">
+        <span className="moment-eyebrow">{eyebrow}</span>
+        <h2 className="moment-title">{title}</h2>
+        <p className="moment-sub">{subtitle}</p>
+        {running ? (
+          <div className="moment-progress" aria-hidden="true">
+            <div
+              className="moment-progress-fill"
+              style={{ width: `${Math.round(progress * 100)}%` }}
+            />
+          </div>
+        ) : null}
+      </div>
+      {!running && cta ? (
+        <div className="moment-action">
+          <Button variant={calm ? "ghost" : "accent"} onClick={onAct}>
+            <Icon name={CTA_ICON[moment.ctaKind ?? "sleep"]} size={16} />
+            {cta}
+          </Button>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * Calm review interstitial — shown when a fresh cycle is waiting. Welcomes the
+ * user and offers the choice to review it now or jump straight to the dashboard.
+ */
+function WelcomeReview({
+  greeting,
+  copy,
+  report,
+  onReview,
+  onDashboard,
+}: {
+  greeting: string;
+  copy: { eyebrow: string; title: string; subtitle: string };
+  report: DreamReport;
+  onReview: () => void;
+  onDashboard: () => void;
+}): ReactElement {
+  const score = composite(report);
+  const split = alignmentSplit(report);
+  return (
+    <div className="welcome">
+      <header>
+        <h1 className="welcome-hello">{greeting}</h1>
+        <p className="welcome-whisper">{LOOP_WHISPER}</p>
+      </header>
+
+      <section className="welcome-card">
+        <span className="moment-eyebrow">{copy.eyebrow}</span>
+        <h2 className="welcome-card-title">{copy.title}</h2>
+        <p className="welcome-card-sub">{copy.subtitle}</p>
+        <div className="welcome-actions">
+          <Button variant="accent" onClick={onReview}>
+            <Icon name="cycle" size={16} />
+            Review cycle
+          </Button>
+          <Button variant="ghost" onClick={onDashboard}>
+            <Icon name="dashboard" size={16} />
+            Go to dashboard
+          </Button>
+        </div>
+      </section>
+
+      <div className="welcome-hero">
+        <ScoreRing rings={report.rings} score={score} />
+        <div className="welcome-substats">
+          {report.rings.map((ring) => (
+            <div key={ring.key} className="welcome-substat">
+              <span className={`welcome-dot ${ring.key}`} />
+              <span>{ring.label}</span>
+              <b className="tnum">{ring.score}</b>
+            </div>
+          ))}
+        </div>
+        <div className="welcome-meta">
+          {dayLabel(report.timestamp)} · {report.sessions} sessions ·{" "}
+          {bandLabel(split.band)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Self-improvement loop (the dashboard's recursive-progress section) ─────────
 
 interface LoopExperiment {
   experiment: Experiment;
@@ -228,16 +393,16 @@ function LoopOutcome({
         <LoopStat
           label="Accepted"
           value={impact.accepted}
-          detail={`${plural(impact.queued, "queued")} still waiting`}
+          detail={`${impact.queued} still queued`}
           tone={impact.accepted > 0 ? "good" : "neutral"}
         />
         <LoopStat
-          label="Review branches"
+          label="Branches"
           value={impact.branches}
           detail={
             impact.branchErrors > 0
-              ? `${plural(impact.branchErrors, "branch")} needs attention`
-              : `${plural(impact.prLinks, "PR link")} ready`
+              ? `${impact.branchErrors} need a look`
+              : `${impact.prLinks} PR links`
           }
           tone={
             impact.branchErrors > 0
@@ -250,21 +415,18 @@ function LoopOutcome({
         <LoopStat
           label="Verdicts"
           value={`${impact.helped}/${impact.concluded}`}
-          detail={`${plural(impact.noChange, "no-change")} · ${plural(
-            impact.worse,
-            "worse"
-          )}`}
+          detail={`${impact.noChange} no-change · ${impact.worse} worse`}
           tone={impact.helped > 0 ? "good" : "neutral"}
         />
         <LoopStat
-          label="Alignment delta"
+          label="Alignment Δ"
           value={
             impact.averageDelta == null ? "—" : signed(impact.averageDelta)
           }
           detail={
             impact.bestDelta == null
-              ? "No concluded measurement"
-              : `Best measured ${signed(impact.bestDelta)}`
+              ? "Not measured yet"
+              : `Best ${signed(impact.bestDelta)}`
           }
           tone={
             impact.averageDelta == null
@@ -277,7 +439,7 @@ function LoopOutcome({
           }
         />
         <LoopStat
-          label="Context health"
+          label="Context"
           value={
             impact.guidanceCoverage == null
               ? "—"
@@ -285,8 +447,8 @@ function LoopOutcome({
           }
           detail={
             impact.guidanceTotal === 0
-              ? "No projects in latest report"
-              : `${impact.guidanceCovered}/${impact.guidanceTotal} projects clear`
+              ? "No projects yet"
+              : `${impact.guidanceCovered}/${impact.guidanceTotal} clear`
           }
           tone={
             impact.guidanceCoverage == null
@@ -318,16 +480,18 @@ function LoopOutcome({
 }
 
 function EmptyDashboard({
+  greeting,
   onRunSleepCycle,
 }: {
+  greeting: string;
   onRunSleepCycle: () => void;
 }): ReactElement {
   return (
     <>
       <PageHeader
-        eyebrow="Home"
-        title="No Sleep Cycle yet"
-        subtitle="Run an overnight Sleep Cycle to build your first alignment report."
+        eyebrow="Live health"
+        title={greeting}
+        subtitle="Run your first Sleep Cycle to fold today's work into a health report — then wake up to it tomorrow."
         primary={
           <Button variant="accent" onClick={onRunSleepCycle}>
             <Icon name="dream" size={16} />
@@ -350,6 +514,7 @@ export default function Today({
   onOpenGoals,
   onOpenCycle,
   onRunSleepCycle,
+  onRunNap,
 }: {
   hd: HarnessDreams;
   report: DreamReport | null;
@@ -357,12 +522,27 @@ export default function Today({
   onOpenGoals: () => void;
   onOpenCycle: () => void;
   onRunSleepCycle: () => void;
+  onRunNap: () => void;
 }): ReactElement {
-  const { state, reports } = hd;
+  const { state, reports, config } = hd;
+  // The welcome interstitial shows once per pending cycle; "Go to dashboard"
+  // dismisses it for that cycle, and a freshly-arrived cycle brings it back.
+  const [dismissedCycleId, setDismissedCycleId] = useState<string | null>(null);
+  const pendingId = pendingCycle?.id ?? null;
 
   if (!state) return <p className="card-hint">Loading...</p>;
 
-  if (!report) return <EmptyDashboard onRunSleepCycle={onRunSleepCycle} />;
+  const demoMode = config?.demoMode ?? false;
+  const tod =
+    demoMode && hd.demoTimeOfDay ? hd.demoTimeOfDay : timeOfDay(new Date());
+  const name = config?.userName?.trim() || undefined;
+  const greeting = `${GREETING[tod]}${name ? `, ${name}` : ""}`;
+
+  if (!report) {
+    return (
+      <EmptyDashboard greeting={greeting} onRunSleepCycle={onRunSleepCycle} />
+    );
+  }
 
   const chronological = [...reports].reverse();
   const recent = chronological.slice(-8);
@@ -409,73 +589,106 @@ export default function Today({
     },
   ];
 
+  // The one welcoming nudge: contextual by time of day + state.
+  const activity = demoMode
+    ? demoActivityFor(tod)
+    : pendingCycle
+      ? pendingCycle.sessions
+      : 0;
+  const moment = decideMoment({
+    tod,
+    phase,
+    pending: pendingCycle,
+    activity,
+    scheduleMode: config?.schedule.mode ?? "nightly",
+  });
+  const momentCtx: MomentContext = {
+    tod,
+    name,
+    count:
+      moment.kind === "review"
+        ? (pendingCycle?.findings.length ?? 0)
+        : activity,
+    projects: report.projects,
+    score,
+    scheduleTime: scheduleTimeLabel(config?.schedule.time),
+    pendingIsNap: pendingCycle?.kind === "nap",
+  };
+  const copy = momentCopy(moment.kind, momentCtx);
+
+  // A waiting cycle gets the calm welcome screen first: review now, or skip to
+  // the dashboard. Once reviewed (no pending), the dashboard shows directly.
+  if (moment.kind === "review" && pendingId !== dismissedCycleId) {
+    return (
+      <WelcomeReview
+        greeting={greeting}
+        copy={copy}
+        report={report}
+        onReview={onOpenCycle}
+        onDashboard={() => setDismissedCycleId(pendingId)}
+      />
+    );
+  }
+
+  function act(): void {
+    if (moment.ctaKind === "review") {
+      onOpenCycle();
+      return;
+    }
+    if (moment.ctaKind === "nap") {
+      onRunNap();
+      return;
+    }
+    onRunSleepCycle();
+  }
+
   return (
     <>
       <PageHeader
         eyebrow="Live health"
-        title="Home"
-        subtitle={`Current state from latest reviewed Sleep Cycle · ${report.harness} · last Sleep Cycle ${lastDream}`}
+        title={greeting}
+        subtitle={LOOP_WHISPER}
         secondary={
-          <Pill
-            tone={
-              split.band === "collaborating"
-                ? "good"
-                : split.band === "fighting"
-                  ? "danger"
-                  : "accent"
-            }
-          >
-            {bandLabel(split.band)}
-          </Pill>
+          demoMode ? (
+            <DemoTimeSwitcher
+              value={hd.demoTimeOfDay}
+              onChange={hd.setDemoTimeOfDay}
+            />
+          ) : (
+            <Pill
+              tone={
+                split.band === "collaborating"
+                  ? "good"
+                  : split.band === "fighting"
+                    ? "danger"
+                    : "accent"
+              }
+            >
+              {bandLabel(split.band)}
+            </Pill>
+          )
         }
         primary={
-          <>
-            {latestCycle ? (
-              <Button variant="ghost" onClick={onOpenCycle}>
-                <Icon name="cycle" size={16} />
-                Open latest Sleep Cycle
-              </Button>
-            ) : null}
-            <Button
-              variant="accent"
-              onClick={() => (pendingCycle ? onOpenCycle() : onRunSleepCycle())}
-              disabled={phase === "dreaming" && !pendingCycle}
-            >
-              <Icon name={pendingCycle ? "cycle" : "dream"} size={16} />
-              {phase === "dreaming"
-                ? "Running…"
-                : pendingCycle
-                  ? "Review Sleep Cycle"
-                  : "Run Sleep Cycle"}
+          latestCycle ? (
+            <Button variant="ghost" onClick={onOpenCycle}>
+              <Icon name="cycle" size={16} />
+              Open latest Sleep Cycle
             </Button>
-          </>
+          ) : undefined
         }
       />
 
-      {hd.config?.demoMode ? (
-        <div className="demo-banner">
-          <Icon name="cycle" size={16} />
-          <span>
-            Demo Mode is using fictional projects and persisted sample cycles.
-            Running a Sleep Cycle simulates the next measurement pass.
-          </span>
-        </div>
-      ) : null}
-
-      {pendingCycle ? (
-        <button type="button" className="dash-pending" onClick={onOpenCycle}>
-          <span className="dash-pending-dot" />
-          <span className="dash-pending-main">
-            <b>A fresh Sleep Cycle is ready to review</b>
-            <small>
-              {pendingCycle.window?.label ?? pendingCycle.rangeLabel} ·{" "}
-              {pendingCycle.findings.length} recommendation
-              {pendingCycle.findings.length === 1 ? "" : "s"} waiting
-            </small>
-          </span>
-          <Icon name="chevron" size={16} />
-        </button>
-      ) : null}
+      <DailyMoment
+        moment={moment}
+        eyebrow={copy.eyebrow}
+        title={copy.title}
+        subtitle={
+          moment.kind === "running" && state.stage ? state.stage : copy.subtitle
+        }
+        cta={copy.cta}
+        progress={state.progress}
+        onAct={act}
+      />
 
       <div className="dash">
         <div className="dash-main">
@@ -614,8 +827,8 @@ export default function Today({
             </div>
 
             <p className="dash-digest">
-              Home reflects reviewed progress only. Findings, evidence, and
-              action decisions stay inside the Sleep Cycle report.
+              {report.harness} · last Sleep Cycle {lastDream}. Findings,
+              evidence, and decisions stay inside the Sleep Cycle report.
             </p>
           </div>
         </aside>

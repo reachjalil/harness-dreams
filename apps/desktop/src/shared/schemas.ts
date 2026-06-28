@@ -57,7 +57,7 @@ export const AppConfigSchema = z.object({
   analysisDepth: AnalysisDepthSchema,
   remRunner: z.object({
     provider: RemRunnerProviderSchema,
-    model: z.string().min(1),
+    model: z.string(),
     claudePath: z.string(),
     codexPath: z.string(),
     timeoutMs: z.number().int().positive(),
@@ -101,7 +101,7 @@ export const ConfigPatchSchema = z
     remRunner: z
       .object({
         provider: RemRunnerProviderSchema,
-        model: z.string().min(1),
+        model: z.string(),
         claudePath: z.string(),
         codexPath: z.string(),
         timeoutMs: z.number().int().positive(),

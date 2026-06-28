@@ -72,6 +72,12 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
     void hd.actions.dreamNow();
   }
 
+  function runNapCycle(): void {
+    setSelectedId(null);
+    setTab("cycle");
+    void hd.actions.napNow();
+  }
+
   return (
     <div className="app shell">
       <div className="titlebar" />
@@ -99,6 +105,7 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
                 pendingCycle={unreviewedCycle ?? null}
                 onOpenGoals={() => setTab("lab")}
                 onRunSleepCycle={runSleepCycle}
+                onRunNap={runNapCycle}
                 onOpenCycle={() => {
                   if (hd.reports[0]) selectCycle(hd.reports[0].id);
                   else navigate("cycle");
@@ -117,7 +124,7 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
                 onRunSleepCycle={runSleepCycle}
               />
             ) : null}
-            {tab === "lab" ? <Lab report={reportForProgress} /> : null}
+            {tab === "lab" ? <Lab hd={hd} report={reportForProgress} /> : null}
             {tab === "chat" ? <Chat /> : null}
             {tab === "settings" ? (
               <Settings hd={hd} onRunSleepCycle={runSleepCycle} />
@@ -129,11 +136,6 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
       <CloudSyncDialog
         open={cloudSyncOpen}
         onClose={() => setCloudSyncOpen(false)}
-        enabled={hd.config?.cloudSync.enabled ?? false}
-        onOpenSettings={() => {
-          setCloudSyncOpen(false);
-          setTab("settings");
-        }}
       />
     </div>
   );

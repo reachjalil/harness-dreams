@@ -1,8 +1,10 @@
 import type {
   AlignmentDetail,
   AnalysisProject,
+  AnalysisSource,
   CycleKind,
   CycleWindow,
+  CycleProvenance,
   DreamReport,
   Experiment,
   Finding,
@@ -28,7 +30,7 @@ import {
   type LocalSession,
   type LocalTurn,
 } from "./localIngest";
-import { runRemAnalysis } from "./remAnalysis";
+import { runRemAnalysis, type RemAnalysisResult } from "./remAnalysis";
 
 /**
  * The real Sleep Cycle engine. Given the enabled projects and the time since
@@ -272,7 +274,7 @@ function analyzeSession(
 interface ProjectAgg {
   path: string;
   name: string;
-  sources: Set<string>;
+  sources: Set<AnalysisSource>;
   config: ProjectConfig;
   sessions: number;
   turns: number;
@@ -732,7 +734,7 @@ function gradeCarriedExperiments(
   insights: ProjectInsight[]
 ): Experiment[] {
   const running = (prev?.experiments ?? []).filter(
-    (exp) => exp.status === "running"
+    (exp) => exp.status === "running" && exp.disposition !== "retired"
   );
   return running.map((exp) => {
     const progress = Math.min(1, (exp.progress ?? 0) + 1 / 3);
@@ -1120,6 +1122,97 @@ function contextSummaryOf(
   };
 }
 
+function provenanceFor(input: {
+  mode: CycleProvenance["mode"];
+  generator: CycleProvenance["generator"];
+  sources: AnalysisSource[];
+  now: number;
+  rem?: RemAnalysisResult | null;
+  remConfigured: boolean;
+}): CycleProvenance {
+  const cli =
+    input.rem != null
+      ? {
+          invoked: true,
+          status: input.rem.error ? ("failed" as const) : ("executed" as const),
+          runner: input.rem.redactionPreview.runner,
+          model: input.rem.redactionPreview.model,
+          redactions: input.rem.redactionPreview.redactions,
+          payloadChars: input.rem.redactionPreview.payloadChars,
+          projects: input.rem.redactionPreview.projects,
+          error: input.rem.error,
+        }
+      : {
+          invoked: false,
+          status: input.remConfigured
+            ? ("skipped" as const)
+            : ("not-required" as const),
+        };
+  return {
+    mode: input.mode,
+    generator: input.generator,
+    usedSampleData: false,
+    sources: input.sources,
+    generatedAt: input.now,
+    cli,
+  };
+}
+
+function noDataReport(now: number, kind: CycleKind): DreamReport {
+  const start = now - DAY_MS;
+  const window = computeWindow([], start, now, "last-24h");
+  const totals: Totals = {
+    sessions: 0,
+    turns: 0,
+    userTurns: 0,
+    corrections: 0,
+    toolCalls: 0,
+    toolFailures: 0,
+    hedges: 0,
+  };
+  const rings = makeRings(totals, null);
+  return {
+    id: `cycle_${now}`,
+    timestamp: now,
+    kind,
+    reviewStatus: "unreviewed",
+    rangeLabel: "Real mode · no projects",
+    sessions: 0,
+    projects: 0,
+    harness: "Real local data",
+    digest:
+      "No enabled projects are selected, so this real Sleep Cycle ended without demo data or sample fixtures.",
+    rings,
+    metrics: makeMetrics(totals, [], 0),
+    findings: [],
+    experiments: [],
+    window,
+    projectInsights: [],
+    alignment: {
+      score: rings.find((ring) => ring.key === "alignment")?.score ?? 80,
+      band: "collaborating",
+      human: {
+        mood: "deep-focus",
+        question: "Which projects should Harness Dreams measure?",
+        signals: ["0 enabled projects", "demo mode off"],
+      },
+      agent: {
+        mood: "confident",
+        question: "Where should I read real local agent sessions from?",
+        signals: ["No demo data used"],
+      },
+      friction: [],
+    },
+    provenance: provenanceFor({
+      mode: "real",
+      generator: "no-data",
+      sources: [],
+      now,
+      remConfigured: false,
+    }),
+  };
+}
+
 function quietReport(
   window: CycleWindow,
   projects: AnalysisProject[],
@@ -1139,31 +1232,7 @@ function quietReport(
   };
   const rings = makeRings(totals, prev);
   const contextFindings = selectFindings(aggs);
-  const findings =
-    contextFindings.length > 0
-      ? contextFindings
-      : [
-          {
-            id: `quiet-${now}`,
-            type: "win",
-            title: "Quiet window — nothing new to review",
-            body: `No agent activity in the ${enabled.length} tracked project${enabled.length === 1 ? "" : "s"} since the last Sleep Cycle.`,
-            improvement:
-              "Keep your project scope current so the next active window is captured.",
-            agentBenefit:
-              "Nothing to change — the agent had no friction to learn from.",
-            userBenefit:
-              "A calm cycle is a healthy one; review resumes when work does.",
-            reflection:
-              "Whether the next window picks up fresh sessions to analyze.",
-            confidence: "high",
-            project: enabled[0]?.name ?? "workspace",
-            projectPath: enabled[0]?.path,
-            evidence: `0 sessions in ${window.label.toLowerCase()}`,
-            action: "No action needed this cycle",
-            category: "contextdoc",
-          } satisfies Finding,
-        ];
+  const findings = contextFindings;
   const insights = projectInsightsOf(aggs);
   const contextHealth = contextSummaryOf(insights);
   const digest =
@@ -1224,6 +1293,13 @@ function quietReport(
           findingId: finding.id,
         })),
     },
+    provenance: provenanceFor({
+      mode: "real",
+      generator: "local-ingest",
+      sources: [...new Set(enabled.flatMap((project) => project.sources))],
+      now,
+      remConfigured: false,
+    }),
   };
 }
 
@@ -1244,18 +1320,17 @@ export interface CycleOptions {
 
 /**
  * Run a full Sleep Cycle over the enabled projects' windowed activity.
- * Returns null only when no projects are enabled (so callers can fall back to
- * the onboarding sample); a quiet-but-real report is returned when projects are
- * enabled but had no activity in the window.
+ * Always returns a real report. With no projects or no activity, the report is
+ * explicit about that state instead of falling back to demo/sample data.
  */
 export function runSleepCycle(
   projects: AnalysisProject[],
   options: CycleOptions = {}
-): DreamReport | null {
-  const enabled = projects.filter((project) => project.enabled);
-  if (enabled.length === 0) return null;
-
+): DreamReport {
   const now = options.now ?? Date.now();
+  const enabled = projects.filter((project) => project.enabled);
+  if (enabled.length === 0) return noDataReport(now, options.kind ?? "sleep");
+
   const prev = options.prev ?? null;
   const isNap = options.kind === "nap";
   const floor = now - DAY_MS;
@@ -1310,7 +1385,9 @@ export function runSleepCycle(
     rings.find((ring) => ring.key === "alignment")?.score ?? 70;
   const insights = projectInsightsOf(aggs);
   const contextHealth = contextSummaryOf(insights);
-  const sources = [...new Set(aggs.flatMap((agg) => [...agg.sources]))];
+  const sources: AnalysisSource[] = [
+    ...new Set(aggs.flatMap((agg) => [...agg.sources])),
+  ];
   const topTopicsAll = [
     ...new Set(insights.flatMap((insight) => insight.topics)),
   ].slice(0, 3);
@@ -1351,5 +1428,13 @@ export function runSleepCycle(
     cloudRedactionPreview: rem
       ? { ...rem.redactionPreview, error: rem.error }
       : undefined,
+    provenance: provenanceFor({
+      mode: "real",
+      generator: "local-ingest",
+      sources,
+      now,
+      rem,
+      remConfigured: !isNap && options.privacyMode === "cloud",
+    }),
   };
 }

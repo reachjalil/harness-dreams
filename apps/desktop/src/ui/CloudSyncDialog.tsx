@@ -1,12 +1,64 @@
 import { type ReactElement, type ReactNode, useEffect, useRef } from "react";
 
-import {
-  CLOUD_SYNC_BENEFITS,
-  CLOUD_SYNC_FOOTNOTE,
-  CLOUD_SYNC_TAGLINE,
-} from "./cloudSync";
 import { Button, Pill } from "./components";
-import { Icon } from "./icons";
+import { Icon, type IconName } from "./icons";
+
+interface CloudSyncPlan {
+  icon: IconName;
+  name: string;
+  price: string;
+  cadence: string;
+  status: string;
+  statusTone: "neutral" | "accent";
+  description: string;
+  features: string[];
+  featured?: boolean;
+}
+
+const CLOUD_SYNC_PLANS: CloudSyncPlan[] = [
+  {
+    icon: "privacy",
+    name: "Local Only",
+    price: "Free",
+    cadence: "forever",
+    status: "Always free",
+    statusTone: "neutral",
+    description:
+      "Private harness health on this Mac, with local reports, projects, and learning.",
+    features: ["No account", "No cloud sync", "Code and secrets stay local"],
+  },
+  {
+    icon: "cloudsync",
+    name: "Sync",
+    price: "$5",
+    cadence: "per month",
+    status: "Coming soon",
+    statusTone: "accent",
+    description:
+      "Sync your harness health, projects, and learning across your own devices.",
+    features: [
+      "Mac, iPhone, and Apple Watch",
+      "Cross-device learning",
+      "Personal project sync",
+    ],
+    featured: true,
+  },
+  {
+    icon: "human",
+    name: "Team Sync",
+    price: "$10",
+    cadence: "per member / month",
+    status: "Coming soon",
+    statusTone: "accent",
+    description:
+      "Shared collaboration and team learning, with projects synced across the team.",
+    features: [
+      "Team project sync",
+      "Shared learning loops",
+      "Collaborative improvements",
+    ],
+  },
+];
 
 /**
  * A minimal, solid (non-glass) modal: a dim scrim with a centered opaque panel.
@@ -19,11 +71,13 @@ function Modal({
   open,
   onClose,
   labelledBy,
+  className,
   children,
 }: {
   open: boolean;
   onClose: () => void;
   labelledBy: string;
+  className?: string;
   children: ReactNode;
 }): ReactElement | null {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -50,7 +104,7 @@ function Modal({
       />
       <div
         ref={panelRef}
-        className="modal"
+        className={`modal${className ? ` ${className}` : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
@@ -62,24 +116,21 @@ function Modal({
   );
 }
 
-/**
- * The always-reachable Cloud Sync dialog. Explains the promise — sync the cycle
- * signal to MongoDB Atlas for phone/watch clients, while code stays local — and
- * routes setup to Settings.
- */
+/** The always-reachable Cloud Sync upgrade dialog. */
 export function CloudSyncDialog({
   open,
   onClose,
-  enabled,
-  onOpenSettings,
 }: {
   open: boolean;
   onClose: () => void;
-  enabled: boolean;
-  onOpenSettings: () => void;
 }): ReactElement {
   return (
-    <Modal open={open} onClose={onClose} labelledBy="cloudsync-title">
+    <Modal
+      open={open}
+      onClose={onClose}
+      labelledBy="cloudsync-title"
+      className="cloudsync-modal"
+    >
       <button
         type="button"
         className="modal-close"
@@ -95,52 +146,65 @@ export function CloudSyncDialog({
             <Icon name="cloudsync" size={22} />
           </span>
           <div className="cloudsync-head-text">
-            <div className="cloudsync-eyebrow">MongoDB Atlas</div>
+            <div className="cloudsync-eyebrow">Harness Dreams</div>
             <h2 id="cloudsync-title" className="cloudsync-title">
-              Cloud Sync
+              Upgrade Sync
             </h2>
           </div>
           <span className="cloudsync-price">
             <Icon name="sync" size={18} />
-            <span>{enabled ? "On" : "Setup"}</span>
+            <span>Coming soon</span>
           </span>
         </div>
 
-        <p className="cloudsync-lede">{CLOUD_SYNC_TAGLINE}</p>
+        <p className="cloudsync-lede">
+          Start local for free, add personal sync for $5 a month, or bring a
+          team into shared projects and learning for $10 per member.
+        </p>
 
-        <div className="cloudsync-soon">
-          <Pill tone={enabled ? "good" : "accent"}>
-            {enabled ? "Enabled" : "Self-hosted"}
-          </Pill>
-          <span>
-            Add your Atlas URI and shared user id in Settings. The desktop keeps
-            syncing whenever it can connect.
-          </span>
-        </div>
-
-        <ul className="cloudsync-benefits">
-          {CLOUD_SYNC_BENEFITS.map((benefit) => (
-            <li key={benefit.title}>
-              <span className="cloudsync-benefit-icon">
-                <Icon name={benefit.icon} size={18} />
-              </span>
-              <div>
-                <div className="cloudsync-benefit-title">{benefit.title}</div>
-                <p className="cloudsync-benefit-body">{benefit.body}</p>
+        <div
+          className="cloudsync-plans"
+          role="list"
+          aria-label="Cloud Sync plans"
+        >
+          {CLOUD_SYNC_PLANS.map((plan) => (
+            <article
+              key={plan.name}
+              className={`cloudsync-plan${plan.featured ? " featured" : ""}`}
+              role="listitem"
+            >
+              <div className="cloudsync-plan-head">
+                <span className="cloudsync-plan-icon">
+                  <Icon name={plan.icon} size={18} />
+                </span>
+                <Pill tone={plan.statusTone}>{plan.status}</Pill>
               </div>
-            </li>
+              <h3 className="cloudsync-plan-name">{plan.name}</h3>
+              <div className="cloudsync-plan-price">
+                <b>{plan.price}</b>
+                <span>{plan.cadence}</span>
+              </div>
+              <p className="cloudsync-plan-description">{plan.description}</p>
+              <ul className="cloudsync-plan-features">
+                {plan.features.map((feature) => (
+                  <li key={feature}>
+                    <Icon name="accept" size={14} />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
           ))}
-        </ul>
+        </div>
 
-        <p className="cloudsync-footnote">{CLOUD_SYNC_FOOTNOTE}</p>
+        <p className="cloudsync-footnote">
+          Code, transcripts, repo paths, patch snippets, and secrets stay local
+          on every plan.
+        </p>
 
         <div className="cloudsync-actions">
           <Button variant="ghost" onClick={onClose}>
             Close
-          </Button>
-          <Button variant="accent" onClick={onOpenSettings}>
-            <Icon name="settings" size={15} />
-            Open Settings
           </Button>
         </div>
       </div>

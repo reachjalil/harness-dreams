@@ -7,6 +7,7 @@ import type {
   AnalysisProject,
   CycleKind,
   DiscoveredProject,
+  GoalDisposition,
   ReviewDecisions,
 } from "../shared/types";
 import { onCloudSyncStatusChange } from "./cloudSync";
@@ -17,6 +18,7 @@ import {
   markReportReviewed,
   onReportsChange,
   resetReports,
+  setGoalDisposition,
 } from "./reports";
 import { getState, onStateChange, patchState } from "./state";
 import {
@@ -43,6 +45,11 @@ export interface Controller {
   openSession(id: string): void;
   completeOnboarding(): void;
   markReviewed(id?: string, decisions?: ReviewDecisions): void;
+  setGoalDisposition(
+    reportId: string,
+    experimentId: string,
+    disposition: GoalDisposition | null
+  ): void;
   discoverProjects(): DiscoveredProject[];
   addProject(projectPath: string): AnalysisProject | null;
   setLaunchAtLogin(value: boolean): void;
@@ -167,6 +174,9 @@ export function createController(): Controller {
       if (getState().hasUnreviewed !== hasUnreviewed) {
         patchState({ hasUnreviewed });
       }
+    },
+    setGoalDisposition: (reportId, experimentId, disposition) => {
+      setGoalDisposition(reportId, experimentId, disposition);
     },
     discoverProjects: () => discoverAnalysisProjects(),
     addProject: (projectPath: string) => {

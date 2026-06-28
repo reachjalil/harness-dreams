@@ -21,7 +21,8 @@
         {
           "cameraPermission": "Scan the Harness Dreams desktop pairing QR code."
         }
-      ]
+      ],
+      "expo-status-bar"
     ]
   }
 }

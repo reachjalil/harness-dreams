@@ -1,4 +1,10 @@
-import { type ReactElement, useEffect, useState } from "react";
+import {
+  type ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { DEMO_PROJECTS } from "../shared/mock";
 import type {
@@ -45,19 +51,30 @@ export default function Settings({
   const [pairing, setPairing] = useState<CloudSyncPairing | null>(null);
   const [pairingBusy, setPairingBusy] = useState(false);
   const [pairingError, setPairingError] = useState<string | null>(null);
+  const discoveryRequest = useRef(0);
 
   useEffect(() => {
     if (config?.demoMode) {
+      discoveryRequest.current += 1;
       setDiscovered([]);
       setScanning(false);
-      return;
     }
+  }, [config?.demoMode]);
+
+  const refreshDiscovered = useCallback(() => {
+    if (config?.demoMode || scanning) return;
+    const requestId = discoveryRequest.current + 1;
+    discoveryRequest.current = requestId;
     setScanning(true);
     void hd.projects
       .discover()
-      .then(setDiscovered)
-      .finally(() => setScanning(false));
-  }, [config?.demoMode, hd.projects]);
+      .then((projects) => {
+        if (discoveryRequest.current === requestId) setDiscovered(projects);
+      })
+      .finally(() => {
+        if (discoveryRequest.current === requestId) setScanning(false);
+      });
+  }, [config?.demoMode, hd.projects, scanning]);
 
   if (!config) return <p className="card-hint">Loading…</p>;
   const cfg = config;
@@ -133,6 +150,22 @@ export default function Settings({
     const devices = await hd.cloudSync.removeDevice(deviceId);
     patch({ cloudSync: { devices } });
     if (pairing?.device.deviceId === deviceId) setPairing(null);
+  }
+
+  function startCloudSync(): void {
+    if (!config) return;
+    if (!config.cloudSync.enabled) {
+      patch({ cloudSync: { enabled: true }, cloudSyncInterest: true });
+      return;
+    }
+    void hd.cloudSync.syncNow();
+  }
+
+  function pairingActionLabel(): string {
+    if (pairingBusy) return "Creating...";
+    if (pairingKind === "watch") return "Pair Apple Watch";
+    if (pairingKind === "ipad") return "Pair iPad";
+    return "Pair iPhone";
   }
 
   function shortId(value: string): string {
@@ -298,102 +331,107 @@ export default function Settings({
               ]}
             />
           </div>
-          {config.privacyMode === "cloud" ? (
-            <>
-              <div className="settings-row">
-                <div className="settings-row-main">
-                  <div className="settings-row-label">REM runner</div>
-                  <div className="settings-row-hint">
-                    Runs the selected CLI locally; no agent SDK is used.
-                  </div>
-                </div>
-                <Segmented<RemRunnerProvider>
-                  ariaLabel="REM runner"
-                  value={config.remRunner.provider}
-                  onChange={(provider) => patch({ remRunner: { provider } })}
-                  options={[
-                    { value: "claude-code", label: "Claude Code" },
-                    { value: "codex", label: "Codex" },
-                  ]}
-                />
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Background REM CLI</div>
+              <div className="settings-row-hint">
+                {config.privacyMode === "cloud"
+                  ? "Runs the selected CLI locally for the REM pass."
+                  : "Selected now; Local-only cycles skip the REM CLI pass."}
               </div>
-              <div className="settings-row">
-                <div className="settings-row-main">
-                  <div className="settings-row-label">Runner command</div>
-                  <div className="settings-row-hint">
-                    Binary path used for the selected CLI runner.
-                  </div>
-                </div>
-                <Field label="">
-                  <input
-                    value={
+            </div>
+            <Segmented<RemRunnerProvider>
+              ariaLabel="REM runner"
+              value={config.remRunner.provider}
+              onChange={(provider) =>
+                patch({
+                  remRunner: {
+                    provider,
+                    model: provider === "codex" ? "gpt-5.5" : "opus",
+                  },
+                })
+              }
+              options={[
+                { value: "codex", label: "Codex" },
+                { value: "claude-code", label: "Claude Code" },
+              ]}
+            />
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Runner command</div>
+              <div className="settings-row-hint">
+                Binary path used for the selected CLI runner.
+              </div>
+            </div>
+            <Field label="">
+              <input
+                value={
+                  config.remRunner.provider === "codex"
+                    ? config.remRunner.codexPath
+                    : config.remRunner.claudePath
+                }
+                onChange={(e) =>
+                  patch({
+                    remRunner:
                       config.remRunner.provider === "codex"
-                        ? config.remRunner.codexPath
-                        : config.remRunner.claudePath
-                    }
-                    onChange={(e) =>
-                      patch({
-                        remRunner:
-                          config.remRunner.provider === "codex"
-                            ? { codexPath: e.target.value }
-                            : { claudePath: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
+                        ? { codexPath: e.target.value }
+                        : { claudePath: e.target.value },
+                  })
+                }
+              />
+            </Field>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">REM model</div>
+              <div className="settings-row-hint">
+                Passed to the CLI with its model flag.
               </div>
-              <div className="settings-row">
-                <div className="settings-row-main">
-                  <div className="settings-row-label">REM model</div>
-                  <div className="settings-row-hint">
-                    Passed to the CLI with its model flag.
-                  </div>
-                </div>
-                <Field label="">
-                  <input
-                    value={config.remRunner.model}
-                    onChange={(e) =>
-                      patch({ remRunner: { model: e.target.value } })
-                    }
-                  />
-                </Field>
+            </div>
+            <Field label="">
+              <input
+                value={config.remRunner.model}
+                onChange={(e) =>
+                  patch({ remRunner: { model: e.target.value } })
+                }
+              />
+            </Field>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Runner timeout</div>
+              <div className="settings-row-hint">
+                Maximum seconds to wait for the local CLI analysis pass.
               </div>
-              <div className="settings-row">
-                <div className="settings-row-main">
-                  <div className="settings-row-label">Runner timeout</div>
-                  <div className="settings-row-hint">
-                    Maximum seconds to wait for the local CLI analysis pass.
-                  </div>
-                </div>
-                <Field label="">
-                  <input
-                    type="number"
-                    min={1}
-                    value={Math.round(config.remRunner.timeoutMs / 1000)}
-                    onChange={(e) => {
-                      const seconds = Number(e.target.value);
-                      if (Number.isFinite(seconds) && seconds > 0) {
-                        patch({
-                          remRunner: {
-                            timeoutMs: Math.round(seconds) * 1000,
-                          },
-                        });
-                      }
-                    }}
-                  />
-                </Field>
+            </div>
+            <Field label="">
+              <input
+                type="number"
+                min={1}
+                value={Math.round(config.remRunner.timeoutMs / 1000)}
+                onChange={(e) => {
+                  const seconds = Number(e.target.value);
+                  if (Number.isFinite(seconds) && seconds > 0) {
+                    patch({
+                      remRunner: {
+                        timeoutMs: Math.round(seconds) * 1000,
+                      },
+                    });
+                  }
+                }}
+              />
+            </Field>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Payload privacy</div>
+              <div className="settings-row-hint">
+                Secrets and local-only details stay on this Mac before the CLI
+                analysis pass runs.
               </div>
-              <div className="settings-row">
-                <div className="settings-row-main">
-                  <div className="settings-row-label">Redacted excerpts</div>
-                  <div className="settings-row-hint">
-                    Secrets are scrubbed before the configured CLI receives the
-                    REM payload.
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : null}
+            </div>
+          </div>
           <div className="settings-row">
             <div className="settings-row-main">
               <div className="settings-row-label">Analysis depth</div>
@@ -432,18 +470,19 @@ export default function Settings({
           </div>
           <div className="settings-row">
             <div className="settings-row-main">
-              <div className="settings-row-label">Cloud Sync access</div>
+              <div className="settings-row-label">Cloud Sync</div>
               <div className="settings-row-hint">
-                The desktop owns sync credentials, device JWTs, and removals.
+                One action enables sync and starts the desktop connection.
               </div>
             </div>
-            <Toggle
-              label="Cloud Sync"
-              checked={config.cloudSync.enabled}
-              onChange={(enabled) =>
-                patch({ cloudSync: { enabled }, cloudSyncInterest: enabled })
-              }
-            />
+            <Button
+              variant={config.cloudSync.enabled ? "ghost" : "accent"}
+              disabled={config.cloudSync.enabled && !cloudReady}
+              onClick={startCloudSync}
+            >
+              <Icon name="sync" size={16} />
+              {config.cloudSync.enabled ? "Sync now" : "Start sync"}
+            </Button>
           </div>
           <div className="settings-row">
             <div className="settings-row-main">
@@ -460,228 +499,204 @@ export default function Settings({
               }
             />
           </div>
-          {config.cloudSync.enabled ? (
-            <>
-              <div className="settings-row">
-                <div className="settings-row-main">
-                  <div className="settings-row-label">Atlas URI</div>
-                  <div className="settings-row-hint">
-                    Leave blank to use HARNESS_DREAMS_MONGODB_URI.
-                  </div>
-                </div>
-                <Field label="">
-                  <input
-                    type="password"
-                    value={config.cloudSync.atlasUri}
-                    placeholder="mongodb+srv://..."
-                    onChange={(e) =>
-                      patch({ cloudSync: { atlasUri: e.target.value } })
-                    }
-                  />
-                </Field>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Atlas URI</div>
+              <div className="settings-row-hint">
+                Leave blank to use HARNESS_DREAMS_MONGODB_URI.
               </div>
-              <div className="settings-row">
-                <div className="settings-row-main">
-                  <div className="settings-row-label">Database</div>
-                  <div className="settings-row-hint">
-                    Collections: sleep_cycles, sleep_cycle_decisions,
-                    sync_devices.
-                  </div>
-                </div>
-                <Field label="">
-                  <input
-                    value={config.cloudSync.databaseName}
-                    onChange={(e) =>
-                      patch({ cloudSync: { databaseName: e.target.value } })
-                    }
-                  />
-                </Field>
+            </div>
+            <Field label="">
+              <input
+                type="password"
+                value={config.cloudSync.atlasUri}
+                placeholder="mongodb+srv://..."
+                onChange={(e) =>
+                  patch({ cloudSync: { atlasUri: e.target.value } })
+                }
+              />
+            </Field>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Database</div>
+              <div className="settings-row-hint">
+                Collections: sleep_cycles, sleep_cycle_decisions, sync_devices.
               </div>
-              <div className="settings-row">
-                <div className="settings-row-main">
+            </div>
+            <Field label="">
+              <input
+                value={config.cloudSync.databaseName}
+                onChange={(e) =>
+                  patch({ cloudSync: { databaseName: e.target.value } })
+                }
+              />
+            </Field>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Desktop-owned user id</div>
+              <div className="settings-row-hint">
+                Generated locally for account-free pairing.
+              </div>
+            </div>
+            <code className="mono-chip">
+              {shortId(config.cloudSync.userId)}
+            </code>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Device name</div>
+              <div className="settings-row-hint">
+                Published to Atlas so conflicts show where a choice came from.
+              </div>
+            </div>
+            <Field label="">
+              <input
+                value={config.cloudSync.deviceName}
+                onChange={(e) =>
+                  patch({ cloudSync: { deviceName: e.target.value } })
+                }
+              />
+            </Field>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Poll fallback</div>
+              <div className="settings-row-hint">
+                Change streams apply changes immediately when Atlas allows them.
+              </div>
+            </div>
+            <Field label="">
+              <input
+                type="number"
+                min={5}
+                value={Math.round(config.cloudSync.syncIntervalMs / 1000)}
+                onChange={(e) => {
+                  const seconds = Number(e.target.value);
+                  if (Number.isFinite(seconds) && seconds >= 5) {
+                    patch({
+                      cloudSync: {
+                        syncIntervalMs: Math.round(seconds) * 1000,
+                      },
+                    });
+                  }
+                }}
+              />
+            </Field>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Sync status</div>
+              <div className="settings-row-hint">
+                {cloudStatus?.message ?? "Waiting for sync status."} Last sync:{" "}
+                {syncTimeLabel(cloudStatus?.lastSyncedAt)}.
+              </div>
+            </div>
+          </div>
+          <div className="device-pairing">
+            <div className="device-pairing-head">
+              <div>
+                <div className="settings-row-label">Companion sync</div>
+                <div className="settings-row-hint">
+                  Pair an iPhone, iPad, or Apple Watch in one QR step.
+                </div>
+              </div>
+            </div>
+            <div className="pairing-controls">
+              <Field label="Name">
+                <input
+                  value={pairingName}
+                  onChange={(e) => setPairingName(e.target.value)}
+                />
+              </Field>
+              <Segmented<CloudSyncDeviceKind>
+                ariaLabel="Device kind"
+                value={pairingKind}
+                onChange={setPairingKind}
+                options={[
+                  { value: "iphone", label: "iPhone" },
+                  { value: "ipad", label: "iPad" },
+                  { value: "watch", label: "Watch" },
+                ]}
+              />
+              <Button
+                variant="accent"
+                disabled={pairingBusy}
+                onClick={() => void createPairing()}
+              >
+                <Icon name="qr" size={16} />
+                {pairingActionLabel()}
+              </Button>
+            </div>
+            {pairing ? (
+              <div className="pairing-card">
+                <img
+                  className="pairing-qr"
+                  src={pairing.qrDataUrl}
+                  alt={`Pair ${pairing.device.deviceName}`}
+                />
+                <div className="pairing-card-main">
                   <div className="settings-row-label">
-                    Desktop-owned user id
+                    {pairing.device.deviceName}
                   </div>
                   <div className="settings-row-hint">
-                    Generated locally for account-free pairing.
+                    Expires at {syncTimeLabel(pairing.expiresAt)} ·{" "}
+                    {shortId(pairing.device.deviceId)}
+                  </div>
+                  <div className="row">
+                    <Button onClick={() => void copyPairing()}>
+                      <Icon name="copy" size={15} />
+                      Copy link
+                    </Button>
+                    <Button variant="ghost" onClick={() => setPairing(null)}>
+                      Done
+                    </Button>
                   </div>
                 </div>
-                <code className="mono-chip">
-                  {shortId(config.cloudSync.userId)}
-                </code>
               </div>
-              <div className="settings-row">
-                <div className="settings-row-main">
-                  <div className="settings-row-label">Device name</div>
-                  <div className="settings-row-hint">
-                    Published to Atlas so conflicts show where a choice came
-                    from.
-                  </div>
-                </div>
-                <Field label="">
-                  <input
-                    value={config.cloudSync.deviceName}
-                    onChange={(e) =>
-                      patch({ cloudSync: { deviceName: e.target.value } })
-                    }
-                  />
-                </Field>
-              </div>
-              <div className="settings-row">
-                <div className="settings-row-main">
-                  <div className="settings-row-label">Poll fallback</div>
-                  <div className="settings-row-hint">
-                    Change streams apply changes immediately when Atlas allows
-                    them.
-                  </div>
-                </div>
-                <Field label="">
-                  <input
-                    type="number"
-                    min={5}
-                    value={Math.round(config.cloudSync.syncIntervalMs / 1000)}
-                    onChange={(e) => {
-                      const seconds = Number(e.target.value);
-                      if (Number.isFinite(seconds) && seconds >= 5) {
-                        patch({
-                          cloudSync: {
-                            syncIntervalMs: Math.round(seconds) * 1000,
-                          },
-                        });
-                      }
-                    }}
-                  />
-                </Field>
-              </div>
-              <div className="settings-row">
-                <div className="settings-row-main">
-                  <div className="settings-row-label">Sync status</div>
-                  <div className="settings-row-hint">
-                    {cloudStatus?.message ?? "Waiting for sync status."} Last
-                    sync: {syncTimeLabel(cloudStatus?.lastSyncedAt)}.
-                  </div>
-                  <div className="settings-row-hint">
-                    Device id: {config.cloudSync.deviceId}
-                  </div>
-                </div>
-                <Button
-                  disabled={!cloudReady}
-                  onClick={() => void hd.cloudSync.syncNow()}
-                >
-                  <Icon name="sync" size={16} />
-                  Sync now
-                </Button>
-              </div>
-              <div className="device-pairing">
-                <div className="device-pairing-head">
-                  <div>
-                    <div className="settings-row-label">Device management</div>
-                    <div className="settings-row-hint">
-                      Add a phone or watch with a QR code. Removing a device
-                      invalidates its JWT for future reads and writes.
-                    </div>
-                  </div>
-                </div>
-                <div className="pairing-controls">
-                  <Field label="Name">
-                    <input
-                      value={pairingName}
-                      onChange={(e) => setPairingName(e.target.value)}
-                    />
-                  </Field>
-                  <Segmented<CloudSyncDeviceKind>
-                    ariaLabel="Device kind"
-                    value={pairingKind}
-                    onChange={setPairingKind}
-                    options={[
-                      { value: "iphone", label: "iPhone" },
-                      { value: "ipad", label: "iPad" },
-                      { value: "watch", label: "Watch" },
-                    ]}
-                  />
-                  <Button
-                    variant="accent"
-                    disabled={pairingBusy}
-                    onClick={() => void createPairing()}
-                  >
-                    <Icon name="qr" size={16} />
-                    {pairingBusy ? "Creating..." : "Add device"}
-                  </Button>
-                </div>
-                {pairing ? (
-                  <div className="pairing-card">
-                    <img
-                      className="pairing-qr"
-                      src={pairing.qrDataUrl}
-                      alt={`Pair ${pairing.device.deviceName}`}
-                    />
-                    <div className="pairing-card-main">
-                      <div className="settings-row-label">
-                        {pairing.device.deviceName}
+            ) : null}
+            {pairingError ? (
+              <p className="settings-empty">{pairingError}</p>
+            ) : null}
+            {config.cloudSync.devices.length > 0 ? (
+              <div className="device-list">
+                {config.cloudSync.devices.map((device) => (
+                  <div key={device.deviceId} className="device-row">
+                    <div className="device-row-main">
+                      <div className="project-row-label">
+                        {device.deviceName}
                       </div>
-                      <div className="settings-row-hint">
-                        Expires at {syncTimeLabel(pairing.expiresAt)} ·{" "}
-                        {shortId(pairing.device.deviceId)}
+                      <div className="project-row-hint">
+                        {device.kind} · {device.status} ·{" "}
+                        {shortId(device.deviceId)}
                       </div>
-                      <div className="pairing-url">{pairing.pairingUrl}</div>
-                      <div className="row">
-                        <Button onClick={() => void copyPairing()}>
-                          <Icon name="copy" size={15} />
-                          Copy link
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={() => setPairing(null)}
-                        >
-                          Done
-                        </Button>
+                      <div className="project-row-hint">
+                        Last seen: {syncTimeLabel(device.lastSeenAt)}
                       </div>
                     </div>
+                    <Button
+                      variant="danger"
+                      onClick={() => void removeDevice(device.deviceId)}
+                    >
+                      <Icon name="trash" size={15} />
+                      Remove
+                    </Button>
                   </div>
-                ) : null}
-                {pairingError ? (
-                  <p className="settings-empty">{pairingError}</p>
-                ) : null}
-                {config.cloudSync.devices.length > 0 ? (
-                  <div className="device-list">
-                    {config.cloudSync.devices.map((device) => (
-                      <div key={device.deviceId} className="device-row">
-                        <div className="device-row-main">
-                          <div className="project-row-label">
-                            {device.deviceName}
-                          </div>
-                          <div className="project-row-hint">
-                            {device.kind} · {device.status} ·{" "}
-                            {shortId(device.deviceId)}
-                          </div>
-                          <div className="project-row-hint">
-                            Last seen: {syncTimeLabel(device.lastSeenAt)}
-                          </div>
-                        </div>
-                        <Button
-                          variant="danger"
-                          onClick={() => void removeDevice(device.deviceId)}
-                        >
-                          <Icon name="trash" size={15} />
-                          Remove
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="settings-empty">No paired devices yet.</p>
-                )}
+                ))}
               </div>
-              <div className="demo-callout">
-                <b>Cycle signal only</b>
-                <span>
-                  Atlas receives report summaries, scores, findings, and action
-                  states. Transcript files, code, local repo paths, and patch
-                  snippets stay on this Mac.
-                </span>
-              </div>
-            </>
-          ) : null}
+            ) : (
+              <p className="settings-empty">No paired devices yet.</p>
+            )}
+          </div>
+          <div className="demo-callout">
+            <b>Cycle signal only</b>
+            <span>
+              Sync carries report summaries, scores, findings, and action
+              states. Transcript files, code, and local project details stay on
+              this Mac.
+            </span>
+          </div>
         </SettingsGroup>
 
         <SettingsGroup
@@ -739,14 +754,8 @@ export default function Settings({
               </div>
             </div>
             <Button
-              disabled={config.demoMode}
-              onClick={() => {
-                setScanning(true);
-                void hd.projects
-                  .discover()
-                  .then(setDiscovered)
-                  .finally(() => setScanning(false));
-              }}
+              disabled={config.demoMode || scanning}
+              onClick={refreshDiscovered}
             >
               <Icon name="reset" size={16} />
               {scanning ? "Scanning..." : "Refresh"}

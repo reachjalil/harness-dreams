@@ -454,6 +454,30 @@ export interface ProjectInsight {
   contextHealth?: ContextHealth;
 }
 
+export type CycleDataMode = "demo" | "real";
+export type CycleGenerator = "demo-fixture" | "local-ingest" | "no-data";
+export type CycleCliStatus = "not-required" | "skipped" | "executed" | "failed";
+
+/** Provenance for whether a cycle came from demo fixtures or real local data. */
+export interface CycleProvenance {
+  mode: CycleDataMode;
+  generator: CycleGenerator;
+  /** Must stay false outside explicit Demo Mode. */
+  usedSampleData: boolean;
+  sources: AnalysisSource[];
+  generatedAt: number;
+  cli: {
+    invoked: boolean;
+    status: CycleCliStatus;
+    runner?: string;
+    model?: string;
+    redactions?: number;
+    payloadChars?: number;
+    projects?: number;
+    error?: string;
+  };
+}
+
 /** Decisions captured during review, keyed by finding id. */
 export type ReviewDecisions = Record<string, ActionState>;
 
@@ -462,6 +486,7 @@ export type CycleReviewStatus = "unreviewed" | "reviewed" | "expired";
 
 export type ExperimentStatus = "proposed" | "running" | "concluded";
 export type ExperimentVerdict = "helped" | "no-change" | "worse";
+export type GoalDisposition = "kept" | "retired";
 
 export interface Experiment {
   id: string;
@@ -477,6 +502,7 @@ export interface Experiment {
   progressLabel?: string;
   verdict?: ExperimentVerdict;
   verdictNote?: string;
+  disposition?: GoalDisposition;
   /** Which project this goal targets, so the next cycle can measure it. */
   projectPath?: string;
   /** Where the accepted change landed. */
@@ -538,4 +564,6 @@ export interface DreamReport {
     projects: number;
     error?: string;
   };
+  /** Real/demo and CLI execution provenance for this generated cycle. */
+  provenance?: CycleProvenance;
 }

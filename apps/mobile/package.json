@@ -4,9 +4,9 @@
   "private": true,
   "main": "expo/AppEntry",
   "scripts": {
-    "start": "expo start",
-    "ios": "expo run:ios",
-    "android": "expo run:android",
+    "start": "NODE_PATH=./node_modules expo start",
+    "ios": "NODE_PATH=./node_modules expo run:ios",
+    "android": "NODE_PATH=./node_modules expo run:android",
     "check": "tsc --noEmit"
   },
   "dependencies": {

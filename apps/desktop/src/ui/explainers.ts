@@ -5,6 +5,7 @@
  * two; tooltips explain, they don't lecture.
  */
 
+import type { TimeOfDay } from "../shared/timeOfDay";
 import type {
   ActionCategory,
   AlignmentBand,
@@ -13,6 +14,7 @@ import type {
   FrictionType,
   RingKey,
 } from "../shared/types";
+import type { MomentKind } from "./moment";
 
 export interface Explainer {
   title: string;
@@ -100,6 +102,8 @@ export const CONFIDENCE_TIP: Record<Confidence, string> = {
 export const TERM = {
   sleepCycle:
     "A quiet-period analysis run that replays your work, scores the day, and turns friction into suggested goals you can accept.",
+  napCycle:
+    "A faster, lighter mid-day check-in. It reviews just this morning's work and surfaces the top nudge or two — no full overnight pass.",
   dreamScore:
     "Your three rings — Efficiency, Effectiveness, and Alignment — blended into one 0–100 score.",
   composite:
@@ -132,3 +136,103 @@ export const SETTINGS_TIP = {
     "Whether Harness Dreams nudges you when a fresh Sleep Cycle is ready.",
   data: "Your data is a single local file — reveal it, replay onboarding, or wipe it.",
 } as const;
+
+// ── The calm daily companion — greeting + the single "moment" on Home ─────────
+
+/** Time-of-day lead for the home greeting. */
+export const GREETING: Record<TimeOfDay, string> = {
+  morning: "Good morning",
+  midday: "Good afternoon",
+  evening: "Good evening",
+  night: "Working late",
+};
+
+/** The one quiet line under the greeting — the dual-loop ethos, calmly put. */
+export const LOOP_WHISPER =
+  "Every cycle sharpens two things — your agent's instincts, and your habits.";
+
+const TOD_EYEBROW: Record<TimeOfDay, string> = {
+  morning: "This morning",
+  midday: "This afternoon",
+  evening: "This evening",
+  night: "Tonight",
+};
+
+export interface MomentCopy {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  cta?: string;
+}
+
+export interface MomentContext {
+  tod: TimeOfDay;
+  name?: string;
+  /** Findings waiting (review), or sessions accumulated (nap/sleep nudges). */
+  count: number;
+  projects: number;
+  score: number;
+  /** Human-formatted nightly schedule time, e.g. "3:00 AM". */
+  scheduleTime: string;
+  /** Whether the pending cycle under review is a nap. */
+  pendingIsNap: boolean;
+}
+
+function nudges(count: number): string {
+  return `${count} ${count === 1 ? "nudge" : "nudges"}`;
+}
+
+/** Build the copy for Home's single focal "moment" from its kind + context. */
+export function momentCopy(kind: MomentKind, ctx: MomentContext): MomentCopy {
+  const eyebrow = TOD_EYEBROW[ctx.tod];
+  switch (kind) {
+    case "running":
+      return {
+        eyebrow: "In progress",
+        title: "Reflecting on your work…",
+        subtitle: "This only takes a moment.",
+      };
+    case "review":
+      return ctx.pendingIsNap
+        ? {
+            eyebrow,
+            title: "Your Nap Cycle is ready",
+            subtitle: `${nudges(ctx.count)} from this morning — one quick thing for your agent, one for you.`,
+            cta: "Review nap",
+          }
+        : {
+            eyebrow,
+            title: "Your Sleep Cycle is ready",
+            subtitle: `${nudges(ctx.count)} to look over — what your harness learned, and a habit that could help you too.`,
+            cta: "Review cycle",
+          };
+    case "nap":
+      return {
+        eyebrow: "Midday",
+        title: "Time for a quick Nap Cycle?",
+        subtitle:
+          "You've built up a few sessions this morning. A nap takes seconds and surfaces just the top nudge or two.",
+        cta: "Take a Nap Cycle",
+      };
+    case "sleep":
+      return {
+        eyebrow,
+        title: "You've done a lot today.",
+        subtitle: `${ctx.count} sessions across ${ctx.projects} project${ctx.projects === 1 ? "" : "s"}. Ready to reflect and wake up sharper tomorrow?`,
+        cta: "Run Sleep Cycle",
+      };
+    case "standby":
+      return {
+        eyebrow: "Tonight",
+        title: "Time to rest.",
+        subtitle: `Your harness will dream at ${ctx.scheduleTime} while you sleep.`,
+      };
+    default:
+      return {
+        eyebrow,
+        title: ctx.name ? `You're all set, ${ctx.name}.` : "You're all set.",
+        subtitle: `Alignment ${ctx.score}. Your harness is rested and ready for the day ahead.`,
+        cta: "Run a Sleep Cycle",
+      };
+  }
+}

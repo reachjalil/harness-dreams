@@ -8,7 +8,7 @@ import type {
   ScheduleMode,
 } from "../shared/types";
 import { CLOUD_SYNC_TAGLINE } from "./cloudSync";
-import { BrandMark, Button, Field } from "./components";
+import { BrandMark, Button, Field, Segmented } from "./components";
 import { Icon } from "./icons";
 import type { HarnessDreams } from "./useHarnessDreams";
 
@@ -21,7 +21,7 @@ const PRIVACY_OPTIONS: { value: PrivacyMode; title: string; sub: string }[] = [
   {
     value: "cloud",
     title: "Cloud analysis (opt-in)",
-    sub: "Send redacted excerpts for richer insights. You can preview redaction first.",
+    sub: "Use a local CLI pass for richer insights while private details stay on this Mac.",
   },
 ];
 
@@ -40,6 +40,7 @@ const SCHEDULE_OPTIONS: { value: ScheduleMode; title: string; sub: string }[] =
   ];
 
 type SetupMode = "real" | "demo";
+type ProjectSourceFilter = "all" | "claude-code" | "codex" | "code";
 
 export default function Onboarding({
   hd,
@@ -48,6 +49,7 @@ export default function Onboarding({
 }): ReactElement {
   const { actions, patch, projects } = hd;
   const [step, setStep] = useState(0);
+  const [name, setName] = useState(hd.config?.userName ?? "");
   const [setupMode, setSetupMode] = useState<SetupMode>("real");
   const [privacy, setPrivacy] = useState<PrivacyMode>("local");
   const [remProvider, setRemProvider] =
@@ -68,6 +70,9 @@ export default function Onboarding({
   const [cloudSync, setCloudSync] = useState(false);
   const [discovered, setDiscovered] = useState<DiscoveredProject[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [projectSearch, setProjectSearch] = useState("");
+  const [projectSourceFilter, setProjectSourceFilter] =
+    useState<ProjectSourceFilter>("all");
   const [scanning, setScanning] = useState(false);
   const lastStep = setupMode === "demo" ? 2 : 6;
 
@@ -78,14 +83,32 @@ export default function Onboarding({
     void projects
       .discover()
       .then((items) => {
-        const top = items.slice(0, 8);
-        setDiscovered(top);
-        setSelected(
-          Object.fromEntries(top.slice(0, 3).map((item) => [item.path, true]))
-        );
+        const top = items.slice(0, 3);
+        setDiscovered(items);
+        setSelected(Object.fromEntries(top.map((item) => [item.path, true])));
       })
       .finally(() => setScanning(false));
   }, [discovered.length, projects, scanning, setupMode, step]);
+
+  const visibleProjects = useMemo(() => {
+    const query = projectSearch.trim().toLowerCase();
+    return discovered.filter((project) => {
+      const sourceMatch =
+        projectSourceFilter === "all" ||
+        project.sources.includes(projectSourceFilter);
+      if (!sourceMatch) return false;
+      if (!query) return true;
+      return [
+        project.name,
+        project.path,
+        project.sources.join(" "),
+        `${project.sessionCount}`,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [discovered, projectSearch, projectSourceFilter]);
 
   const selectedProjects = useMemo(
     () => discovered.filter((project) => selected[project.path]),
@@ -95,6 +118,7 @@ export default function Onboarding({
   function finish(): void {
     if (setupMode === "demo") {
       patch({
+        userName: name.trim() || "Alex",
         demoMode: true,
         privacyMode: "local",
         schedule: { mode: "manual" },
@@ -118,6 +142,7 @@ export default function Onboarding({
       addedAt: Date.now(),
     }));
     patch({
+      userName: name.trim(),
       demoMode: false,
       privacyMode: privacy,
       remRunner: {
@@ -156,9 +181,9 @@ export default function Onboarding({
   }
 
   return (
-    <div className="onb">
+    <div className={`onb${step === 3 ? " project-step" : ""}`}>
       <div className="titlebar" />
-      <div className="onb-body">
+      <div className={`onb-body${step === 3 ? " project-step" : ""}`}>
         {step === 0 ? (
           <>
             <div className="onb-mark-wrap">
@@ -170,6 +195,19 @@ export default function Onboarding({
               Dreams reflects on the day — so you wake up a little sharper than
               you went to bed.
             </p>
+            <div className="onb-name">
+              <Field label="First, what should I call you?">
+                <input
+                  type="text"
+                  value={name}
+                  placeholder="Your name"
+                  onChange={(event) => setName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") next();
+                  }}
+                />
+              </Field>
+            </div>
           </>
         ) : null}
 
@@ -247,38 +285,82 @@ export default function Onboarding({
           <>
             <h2>Add projects</h2>
             <p>Choose the local projects Harness Dreams should analyze.</p>
-            <div className="choices project-choices">
-              {scanning ? (
-                <div className="choice">Scanning local data...</div>
-              ) : null}
-              {!scanning && discovered.length === 0 ? (
-                <div className="choice">
-                  No Claude or Codex projects found yet.
+            <div className="onb-project-shell">
+              <div className="onb-project-toolbar">
+                <div className="onb-project-count">
+                  {selectedProjects.length} selected
+                  {discovered.length > 0
+                    ? ` · ${visibleProjects.length} shown`
+                    : ""}
                 </div>
-              ) : null}
-              {discovered.slice(0, 8).map((project) => (
-                <button
-                  key={project.path}
-                  type="button"
-                  className={`choice${selected[project.path] ? " selected" : ""}`}
-                  onClick={() =>
-                    setSelected((current) => ({
-                      ...current,
-                      [project.path]: !current[project.path],
-                    }))
-                  }
-                >
-                  <div className="choice-title">
-                    <Icon name="data" size={15} />
-                    {project.name}
+                <div className="onb-project-controls">
+                  <label className="onb-project-search">
+                    <Icon name="search" size={14} />
+                    <input
+                      type="search"
+                      value={projectSearch}
+                      placeholder="Search projects"
+                      aria-label="Search projects"
+                      onChange={(event) => setProjectSearch(event.target.value)}
+                    />
+                  </label>
+                  <Segmented<ProjectSourceFilter>
+                    ariaLabel="Filter projects by source"
+                    value={projectSourceFilter}
+                    onChange={setProjectSourceFilter}
+                    options={[
+                      { value: "all", label: "All" },
+                      { value: "claude-code", label: "Claude" },
+                      { value: "codex", label: "Codex" },
+                      { value: "code", label: "Code" },
+                    ]}
+                  />
+                </div>
+              </div>
+              <div className="choices project-choices">
+                {scanning ? (
+                  <div className="choice project-empty">
+                    Scanning local data...
                   </div>
-                  <div className="choice-sub">
-                    {project.sources.join(" + ")} · {project.sessionCount}{" "}
-                    sessions
+                ) : null}
+                {!scanning && discovered.length === 0 ? (
+                  <div className="choice project-empty">
+                    No Claude or Codex projects found yet.
                   </div>
-                  <div className="choice-sub">{project.path}</div>
-                </button>
-              ))}
+                ) : null}
+                {!scanning &&
+                discovered.length > 0 &&
+                visibleProjects.length === 0 ? (
+                  <div className="choice project-empty">
+                    No projects match this search.
+                  </div>
+                ) : null}
+                {visibleProjects.map((project) => (
+                  <button
+                    key={project.path}
+                    type="button"
+                    className={`choice project-choice${selected[project.path] ? " selected" : ""}`}
+                    onClick={() =>
+                      setSelected((current) => ({
+                        ...current,
+                        [project.path]: !current[project.path],
+                      }))
+                    }
+                  >
+                    <div className="choice-title">
+                      <Icon name="data" size={15} />
+                      {project.name}
+                    </div>
+                    <div className="choice-sub">
+                      {project.sources.join(" + ")} · {project.sessionCount}{" "}
+                      sessions
+                    </div>
+                    <div className="choice-sub project-path">
+                      {project.path}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         ) : null}
@@ -312,7 +394,7 @@ export default function Onboarding({
                   >
                     <div className="choice-title">Claude Code CLI</div>
                     <div className="choice-sub">
-                      Runs `claude -p` locally with the redacted REM payload.
+                      Runs `claude -p` locally with the prepared REM payload.
                     </div>
                   </button>
                   <button
@@ -322,7 +404,7 @@ export default function Onboarding({
                   >
                     <div className="choice-title">Codex CLI</div>
                     <div className="choice-sub">
-                      Runs `codex exec` locally with the redacted REM payload.
+                      Runs `codex exec` locally with the prepared REM payload.
                     </div>
                   </button>
                 </div>
@@ -405,8 +487,8 @@ export default function Onboarding({
             </div>
             {cloudSync ? (
               <div className="onb-soon">
-                <b>Cloud Sync needs Atlas setup.</b> After onboarding, add your
-                MongoDB Atlas URI and shared user id in Settings.
+                <b>Cloud Sync is one start action.</b> Add your sync settings
+                and start the desktop connection from Settings.
               </div>
             ) : null}
           </>

@@ -77,6 +77,22 @@ export function registerIpc(controller: Controller): void {
       return getState();
     }
   );
+  ipcMain.handle(
+    Invoke.SetGoalDisposition,
+    (
+      _event,
+      reportId: unknown,
+      experimentId: unknown,
+      disposition: unknown
+    ) => {
+      controller.setGoalDisposition(
+        z.string().parse(reportId),
+        z.string().parse(experimentId),
+        z.enum(["kept", "retired"]).nullable().parse(disposition)
+      );
+      return getReports();
+    }
+  );
   ipcMain.handle(Invoke.SetLaunchAtLogin, (_event, value: unknown) => {
     controller.setLaunchAtLogin(z.boolean().parse(value));
     return getConfig();

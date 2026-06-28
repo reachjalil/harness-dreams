@@ -9,8 +9,7 @@ import path from "node:path";
 
 import { app } from "electron";
 
-import { reportsFromDreamLogs } from "../shared/dreamLogAnalysis";
-import { makeReport, nextDemoReport, seedDemoReports } from "../shared/mock";
+import { nextDemoReport, seedDemoReports } from "../shared/mock";
 import type {
   ActionCategory,
   ActionQueueEntry,
@@ -18,6 +17,7 @@ import type {
   DreamReport,
   Experiment,
   Finding,
+  GoalDisposition,
   ReviewDecisions,
   SyncedReviewDecision,
 } from "../shared/types";
@@ -85,29 +85,9 @@ function reportFileForCurrentMode(): string {
   );
 }
 
-function sampleDreamLogPath(): string | null {
-  const candidates = [
-    path.resolve(process.cwd(), "dream.dream_logs.example.json"),
-    path.resolve(app.getAppPath(), "dream.dream_logs.example.json"),
-    path.resolve(app.getAppPath(), "..", "dream.dream_logs.example.json"),
-  ];
-  return candidates.find((candidate) => existsSync(candidate)) ?? null;
-}
-
 function seedFromSample(): DreamReport[] {
   if (getConfig().demoMode) return seedDemoReports(Date.now());
-  const config = getConfig();
-  const local = runSleepCycle(config.projects ?? [], {
-    privacyMode: config.privacyMode,
-    analysisDepth: config.analysisDepth,
-    remRunner: config.remRunner,
-  });
-  if (local) return [local];
-  const samplePath = sampleDreamLogPath();
-  const parsed = samplePath ? readJsonFile(samplePath) : null;
-  const realReports = reportsFromDreamLogs(parsed);
-  if (realReports.length > 0) return realReports;
-  return [makeReport(Date.now(), Math.floor(Date.now() / 997) % 1000)];
+  return [];
 }
 
 export function initReports(): void {
@@ -146,10 +126,8 @@ export function getLatest(): DreamReport | null {
 }
 
 /**
- * Record a freshly-completed Sleep Cycle. The window starts at the previous
- * cycle's timestamp (capped at 24h inside the engine), so each run reviews only
- * what's new. Falls back to the sample/mock report only when no projects are
- * enabled.
+ * Record a freshly-completed Sleep Cycle. In real mode this always delegates to
+ * the real engine and never falls back to sample/mock report generation.
  */
 export function addDream(kind: CycleKind = "sleep"): DreamReport {
   const now = Date.now();
@@ -167,22 +145,16 @@ export function addDream(kind: CycleKind = "sleep"): DreamReport {
     publish();
     return fresh;
   }
-  const samplePath = sampleDreamLogPath();
   const config = getConfig();
-  const base =
-    runSleepCycle(config.projects ?? [], {
-      since: prev?.timestamp ?? null,
-      now,
-      prev,
-      privacyMode: config.privacyMode,
-      analysisDepth: config.analysisDepth,
-      remRunner: config.remRunner,
-      kind,
-    }) ??
-    (samplePath
-      ? reportsFromDreamLogs(readJsonFile(samplePath), now)[0]
-      : null) ??
-    makeReport(now, Math.floor(now / 997) % 1000, "unreviewed");
+  const base = runSleepCycle(config.projects ?? [], {
+    since: prev?.timestamp ?? null,
+    now,
+    prev,
+    privacyMode: config.privacyMode,
+    analysisDepth: config.analysisDepth,
+    remRunner: config.remRunner,
+    kind,
+  });
   const fresh = {
     ...base,
     id: `${base.id}_${now}`,
@@ -252,7 +224,15 @@ function applyAcceptedExperiments(
   );
   const acceptedExperiments = report.findings
     .filter((finding) => acceptedIds.has(finding.id))
-    .map((finding) => experimentFromFinding(finding, report));
+    .map((finding) => {
+      const next = experimentFromFinding(finding, report);
+      const existing = report.experiments.find(
+        (experiment) => experiment.id === next.id
+      );
+      return existing?.disposition
+        ? { ...next, disposition: existing.disposition }
+        : next;
+    });
   return [
     ...report.experiments.filter(
       (experiment) =>
@@ -260,6 +240,36 @@ function applyAcceptedExperiments(
     ),
     ...acceptedExperiments,
   ];
+}
+
+export function setGoalDisposition(
+  reportId: string,
+  experimentId: string,
+  disposition: GoalDisposition | null
+): DreamReport | null {
+  const target = reports.find((report) => report.id === reportId);
+  if (!target) return null;
+
+  let changed = false;
+  reports = reports.map((report) => {
+    if (report.id !== reportId) return report;
+    return {
+      ...report,
+      experiments: report.experiments.map((experiment) => {
+        if (experiment.id !== experimentId) return experiment;
+        changed = true;
+        if (disposition === null) {
+          const next = { ...experiment };
+          delete next.disposition;
+          return next;
+        }
+        return { ...experiment, disposition };
+      }),
+    };
+  });
+
+  if (changed) publish();
+  return getReports().find((report) => report.id === reportId) ?? null;
 }
 
 function queueFromDecisions(

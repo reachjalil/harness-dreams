@@ -23,6 +23,7 @@ export const Invoke = {
   ResumeDream: "action:resumeDream",
   CompleteOnboarding: "action:completeOnboarding",
   MarkReviewed: "action:markReviewed",
+  SetGoalDisposition: "action:setGoalDisposition",
   SetLaunchAtLogin: "action:setLaunchAtLogin",
   TestNotification: "action:testNotification",
   ResetOnboarding: "action:resetOnboarding",

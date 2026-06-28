@@ -1,10 +1,10 @@
 # Harness Dreams Mobile
 
-Expo SDK 56 companion app for iPhone/iPad.
+Expo SDK 54 companion app for iPhone/iPad.
 
 ## Why Expo
 
-The app uses Expo's New Architecture path (`newArchEnabled: true`) and the SDK 56 template dependency set. It pairs with the desktop app by scanning a QR code from Settings.
+The app uses Expo's New Architecture path (`newArchEnabled: true`) and an SDK 54 dependency set that builds with the current Xcode 16.1 simulator toolchain. SDK 56 needs the full Xcode 26.x app, not only newer Command Line Tools.
 
 ## Pairing Flow
 
@@ -20,5 +20,7 @@ The QR carries a desktop-signed JWT and a local sync URL. The device stores the 
 pnpm --filter @harness-dreams/mobile start
 pnpm --filter @harness-dreams/mobile ios
 ```
+
+The current checked-in iOS target omits the generated app icon asset catalog from the simulator build because Xcode 16.1 on this machine fails to spawn `AssetCatalogSimulatorAgent`. Re-add the app icon asset catalog after updating the full Xcode app to 26.x.
 
 Use the Expo app on a physical device for QR scanning and local-network sync.

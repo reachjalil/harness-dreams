@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -21,6 +21,7 @@ import type { LocalSession } from "./localIngest";
 
 const MAX_TURNS_PER_PROJECT = 80;
 const MAX_TURN_CHARS = 1400;
+const MAX_ERROR_CHARS = 1400;
 const SECRET_RE =
   /\b(sk-[A-Za-z0-9_-]{20,}|[A-Za-z0-9_]*(?:TOKEN|SECRET|KEY|PASSWORD)[A-Za-z0-9_]*\s*[:=]\s*["']?[^"'\s]+|gh[pousr]_[A-Za-z0-9_]{20,})\b/g;
 
@@ -96,6 +97,29 @@ function redact(text: string, count: { value: number }): string {
   });
 }
 
+function runnerErrorSummary(
+  error: Error | undefined,
+  stderr: string,
+  status: number | null
+): string {
+  if (error) return short(error.message, MAX_ERROR_CHARS);
+  const diagnosticLines = stderr
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter(
+      (line) =>
+        /\b(ERROR|WARN|not supported|exited|failed|permission|trusted|auth|invalid_request_error)\b/i.test(
+          line
+        ) && !line.startsWith('{"projects"')
+    )
+    .slice(-12);
+  if (diagnosticLines.length > 0) {
+    return short(diagnosticLines.join("\n"), MAX_ERROR_CHARS);
+  }
+  return `runner exited ${status}`;
+}
+
 function resolveBinary(
   provider: RemRunnerConfig["provider"],
   configured: string
@@ -139,6 +163,25 @@ function resolveBinary(
         return true;
       return existsSync(candidate);
     }) ?? configured
+  );
+}
+
+function safeIsDirectory(file: string): boolean {
+  try {
+    return statSync(file).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function runnerCwd(projects: AnalysisProject[]): string {
+  return (
+    projects
+      .filter((project) => project.enabled)
+      .map((project) => project.path)
+      .find(
+        (projectPath) => existsSync(projectPath) && safeIsDirectory(projectPath)
+      ) ?? os.homedir()
   );
 }
 
@@ -357,7 +400,7 @@ export function runRemAnalysis(
   );
   const args = argvFor(config, prompt);
   const proc = spawnSync(bin, args, {
-    cwd: os.homedir(),
+    cwd: runnerCwd(projects),
     encoding: "utf8",
     timeout: config.timeoutMs,
     maxBuffer: 10 * 1024 * 1024,
@@ -374,8 +417,7 @@ export function runRemAnalysis(
     return {
       findings: [],
       redactionPreview: preview,
-      error:
-        proc.error?.message || proc.stderr || `runner exited ${proc.status}`,
+      error: runnerErrorSummary(proc.error, proc.stderr, proc.status),
     };
   }
   const parsed = parseJson(proc.stdout);

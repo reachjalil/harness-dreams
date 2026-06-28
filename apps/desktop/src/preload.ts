@@ -11,6 +11,7 @@ import type {
   CloudSyncStatus,
   DiscoveredProject,
   DreamReport,
+  GoalDisposition,
   ReviewDecisions,
   RuntimeState,
 } from "./shared/types";
@@ -79,6 +80,17 @@ const api = {
       decisions?: ReviewDecisions
     ): Promise<RuntimeState> =>
       ipcRenderer.invoke(Invoke.MarkReviewed, id, decisions),
+    setGoalDisposition: (
+      reportId: string,
+      experimentId: string,
+      disposition: GoalDisposition | null
+    ): Promise<DreamReport[]> =>
+      ipcRenderer.invoke(
+        Invoke.SetGoalDisposition,
+        reportId,
+        experimentId,
+        disposition
+      ),
     setLaunchAtLogin: (value: boolean): Promise<AppConfig> =>
       ipcRenderer.invoke(Invoke.SetLaunchAtLogin, value),
     testNotification: (): Promise<void> =>
