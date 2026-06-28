@@ -28,8 +28,8 @@ import { broadcastToUi, setQuitting, showMain } from "./windows";
 
 /**
  * The controller owns every state-changing action the tray, menu, and UI can
- * trigger. In this mock build, "dreaming" is a simulated progress run that ends
- * with a fresh report + a morning-style notification.
+ * trigger. A manual "dream" shows progress while the local Sleep Cycle runs and
+ * then publishes a fresh report + morning-style notification.
  */
 
 export interface Controller {

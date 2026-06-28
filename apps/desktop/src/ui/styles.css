@@ -1331,6 +1331,37 @@ button {
   align-self: flex-start;
 }
 
+.finding-grounding {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+
+.finding-grounding-item {
+  min-width: 0;
+  padding: var(--s-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xs);
+  background: var(--glass-sunken);
+}
+
+.finding-grounding-item span {
+  display: block;
+  font-size: var(--t-eyebrow);
+  font-weight: var(--w-semi);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.finding-grounding-item p {
+  margin-top: 3px;
+  font-size: var(--t-label);
+  line-height: 1.35;
+  color: var(--text-2);
+  word-break: break-word;
+}
+
 .finding-benefits {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1667,6 +1698,23 @@ button {
   font-size: var(--t-eyebrow);
   color: var(--muted);
   font-family: var(--font-mono);
+}
+.queue-branch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+  font-size: var(--t-eyebrow);
+  color: var(--muted);
+}
+.queue-branch .tnum {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+.queue-branch a {
+  color: var(--teal);
+  font-weight: var(--w-med);
 }
 .queue-tally {
   display: flex;
@@ -2200,7 +2248,8 @@ button {
   color: var(--muted);
 }
 .field input[type="time"],
-.field input[type="text"] {
+.field input[type="text"],
+.field input[type="number"] {
   font-family: var(--font);
   font-size: var(--t-body);
   color: var(--text);
@@ -2344,6 +2393,14 @@ button {
   color: var(--text-2);
   font-size: var(--t-label);
   line-height: 1.45;
+}
+.onb-rem-fields {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  text-align: left;
 }
 /* Price tag on the Cloud Sync choice ($5/mo). */
 .choice-tag {
@@ -2842,6 +2899,96 @@ button {
   gap: var(--s-2);
 }
 
+.loop-impact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: var(--s-2);
+}
+
+.loop-stat {
+  min-width: 0;
+  padding: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--glass);
+}
+
+.loop-stat.good {
+  border-color: color-mix(in srgb, var(--positive) 34%, var(--border));
+}
+
+.loop-stat.warn {
+  border-color: color-mix(in srgb, var(--attention) 36%, var(--border));
+}
+
+.loop-stat.danger {
+  border-color: color-mix(in srgb, var(--negative) 38%, var(--border));
+}
+
+.loop-stat-label,
+.loop-stat-detail {
+  display: block;
+  font-size: var(--t-eyebrow);
+  color: var(--muted);
+}
+
+.loop-stat-label {
+  font-weight: var(--w-semi);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.loop-stat strong {
+  display: block;
+  margin-top: 2px;
+  font-size: clamp(24px, 2.5vw, 34px);
+  line-height: 1.05;
+  color: var(--text);
+}
+
+.loop-stat-detail {
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.loop-verdict {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-sunken);
+}
+
+.loop-verdict.helped {
+  border-color: color-mix(in srgb, var(--positive) 35%, var(--border));
+}
+
+.loop-verdict.worse {
+  border-color: color-mix(in srgb, var(--negative) 38%, var(--border));
+}
+
+.loop-verdict-main {
+  min-width: 0;
+}
+
+.loop-verdict-main h3 {
+  margin-top: 2px;
+  font-size: var(--t-label);
+  font-weight: var(--w-semi);
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.loop-verdict-main p {
+  margin-top: 2px;
+  font-size: var(--t-label);
+  color: var(--text-2);
+}
+
 /* Compact finding tile */
 .finding-tile {
   display: flex;
@@ -2896,6 +3043,11 @@ button {
   font-weight: var(--w-semi);
   color: var(--text);
   line-height: 1.35;
+}
+.finding-tile-gap {
+  font-size: var(--t-eyebrow);
+  line-height: 1.35;
+  color: var(--muted);
 }
 .finding-tile-foot {
   display: flex;
@@ -2972,9 +3124,20 @@ button {
   .grid-2,
   .align-sides,
   .finding-benefits,
+  .finding-grounding,
+  .review-compass,
+  .review-outcome-grid,
+  .branch-plan,
   .overview-grid,
   .findings-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .review-compass-line {
+    display: none;
+  }
+  .branch-plan-steps {
+    flex-wrap: wrap;
+    white-space: normal;
   }
 }
 
@@ -4020,6 +4183,103 @@ body {
 
 /* ── 23. Cycle review — steps + step transitions ──────────────────────────── */
 
+.review-compass {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-3);
+  padding: var(--s-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--glass);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+  overflow: hidden;
+}
+.review-compass-line {
+  position: absolute;
+  left: var(--s-4);
+  right: var(--s-4);
+  top: 22px;
+  height: 2px;
+  border-radius: var(--r-pill);
+  background: var(--hairline);
+  pointer-events: none;
+}
+.review-compass-line span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--violet), var(--teal));
+  transition: width var(--dur-2) var(--ease);
+}
+.review-compass-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: var(--s-2);
+  align-items: center;
+  min-height: 74px;
+  padding: var(--s-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--ink-850);
+  color: var(--text-2);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-1) var(--ease),
+    background var(--dur-1) var(--ease);
+}
+.review-compass-card:hover {
+  background: var(--ink-800);
+}
+.review-compass-card.active {
+  border-color: color-mix(in srgb, var(--violet) 44%, transparent);
+  background: var(--violet-weak);
+  color: var(--text);
+}
+.review-compass-card.done .review-compass-icon {
+  color: var(--teal);
+}
+.review-compass-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-pill);
+  background: var(--glass-sunken);
+  color: var(--violet);
+}
+.review-compass-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--s-2);
+  min-width: 0;
+  align-items: baseline;
+}
+.review-compass-label,
+.review-compass-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-compass-label {
+  font-size: var(--t-label);
+  font-weight: var(--w-semi);
+  color: var(--text);
+}
+.review-compass-main b {
+  grid-row: span 2;
+  font-size: var(--t-title);
+  color: var(--text);
+}
+.review-compass-main small {
+  font-size: var(--t-eyebrow);
+  color: var(--muted);
+}
+
 .cycle-steps {
   display: inline-flex;
   align-items: center;
@@ -4070,6 +4330,142 @@ body {
 .review-panel {
   animation: step-in 200ms var(--ease);
 }
+
+.review-outcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--glass);
+}
+.review-outcome.accepted {
+  border-color: color-mix(in srgb, var(--teal) 42%, transparent);
+  background: color-mix(in srgb, var(--teal) 9%, var(--glass));
+}
+.review-outcome.rejected {
+  opacity: 0.82;
+}
+.review-outcome-head {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: var(--s-2);
+  align-items: start;
+}
+.review-outcome-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-pill);
+  background: var(--glass-sunken);
+  color: var(--teal);
+}
+.review-outcome-status {
+  font-size: var(--t-label);
+  font-weight: var(--w-semi);
+  color: var(--text);
+}
+.review-outcome p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: var(--t-label);
+}
+.review-outcome-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+.review-outcome-grid span,
+.review-config-gap {
+  min-width: 0;
+  padding: var(--s-2);
+  border-radius: var(--radius-xs);
+  background: var(--glass-sunken);
+}
+.review-outcome-grid b,
+.review-outcome-grid small,
+.review-config-gap b,
+.review-config-gap span {
+  display: block;
+}
+.review-outcome-grid b,
+.review-config-gap b {
+  margin-bottom: 2px;
+  font-size: var(--t-eyebrow);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.review-outcome-grid small,
+.review-config-gap span {
+  overflow-wrap: anywhere;
+  font-size: var(--t-label);
+  color: var(--text-2);
+}
+.branch-plan {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-3);
+  border: 1px solid color-mix(in srgb, var(--teal) 38%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--teal) 8%, var(--glass));
+}
+.branch-plan-summary {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: center;
+  min-width: 0;
+}
+.branch-plan-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-pill);
+  color: var(--teal);
+  background: var(--glass-sunken);
+}
+.branch-plan-summary b,
+.branch-plan-summary span {
+  display: block;
+}
+.branch-plan-summary b {
+  color: var(--text);
+  font-size: var(--t-label);
+}
+.branch-plan-summary span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--t-label);
+}
+.branch-plan-steps {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--muted);
+  font-size: var(--t-eyebrow);
+  font-weight: var(--w-semi);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.branch-plan-steps span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--glass-sunken);
+}
+
 @keyframes step-in {
   from {
     opacity: 0;

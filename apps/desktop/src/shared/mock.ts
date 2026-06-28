@@ -1,4 +1,5 @@
 import type {
+  ActionQueueEntry,
   AlignmentBand,
   AlignmentDetail,
   CycleReviewStatus,
@@ -6,6 +7,7 @@ import type {
   Experiment,
   Finding,
   Metric,
+  ProjectInsight,
   Ring,
 } from "./types";
 
@@ -157,7 +159,22 @@ const FINDINGS: Finding[] = [
     confidence: "high",
     project: "agent-fleet",
     evidence: "4 prompts · “actually run the tests”",
+    evidenceFile:
+      "/Users/jalillaaraichi/.codex/sessions/mock/agent-fleet-tests.jsonl",
+    configGap:
+      "AGENTS.md did not name the repo's canonical validation command.",
     action: "Add test-runner hint to AGENTS.md",
+    category: "agentsmd",
+    frictionType: "config-conflict",
+    projectPath: "/Users/jalillaaraichi/agent-fleet",
+    patch: {
+      target: "agentsmd",
+      file: "/Users/jalillaaraichi/agent-fleet/AGENTS.md",
+      label: "AGENTS.md · agent-fleet",
+      snippet:
+        "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\n- Run `pnpm test` before claiming code changes are complete.\n<!-- harness-dreams:end -->\n",
+      creates: false,
+    },
   },
   {
     id: "f_dup_opportunity",
@@ -193,11 +210,67 @@ const FINDINGS: Finding[] = [
     confidence: "low",
     project: "waker",
     evidence: "14% tool failures · no AGENTS.md",
+    configGap:
+      "The project has no local guidance file, so the agent discovers setup through failed tools.",
     action: "Draft a starter AGENTS.md",
+    category: "agentsmd",
+    frictionType: "missing-skill",
+    projectPath: "/Users/jalillaaraichi/waker",
+  },
+];
+
+const REVIEW_DECISIONS: ActionQueueEntry[] = [
+  {
+    findingId: "f_reask_mistake",
+    category: "agentsmd",
+    action: "Add test-runner hint to AGENTS.md",
+    project: "agent-fleet",
+    state: "accepted",
+    projectPath: "/Users/jalillaaraichi/agent-fleet",
+    patch: FINDINGS[1].patch,
+    reviewBranch: {
+      branch: "codex/harness-dreams-agent-fleet-tests",
+      baseBranch: "main",
+      worktreePath:
+        "/Users/jalillaaraichi/Library/Application Support/Harness Dreams/recommendation-worktrees/agent-fleet",
+      commit: "7c3a91d",
+      remote: "origin",
+      prUrl:
+        "https://github.com/example/agent-fleet/compare/main...codex/harness-dreams-agent-fleet-tests?expand=1",
+      pushed: true,
+    },
+  },
+  {
+    findingId: "f_dup_opportunity",
+    category: "skill",
+    action: "Track as improvement",
+    project: "zod-to-sql · sql-export",
+    state: "queued",
   },
 ];
 
 const EXPERIMENTS: Experiment[] = [
+  {
+    id: "accepted_f_reask_mistake",
+    title: "Add test-runner hint to AGENTS.md",
+    hypothesis:
+      "The exact validation command removes repeated test-command corrections.",
+    agentBenefit:
+      "The harness chooses the correct verification path without guessing.",
+    userBenefit:
+      "You spend fewer prompts asking the agent to actually run the tests.",
+    reflection:
+      "Check the next agent-fleet sessions for fewer test-command corrections.",
+    metric: "alignment · re-ask rate · tool success",
+    status: "concluded",
+    progress: 1 / 3,
+    progressLabel: "1 / 3 cycles measured",
+    verdict: "helped",
+    verdictNote: "Alignment 71 → 83 (+12)",
+    projectPath: "/Users/jalillaaraichi/agent-fleet",
+    category: "agentsmd",
+    baseline: { alignment: 71, corrections: 4 },
+  },
   {
     id: "x_medium_ui",
     title: "Medium thinking effort for UI tasks",
@@ -238,6 +311,54 @@ const EXPERIMENTS: Experiment[] = [
     status: "running",
     progress: 0.6,
     progressLabel: "3 / 5 sessions",
+  },
+];
+
+const PROJECT_INSIGHTS: ProjectInsight[] = [
+  {
+    name: "agent-fleet",
+    path: "/Users/jalillaaraichi/agent-fleet",
+    sources: ["claude-code", "codex"],
+    sessions: 6,
+    turns: 44,
+    corrections: 1,
+    toolFailures: 0,
+    hedges: 1,
+    alignment: 83,
+    topics: ["tests", "runner", "verification"],
+    hasAgentsMd: true,
+    hasClaudeMd: false,
+    skillCount: 3,
+  },
+  {
+    name: "waker",
+    path: "/Users/jalillaaraichi/waker",
+    sources: ["claude-code"],
+    sessions: 2,
+    turns: 17,
+    corrections: 2,
+    toolFailures: 3,
+    hedges: 1,
+    alignment: 58,
+    topics: ["setup", "tools", "environment"],
+    hasAgentsMd: false,
+    hasClaudeMd: false,
+    skillCount: 0,
+  },
+  {
+    name: "zod-to-sql",
+    path: "/Users/jalillaaraichi/zod-to-sql",
+    sources: ["codex"],
+    sessions: 3,
+    turns: 24,
+    corrections: 1,
+    toolFailures: 0,
+    hedges: 0,
+    alignment: 79,
+    topics: ["csv", "parser", "schema"],
+    hasAgentsMd: true,
+    hasClaudeMd: true,
+    skillCount: 1,
   },
 ];
 
@@ -315,7 +436,9 @@ export function makeReport(
     metrics: metrics(seed),
     findings: FINDINGS,
     experiments: EXPERIMENTS,
+    reviewDecisions: reviewStatus === "reviewed" ? REVIEW_DECISIONS : undefined,
     alignment: alignment(seed, alignScore),
+    projectInsights: PROJECT_INSIGHTS,
   };
 }
 

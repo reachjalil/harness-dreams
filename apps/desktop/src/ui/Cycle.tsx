@@ -1,4 +1,4 @@
-import { type ReactElement, useMemo, useState } from "react";
+import { type ReactElement, useEffect, useMemo, useState } from "react";
 
 import { DREAM_STAGES } from "../shared/stages";
 import type {
@@ -42,6 +42,7 @@ import type { HarnessDreams } from "./useHarnessDreams";
 
 // Local review state: one decision per finding. "open" means undecided.
 type Decisions = Record<string, ActionState>;
+type ReviewStep = "overview" | "findings" | "queue";
 
 const QUEUE_ID = "__queue";
 
@@ -143,6 +144,33 @@ function shortFinding(finding: Finding): string {
   return finding.title.length > 30
     ? `${finding.title.slice(0, 29)}…`
     : finding.title;
+}
+
+function fileName(file: string | undefined): string {
+  if (!file) return "Transcript";
+  const parts = file.split("/");
+  return parts.at(-1) ?? file;
+}
+
+function decisionStats(report: DreamReport, decisions: Decisions): {
+  accepted: number;
+  rejected: number;
+  open: number;
+  decided: number;
+} {
+  let accepted = 0;
+  let rejected = 0;
+  for (const finding of report.findings) {
+    if (decisions[finding.id] === "accepted") accepted += 1;
+    if (decisions[finding.id] === "rejected") rejected += 1;
+  }
+  const decided = accepted + rejected;
+  return {
+    accepted,
+    rejected,
+    decided,
+    open: Math.max(0, report.findings.length - decided),
+  };
 }
 
 function reviewMetrics(report: DreamReport): Metric[] {
@@ -494,30 +522,193 @@ function CycleResting({
   );
 }
 
-// ── Step 1 · Overview ────────────────────────────────────────────────────────
+// ── Review wizard scaffolding ────────────────────────────────────────────────
 
-function ReviewFlow({ findingCount }: { findingCount: number }): ReactElement {
+function ReviewCompass({
+  report,
+  decisions,
+  step,
+  onOverview,
+  onFindings,
+  onQueue,
+}: {
+  report: DreamReport;
+  decisions: Decisions;
+  step: ReviewStep;
+  onOverview: () => void;
+  onFindings: () => void;
+  onQueue: () => void;
+}): ReactElement {
+  const stats = decisionStats(report, decisions);
+  const stageIndex = step === "overview" ? 0 : step === "findings" ? 1 : 2;
+  const stages = [
+    {
+      key: "overview",
+      label: "Readout",
+      value: composite(report),
+      caption: `${report.sessions} sessions`,
+      icon: "cycle" as const,
+      onClick: onOverview,
+    },
+    {
+      key: "findings",
+      label: "Decide",
+      value: `${stats.decided}/${report.findings.length}`,
+      caption: `${stats.open} open`,
+      icon: "improvements" as const,
+      onClick: onFindings,
+    },
+    {
+      key: "queue",
+      label: "Branch",
+      value: stats.accepted,
+      caption: "accepted",
+      icon: "opensource" as const,
+      onClick: onQueue,
+    },
+  ];
+
   return (
-    <div
-      className="cycle-steps"
-      role="list"
-      aria-label="Sleep Cycle review flow"
-    >
-      <span className="cycle-step active" role="listitem">
-        <span className="cycle-step-dot" />
-        Report
-      </span>
-      <span className="cycle-step" role="listitem">
-        <span className="cycle-step-dot" />
-        {findingCount} suggested goals
-      </span>
-      <span className="cycle-step" role="listitem">
-        <span className="cycle-step-dot" />
-        Goal decisions
-      </span>
+    <div className="review-compass" aria-label="Sleep Cycle review progress">
+      <div className="review-compass-line">
+        <span style={{ width: `${((stageIndex + 1) / stages.length) * 100}%` }} />
+      </div>
+      {stages.map((stage, index) => {
+        const state =
+          index < stageIndex
+            ? "done"
+            : index === stageIndex
+              ? "active"
+              : "pending";
+        return (
+          <button
+            key={stage.key}
+            type="button"
+            className={`review-compass-card ${state}`}
+            onClick={stage.onClick}
+          >
+            <span className="review-compass-icon">
+              <Icon name={stage.icon} size={16} />
+            </span>
+            <span className="review-compass-main">
+              <span className="review-compass-label">{stage.label}</span>
+              <b className="tnum">{stage.value}</b>
+              <small>{stage.caption}</small>
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
+
+function ReviewOutcomePanel({
+  finding,
+  category,
+  state,
+}: {
+  finding: Finding;
+  category: ActionCategory;
+  state: ActionState;
+}): ReactElement {
+  const accepted = state === "accepted";
+  const rejected = state === "rejected";
+  const tone = accepted ? "accepted" : rejected ? "rejected" : "open";
+  const status = accepted
+    ? "Queued for feature branch"
+    : rejected
+      ? "Retired from this cycle"
+      : "Ready for decision";
+  const target = finding.patch?.label ?? CATEGORY_LABEL[category];
+  return (
+    <div className={`review-outcome ${tone}`}>
+      <div className="review-outcome-head">
+        <span className="review-outcome-icon">
+          <Icon
+            name={accepted ? "opensource" : rejected ? "reset" : "improvements"}
+            size={16}
+          />
+        </span>
+        <div>
+          <div className="review-outcome-status">{status}</div>
+          <p>
+            {accepted
+              ? "Mark reviewed creates a feature branch, commits this change, and records a PR link when push succeeds."
+              : rejected
+                ? "This suggestion stays in the report, but no branch or tracked goal is created."
+                : "Accepting prepares this recommendation for a review branch instead of editing your current checkout."}
+          </p>
+        </div>
+      </div>
+      <div className="review-outcome-grid">
+        <span>
+          <b>Target</b>
+          <small>{target}</small>
+        </span>
+        <span>
+          <b>Project</b>
+          <small>{finding.project}</small>
+        </span>
+        <span>
+          <b>Evidence</b>
+          <small>{fileName(finding.evidenceFile)}</small>
+        </span>
+      </div>
+      {finding.configGap ? (
+        <div className="review-config-gap">
+          <b>Config gap</b>
+          <span>{finding.configGap}</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function BranchPlan({
+  report,
+  decisions,
+}: {
+  report: DreamReport;
+  decisions: Decisions;
+}): ReactElement {
+  const acceptedFindings = report.findings.filter(
+    (finding) => decisions[finding.id] === "accepted"
+  );
+  const repos = new Set(
+    acceptedFindings.map((finding) => finding.projectPath ?? finding.project)
+  );
+  return (
+    <div className="branch-plan">
+      <div className="branch-plan-summary">
+        <span className="branch-plan-icon">
+          <Icon name="opensource" size={18} />
+        </span>
+        <div>
+          <b>
+            {acceptedFindings.length} accepted change
+            {acceptedFindings.length === 1 ? "" : "s"} across {repos.size} repo
+            {repos.size === 1 ? "" : "s"}
+          </b>
+          <span>
+            Branches are created after review; PR links appear when push
+            succeeds.
+          </span>
+        </div>
+      </div>
+      <div className="branch-plan-steps">
+        <span>feature branch</span>
+        <Icon name="chevron" size={14} />
+        <span>commit</span>
+        <Icon name="chevron" size={14} />
+        <span>push if origin exists</span>
+        <Icon name="chevron" size={14} />
+        <span>PR link</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 1 · Overview ────────────────────────────────────────────────────────
 
 function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
   const topFindings = report.findings.slice(0, 3);
@@ -592,11 +783,13 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
   const split = alignmentSplit(report);
   const alignmentRing = report.rings.find((ring) => ring.key === "alignment");
   const findingCount = report.findings.length;
+  const acceptedBranches =
+    report.reviewDecisions?.filter(
+      (entry) => entry.state === "accepted" && entry.reviewBranch
+    ) ?? [];
 
   return (
     <div className="review-overview">
-      <ReviewFlow findingCount={findingCount} />
-
       {report.window ? <CycleWindowBanner info={report.window} /> : null}
 
       <div className="flat-strip">
@@ -638,6 +831,19 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
       ) : null}
 
       <ReportNarrative report={report} />
+
+      {acceptedBranches.length > 0 ? (
+        <Section
+          title="Accepted review branches"
+          hint="Accepted AGENTS.md, CLAUDE.md, and skill changes are prepared on feature branches with PR links when the branch is pushed."
+        >
+          <div className="action-queue">
+            {acceptedBranches.map((entry) => (
+              <ActionQueueItem key={entry.findingId} item={entry} />
+            ))}
+          </div>
+        </Section>
+      ) : null}
 
       {findingCount > 0 ? (
         <Section
@@ -754,6 +960,11 @@ function ReviewFindings({
                 onAccept={() => onDecide(finding.id, "accepted")}
                 onReject={() => onDecide(finding.id, "rejected")}
               />
+              <ReviewOutcomePanel
+                finding={finding}
+                category={categorize(finding)}
+                state={decisions[finding.id] ?? "open"}
+              />
               {finding.patch ? <PatchPreview patch={finding.patch} /> : null}
               <FrictionForFinding report={report} findingId={finding.id} />
               <div className="review-controls">
@@ -806,6 +1017,8 @@ function ReviewQueue({
       action: finding.action,
       project: finding.project,
       state: decisions[finding.id] ?? "open",
+      projectPath: finding.projectPath,
+      patch: finding.patch,
     }));
 
   const accepted = entries.filter((e) => e.state === "accepted").length;
@@ -821,11 +1034,11 @@ function ReviewQueue({
     }, {});
 
   const CATEGORY_NEXT: Record<ActionCategory, string> = {
-    agentsmd: "Patches land in AGENTS.md / memory before the next session.",
-    claudemd: "Patches land in CLAUDE.md before the next Claude Code session.",
-    contextdoc: "Written as durable project context future agents can cite.",
-    prompthabit: "Surfaced as a prompt checkpoint when similar work starts.",
-    skill: "Routed to add or select a more specific skill.",
+    agentsmd: "A feature branch updates AGENTS.md and links you to a PR when pushed.",
+    claudemd: "A feature branch updates CLAUDE.md and links you to a PR when pushed.",
+    contextdoc: "A feature branch writes durable context future agents can cite.",
+    prompthabit: "A feature branch captures the prompt checkpoint for review.",
+    skill: "A feature branch scaffolds or updates the skill and links you to a PR when pushed.",
   };
 
   return (
@@ -859,6 +1072,10 @@ function ReviewQueue({
           tip={TERM.open}
         />
       </div>
+
+      {accepted > 0 ? (
+        <BranchPlan report={report} decisions={decisions} />
+      ) : null}
 
       {entries.length === 0 ? (
         <div className="empty">
@@ -932,6 +1149,11 @@ export default function Cycle({
   // Review wizard step: "__overview" → a finding id → "__queue".
   const [activeId, setActiveId] = useState<string>("__overview");
   const [decisions, setDecisions] = useState<Decisions>({});
+
+  useEffect(() => {
+    setActiveId("__overview");
+    setDecisions({});
+  }, [report?.id]);
 
   const decisionCount = useMemo(
     () => Object.values(decisions).filter((s) => s !== "open").length,
@@ -1051,6 +1273,15 @@ export default function Cycle({
             </Button>
           ) : undefined
         }
+      />
+
+      <ReviewCompass
+        report={report}
+        decisions={decisions}
+        step={step}
+        onOverview={() => setActiveId("__overview")}
+        onFindings={() => setActiveId(report.findings[0]?.id ?? QUEUE_ID)}
+        onQueue={() => setActiveId(QUEUE_ID)}
       />
 
       <div className="review-step" key={step}>

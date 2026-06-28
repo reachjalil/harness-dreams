@@ -1,6 +1,11 @@
 import type { ReactElement } from "react";
 
-import type { DreamReport } from "../shared/types";
+import type {
+  ActionQueueEntry,
+  DreamReport,
+  Experiment,
+  ExperimentVerdict,
+} from "../shared/types";
 import { parseNum } from "./anim";
 import {
   alignmentSplit,
@@ -56,6 +61,248 @@ function trendTone(delta: number): "positive" | "negative" | "neutral" {
   if (delta > 0) return "positive";
   if (delta < 0) return "negative";
   return "neutral";
+}
+
+function signed(value: number): string {
+  return `${value > 0 ? "+" : ""}${value}`;
+}
+
+function plural(count: number, label: string): string {
+  return `${count} ${label}${count === 1 ? "" : "s"}`;
+}
+
+function verdictTone(verdict?: ExperimentVerdict): "good" | "warn" | "danger" {
+  if (verdict === "helped") return "good";
+  if (verdict === "worse") return "danger";
+  return "warn";
+}
+
+function parseAlignmentDelta(note?: string): number | null {
+  if (!note) return null;
+  const match = note.match(/\(([+-]?\d+)\)/);
+  if (!match) return null;
+  const parsed = Number(match[1]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+interface LoopExperiment {
+  experiment: Experiment;
+  reportId: string;
+  timestamp: number;
+  alignmentDelta: number | null;
+}
+
+interface LoopImpact {
+  accepted: number;
+  queued: number;
+  branches: number;
+  prLinks: number;
+  branchErrors: number;
+  concluded: number;
+  helped: number;
+  noChange: number;
+  worse: number;
+  averageDelta: number | null;
+  bestDelta: number | null;
+  guidanceCoverage: number | null;
+  guidanceCovered: number;
+  guidanceTotal: number;
+  latestVerdict: LoopExperiment | null;
+}
+
+function reviewedReports(reports: DreamReport[]): DreamReport[] {
+  return reports.filter(
+    (candidate) => candidate.reviewStatus === "reviewed" || candidate.reviewedAt
+  );
+}
+
+function latestExperiments(reports: DreamReport[]): LoopExperiment[] {
+  const byId = new Map<string, LoopExperiment>();
+  for (const report of reviewedReports(reports)) {
+    for (const experiment of report.experiments) {
+      if (byId.has(experiment.id)) continue;
+      byId.set(experiment.id, {
+        experiment,
+        reportId: report.id,
+        timestamp: report.timestamp,
+        alignmentDelta: parseAlignmentDelta(experiment.verdictNote),
+      });
+    }
+  }
+  return [...byId.values()];
+}
+
+function loopImpact(reports: DreamReport[], report: DreamReport): LoopImpact {
+  const reviewed = reviewedReports(reports);
+  const decisions: ActionQueueEntry[] = reviewed.flatMap(
+    (candidate) => candidate.reviewDecisions ?? []
+  );
+  const accepted = decisions.filter((entry) => entry.state === "accepted");
+  const queued = decisions.filter((entry) => entry.state === "queued");
+  const experiments = latestExperiments(reports);
+  const concluded = experiments.filter(
+    ({ experiment }) => experiment.status === "concluded"
+  );
+  const deltas = concluded
+    .map((item) => item.alignmentDelta)
+    .filter((value): value is number => value != null);
+  const guidanceTotal = report.projectInsights?.length ?? 0;
+  const guidanceCovered =
+    report.projectInsights?.filter((project) => project.hasAgentsMd).length ??
+    0;
+
+  return {
+    accepted: accepted.length,
+    queued: queued.length,
+    branches: accepted.filter((entry) => entry.reviewBranch?.branch).length,
+    prLinks: accepted.filter((entry) => entry.reviewBranch?.prUrl).length,
+    branchErrors: accepted.filter((entry) => entry.reviewBranch?.error).length,
+    concluded: concluded.length,
+    helped: concluded.filter(({ experiment }) => experiment.verdict === "helped")
+      .length,
+    noChange: concluded.filter(
+      ({ experiment }) => experiment.verdict === "no-change"
+    ).length,
+    worse: concluded.filter(({ experiment }) => experiment.verdict === "worse")
+      .length,
+    averageDelta:
+      deltas.length === 0
+        ? null
+        : Math.round(deltas.reduce((sum, value) => sum + value, 0) / deltas.length),
+    bestDelta: deltas.length === 0 ? null : Math.max(...deltas),
+    guidanceCoverage:
+      guidanceTotal === 0 ? null : Math.round((guidanceCovered / guidanceTotal) * 100),
+    guidanceCovered,
+    guidanceTotal,
+    latestVerdict:
+      concluded.sort((a, b) => b.timestamp - a.timestamp)[0] ?? null,
+  };
+}
+
+function LoopStat({
+  label,
+  value,
+  detail,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+  tone?: "neutral" | "good" | "warn" | "danger";
+}): ReactElement {
+  return (
+    <div className={`loop-stat ${tone}`}>
+      <span className="loop-stat-label">{label}</span>
+      <strong>{value}</strong>
+      <span className="loop-stat-detail">{detail}</span>
+    </div>
+  );
+}
+
+function LoopOutcome({
+  impact,
+  onOpenCycle,
+}: {
+  impact: LoopImpact;
+  onOpenCycle: () => void;
+}): ReactElement {
+  const latest = impact.latestVerdict;
+  return (
+    <Section
+      title="Self-improvement loop"
+      hint="Accepted changes, review branches, and measured outcomes from reviewed cycles."
+      right={
+        <Button variant="ghost" onClick={onOpenCycle}>
+          <Icon name="cycle" size={15} />
+          Sleep Cycles
+        </Button>
+      }
+    >
+      <div className="loop-impact-grid">
+        <LoopStat
+          label="Accepted"
+          value={impact.accepted}
+          detail={`${plural(impact.queued, "queued")} still waiting`}
+          tone={impact.accepted > 0 ? "good" : "neutral"}
+        />
+        <LoopStat
+          label="Review branches"
+          value={impact.branches}
+          detail={
+            impact.branchErrors > 0
+              ? `${plural(impact.branchErrors, "branch")} needs attention`
+              : `${plural(impact.prLinks, "PR link")} ready`
+          }
+          tone={
+            impact.branchErrors > 0
+              ? "warn"
+              : impact.branches > 0
+                ? "good"
+                : "neutral"
+          }
+        />
+        <LoopStat
+          label="Verdicts"
+          value={`${impact.helped}/${impact.concluded}`}
+          detail={`${plural(impact.noChange, "no-change")} · ${plural(
+            impact.worse,
+            "worse"
+          )}`}
+          tone={impact.helped > 0 ? "good" : "neutral"}
+        />
+        <LoopStat
+          label="Alignment delta"
+          value={impact.averageDelta == null ? "—" : signed(impact.averageDelta)}
+          detail={
+            impact.bestDelta == null
+              ? "No concluded measurement"
+              : `Best measured ${signed(impact.bestDelta)}`
+          }
+          tone={
+            impact.averageDelta == null
+              ? "neutral"
+              : impact.averageDelta > 0
+                ? "good"
+                : impact.averageDelta < 0
+                  ? "danger"
+                  : "warn"
+          }
+        />
+        <LoopStat
+          label="AGENTS.md coverage"
+          value={
+            impact.guidanceCoverage == null ? "—" : `${impact.guidanceCoverage}%`
+          }
+          detail={
+            impact.guidanceTotal === 0
+              ? "No projects in latest report"
+              : `${impact.guidanceCovered}/${impact.guidanceTotal} projects covered`
+          }
+          tone={
+            impact.guidanceCoverage == null
+              ? "neutral"
+              : impact.guidanceCoverage >= 80
+                ? "good"
+                : "warn"
+          }
+        />
+      </div>
+      {latest ? (
+        <div className={`loop-verdict ${latest.experiment.verdict ?? "no-change"}`}>
+          <Pill tone={verdictTone(latest.experiment.verdict)}>
+            {latest.experiment.verdict ?? "measured"}
+          </Pill>
+          <div className="loop-verdict-main">
+            <span className="dash-eyebrow">Did your last changes help?</span>
+            <h3>{latest.experiment.title}</h3>
+            <p>{latest.experiment.verdictNote}</p>
+          </div>
+        </div>
+      ) : (
+        <p className="muted">No measured verdict yet.</p>
+      )}
+    </Section>
+  );
 }
 
 function EmptyDashboard({
@@ -126,6 +373,7 @@ export default function Today({
   const alignmentDelta = previousReviewed
     ? alignmentScore - ringScore(previousReviewed, "alignment")
     : null;
+  const impact = loopImpact(reports, report);
 
   const overviewMetrics = report.metrics.slice(0, 4);
   const runningImprovements = report.experiments.filter(
@@ -250,6 +498,8 @@ export default function Today({
               }
             />
           </div>
+
+          <LoopOutcome impact={impact} onOpenCycle={onOpenCycle} />
 
           <Section
             title="Accumulated progress"

@@ -1036,6 +1036,11 @@ export function CategoryChip({
   );
 }
 
+function shortArtifact(file: string): string {
+  const parts = file.split(/[\\/]/).filter(Boolean);
+  return parts.slice(-2).join("/") || file;
+}
+
 export function FindingCard({
   finding,
   category,
@@ -1074,6 +1079,28 @@ export function FindingCard({
       <h3 className="finding-name">{finding.title}</h3>
       {!compact ? <p className="finding-body">{finding.body}</p> : null}
       <span className="finding-evidence">{finding.evidence}</span>
+      {!compact && (finding.configGap || finding.evidenceFile || finding.patch) ? (
+        <div className="finding-grounding">
+          {finding.configGap ? (
+            <div className="finding-grounding-item">
+              <span>Config gap</span>
+              <p>{finding.configGap}</p>
+            </div>
+          ) : null}
+          {finding.evidenceFile ? (
+            <div className="finding-grounding-item">
+              <span>Evidence file</span>
+              <p>{shortArtifact(finding.evidenceFile)}</p>
+            </div>
+          ) : null}
+          {finding.patch ? (
+            <div className="finding-grounding-item">
+              <span>Applies as</span>
+              <p>{finding.patch.label}</p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       {!compact ? (
         <div className="finding-benefits">
           <div>
@@ -1152,6 +1179,9 @@ export function FindingTile({
       </div>
       <h3 className="finding-tile-title">{finding.title}</h3>
       <span className="finding-evidence">{finding.evidence}</span>
+      {finding.configGap ? (
+        <span className="finding-tile-gap">{finding.configGap}</span>
+      ) : null}
       <div className="finding-tile-foot">
         <span className="finding-tile-action">{finding.action}</span>
         <span className="finding-tile-arrow">›</span>
@@ -1264,6 +1294,19 @@ export function ActionQueueItem({
           <span>·</span>
           <span>{item.project}</span>
         </div>
+        {item.reviewBranch ? (
+          <div className="queue-branch">
+            {item.reviewBranch.branch ? (
+              <span className="tnum">{item.reviewBranch.branch}</span>
+            ) : null}
+            {item.reviewBranch.pushed && item.reviewBranch.prUrl ? (
+              <a href={item.reviewBranch.prUrl}>Create PR</a>
+            ) : null}
+            {!item.reviewBranch.pushed && item.reviewBranch.error ? (
+              <span>{item.reviewBranch.error}</span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       {onApply ? (
         <Button variant="ghost" onClick={onApply}>

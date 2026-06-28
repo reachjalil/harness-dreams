@@ -19,8 +19,8 @@ import type {
   Finding,
   ReviewDecisions,
 } from "../shared/types";
-import { applyAgentsBlock, applyClaudeBlock, applySkillFile } from "./agentConfig";
 import { runSleepCycle } from "./cycleEngine";
+import { applyAcceptedRecommendationsAsBranches } from "./recommendationBranches";
 import { getConfig } from "./store";
 
 /**
@@ -227,67 +227,22 @@ function queueFromDecisions(
 }
 
 /**
- * Apply the user's accepted recommendations to disk: write an idempotent
- * managed AGENTS.md block into each originating project, and scaffold a skill
- * file for any accepted skill recommendation. This is what makes an accepted
- * finding a real AGENTS.md / skill improvement rather than a tracked note.
+ * Apply the user's accepted recommendations as reviewable repo branches. Each
+ * affected git repo gets a persistent worktree, a feature branch, a commit, and
+ * a PR creation URL when the branch can be pushed to a GitHub origin.
  */
-function applyApprovedGuidance(entries: ActionQueueEntry[]): void {
+function applyApprovedGuidance(entries: ActionQueueEntry[]): ActionQueueEntry[] {
   const accepted = entries.filter((entry) => entry.state === "accepted");
-  if (accepted.length === 0) return;
-
-  // AGENTS.md / context / prompt guidance, grouped by target file.
-  const agentsByFile = new Map<string, string[]>();
-  const claudeByFile = new Map<string, string[]>();
-  for (const entry of accepted) {
-    if (entry.category === "skill") continue;
-    const line = `[${entry.category}] ${entry.action}`;
-    if (entry.category === "claudemd") {
-      const file =
-        entry.patch?.file ??
-        (entry.projectPath
-          ? path.join(entry.projectPath, "CLAUDE.md")
-          : path.resolve(process.cwd(), "CLAUDE.md"));
-      claudeByFile.set(file, [...(claudeByFile.get(file) ?? []), line]);
-      continue;
-    }
-    const file =
-      (entry.patch && entry.patch.target !== "skill"
-        ? entry.patch.file
-        : undefined) ??
-      (entry.projectPath
-        ? path.join(entry.projectPath, "AGENTS.md")
-        : path.resolve(process.cwd(), "AGENTS.md"));
-    agentsByFile.set(file, [...(agentsByFile.get(file) ?? []), line]);
-  }
-  for (const [file, lines] of agentsByFile) {
-    try {
-      applyAgentsBlock(file, lines);
-    } catch (err) {
-      console.error("[reports] failed to apply AGENTS.md guidance", file, err);
-    }
-  }
-  for (const [file, lines] of claudeByFile) {
-    try {
-      applyClaudeBlock(file, lines);
-    } catch (err) {
-      console.error("[reports] failed to apply CLAUDE.md guidance", file, err);
-    }
-  }
-
-  // Scaffold accepted skills (created only if they don't already exist).
-  for (const entry of accepted) {
-    if (entry.category !== "skill" || !entry.patch) continue;
-    try {
-      applySkillFile(entry.patch);
-    } catch (err) {
-      console.error(
-        "[reports] failed to scaffold skill",
-        entry.patch.file,
-        err
-      );
-    }
-  }
+  if (accepted.length === 0) return entries;
+  const branchResults = applyAcceptedRecommendationsAsBranches(
+    accepted,
+    path.join(app.getPath("userData"), "recommendation-worktrees")
+  );
+  return entries.map((entry) =>
+    entry.state === "accepted" && branchResults.has(entry.findingId)
+      ? { ...entry, reviewBranch: branchResults.get(entry.findingId) }
+      : entry
+  );
 }
 
 /** Explicit user review. Only the newest cycle is reviewable. */
@@ -309,11 +264,12 @@ export function markReportReviewed(
   const acceptedExperiments = latest.findings
     .filter((finding) => acceptedIds.has(finding.id))
     .map((finding) => experimentFromFinding(finding, latest));
+  const appliedReviewDecisions = applyApprovedGuidance(reviewDecisions);
   const marked = {
     ...latest,
     reviewStatus: "reviewed" as const,
     reviewedAt: Date.now(),
-    reviewDecisions,
+    reviewDecisions: appliedReviewDecisions,
     experiments: [
       ...latest.experiments.filter(
         (experiment) =>
@@ -322,7 +278,6 @@ export function markReportReviewed(
       ...acceptedExperiments,
     ],
   };
-  applyApprovedGuidance(reviewDecisions);
   reports = [marked, ...reports.slice(1)];
   publish();
   return marked;

@@ -261,6 +261,31 @@ export default function Settings({
               </div>
               <div className="settings-row">
                 <div className="settings-row-main">
+                  <div className="settings-row-label">Runner timeout</div>
+                  <div className="settings-row-hint">
+                    Maximum seconds to wait for the local CLI analysis pass.
+                  </div>
+                </div>
+                <Field label="">
+                  <input
+                    type="number"
+                    min={1}
+                    value={Math.round(config.remRunner.timeoutMs / 1000)}
+                    onChange={(e) => {
+                      const seconds = Number(e.target.value);
+                      if (Number.isFinite(seconds) && seconds > 0) {
+                        patch({
+                          remRunner: {
+                            timeoutMs: Math.round(seconds) * 1000,
+                          },
+                        });
+                      }
+                    }}
+                  />
+                </Field>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-main">
                   <div className="settings-row-label">Redacted excerpts</div>
                   <div className="settings-row-hint">
                     Secrets are scrubbed before the configured CLI receives the
@@ -558,7 +583,7 @@ export default function Settings({
             <div className="settings-row-main">
               <div className="settings-row-label">Harness Dreams v0.1.0</div>
               <div className="settings-row-hint">
-                Local-first · mock build ·{" "}
+                Local-first · real local sessions ·{" "}
                 <a href="https://github.com/reachjalil/harness-dreams">
                   github.com/reachjalil/harness-dreams
                 </a>
