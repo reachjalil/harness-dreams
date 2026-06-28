@@ -8,21 +8,14 @@
   "secondCycleProject": {
     "name": "agent-fleet",
     "path": "/Users/jalillaaraichi/agent-fleet",
-    "sources": [
-      "claude-code"
-    ],
+    "sources": ["claude-code"],
     "sessions": 3,
     "turns": 837,
     "corrections": 4,
     "toolFailures": 11,
     "hedges": 3,
     "alignment": 85,
-    "topics": [
-      "component",
-      "merged",
-      "review",
-      "agent"
-    ],
+    "topics": ["component", "merged", "review", "agent"],
     "hasAgentsMd": true,
     "hasClaudeMd": true,
     "skillCount": 6

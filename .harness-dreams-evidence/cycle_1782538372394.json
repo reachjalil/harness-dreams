@@ -160,22 +160,14 @@
     {
       "name": "human-sense",
       "path": "/Users/jalillaaraichi/human-sense",
-      "sources": [
-        "codex",
-        "claude-code"
-      ],
+      "sources": ["codex", "claude-code"],
       "sessions": 2,
       "turns": 838,
       "corrections": 38,
       "toolFailures": 0,
       "hedges": 2,
       "alignment": 42,
-      "topics": [
-        "around",
-        "create",
-        "each",
-        "acceptable"
-      ],
+      "topics": ["around", "create", "each", "acceptable"],
       "hasAgentsMd": true,
       "hasClaudeMd": true,
       "skillCount": 6
@@ -183,21 +175,14 @@
     {
       "name": "agent-fleet",
       "path": "/Users/jalillaaraichi/agent-fleet",
-      "sources": [
-        "claude-code"
-      ],
+      "sources": ["claude-code"],
       "sessions": 3,
       "turns": 837,
       "corrections": 4,
       "toolFailures": 11,
       "hedges": 3,
       "alignment": 85,
-      "topics": [
-        "component",
-        "merged",
-        "review",
-        "agent"
-      ],
+      "topics": ["component", "merged", "review", "agent"],
       "hasAgentsMd": true,
       "hasClaudeMd": true,
       "skillCount": 5

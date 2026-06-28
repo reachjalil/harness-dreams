@@ -3,30 +3,21 @@
     {
       "path": "/Users/jalillaaraichi/harness-dreams",
       "name": "harness-dreams",
-      "sources": [
-        "claude-code",
-        "codex"
-      ],
+      "sources": ["claude-code", "codex"],
       "enabled": true,
       "addedAt": 1782624772395
     },
     {
       "path": "/Users/jalillaaraichi/human-sense",
       "name": "human-sense",
-      "sources": [
-        "claude-code",
-        "codex"
-      ],
+      "sources": ["claude-code", "codex"],
       "enabled": true,
       "addedAt": 1782624772395
     },
     {
       "path": "/Users/jalillaaraichi/agent-fleet",
       "name": "agent-fleet",
-      "sources": [
-        "claude-code",
-        "codex"
-      ],
+      "sources": ["claude-code", "codex"],
       "enabled": true,
       "addedAt": 1782624772395
     }

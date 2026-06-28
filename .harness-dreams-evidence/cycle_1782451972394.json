@@ -167,19 +167,14 @@
     {
       "name": "agent-fleet",
       "path": "/Users/jalillaaraichi/agent-fleet",
-      "sources": [
-        "claude-code"
-      ],
+      "sources": ["claude-code"],
       "sessions": 2,
       "turns": 448,
       "corrections": 0,
       "toolFailures": 16,
       "hedges": 0,
       "alignment": 95,
-      "topics": [
-        "continue",
-        "pass2"
-      ],
+      "topics": ["continue", "pass2"],
       "hasAgentsMd": true,
       "hasClaudeMd": true,
       "skillCount": 5
@@ -187,21 +182,14 @@
     {
       "name": "human-sense",
       "path": "/Users/jalillaaraichi/human-sense",
-      "sources": [
-        "claude-code"
-      ],
+      "sources": ["claude-code"],
       "sessions": 1,
       "turns": 288,
       "corrections": 0,
       "toolFailures": 2,
       "hedges": 0,
       "alignment": 96,
-      "topics": [
-        "agent-fleet",
-        "apps",
-        "base",
-        "butter"
-      ],
+      "topics": ["agent-fleet", "apps", "base", "butter"],
       "hasAgentsMd": true,
       "hasClaudeMd": true,
       "skillCount": 6
@@ -213,10 +201,7 @@
     "human": {
       "mood": "deep-focus",
       "question": "How do I get the agent to handle continue without repeated corrections?",
-      "signals": [
-        "0 corrections",
-        "0% re-ask"
-      ]
+      "signals": ["0 corrections", "0% re-ask"]
     },
     "agent": {
       "mood": "overloaded",

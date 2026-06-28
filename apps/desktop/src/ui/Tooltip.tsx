@@ -124,6 +124,8 @@ export function Tooltip({
   useEffect(() => clearTimer, [clearTimer]);
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: tooltip trigger needs mouse/focus events
+    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-label on span is intentional for keyboard-accessible tooltip triggers
     <span
       ref={triggerRef}
       className={`tip-trigger${block ? " tip-block" : ""}${
