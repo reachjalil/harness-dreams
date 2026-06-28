@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Sleeping Brain — Memory Workflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0A0C1C; --night-2:#10132E; --panel:#161A3A; --line:#262C55;
+    --moon:#D2D7F2; --mute:#838AB8; --faint:#5A608E;
+    /* region coding */
+    --hpc:#E66A95;   /* hippocampus — rose */
+    --ctx:#4F8FB0;   /* neocortex — teal */
+    --thal:#9B8CE0;  /* thalamus — violet */
+    --amy:#F4C861;   /* amygdala — gold */
+    --stem:#5FB6A0;  /* brainstem nuclei — green */
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;color:var(--moon);font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+    background:
+      radial-gradient(110% 70% at 100% 0%, rgba(155,140,224,.10) 0%, rgba(155,140,224,0) 45%),
+      radial-gradient(90% 70% at 0% 0%, rgba(79,143,176,.10) 0%, rgba(79,143,176,0) 50%),
+      var(--night);
+  }
+  .stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .star{position:absolute;border-radius:50%;background:#fff;animation:tw 4s ease-in-out infinite;}
+  @keyframes tw{0%,100%{opacity:.15;}50%{opacity:.65;}}
+  .wrap{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:64px 28px 96px;}
+
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--faint);margin:0 0 22px;}
+  h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(38px,6.4vw,76px);line-height:1.0;letter-spacing:-.015em;margin:0 0 22px;}
+  h1 em{font-style:italic;font-weight:500;color:var(--hpc);}
+  .lede{font-size:clamp(16px,2vw,19px);color:var(--mute);max-width:56ch;margin:0;}
+
+  .section-tag{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--faint);margin:84px 0 8px;}
+  .section-tag .n{color:var(--hpc);}
+  h2{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(26px,3.4vw,38px);letter-spacing:-.01em;margin:0 0 14px;}
+  .body{font-size:15.5px;color:var(--mute);max-width:64ch;}
+  .body b{color:var(--moon);font-weight:600;}
+  .body .term{color:var(--moon);font-weight:600;}
+
+  /* panels */
+  .panel{background:linear-gradient(180deg,var(--panel) 0%,var(--night-2) 100%);border:1px solid var(--line);border-radius:18px;padding:30px 28px;margin-top:26px;}
+  svg{display:block;width:100%;height:auto;overflow:visible;}
+
+  /* region legend */
+  .legend{display:flex;flex-wrap:wrap;gap:10px 22px;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--mute);margin-top:20px;}
+  .legend span{display:inline-flex;align-items:center;gap:8px;}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+  /* circuit nodes */
+  .node-box{fill:var(--night-2);stroke-width:1.5;}
+  .node-name{font-family:"Fraunces",serif;font-size:16px;font-weight:600;fill:var(--moon);}
+  .node-sub{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.04em;}
+  .edge{fill:none;stroke:var(--faint);stroke-width:1.6;}
+  .edge-label{font-family:"IBM Plex Mono",monospace;font-size:11px;fill:var(--mute);letter-spacing:.03em;}
+  .pulse{fill:none;stroke:var(--hpc);stroke-width:3;stroke-linecap:round;stroke-dasharray:14 380;filter:drop-shadow(0 0 5px rgba(230,106,149,.7));}
+  .brainblob{fill:rgba(120,130,200,.05);stroke:rgba(120,130,200,.16);stroke-width:1;}
+
+  /* oscillation lanes */
+  .lane-label{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.03em;}
+  .lane-freq{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:var(--faint);}
+  .wave{fill:none;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round;}
+  .upstate{fill:rgba(244,200,97,.06);stroke:rgba(244,200,97,.25);stroke-width:1;stroke-dasharray:3 4;}
+  .upstate-cap{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:var(--amy);letter-spacing:.05em;}
+
+  /* neuromodulator matrix */
+  .nm{display:grid;grid-template-columns:140px repeat(3,1fr);gap:10px;margin-top:8px;align-items:center;}
+  .nm .h{font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:center;}
+  .nm .rl{font-family:"IBM Plex Sans";font-size:14px;color:var(--moon);}
+  .nm .rl small{display:block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--faint);letter-spacing:.02em;}
+  .cell{height:46px;border-radius:10px;border:1px solid var(--line);position:relative;display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--moon);overflow:hidden;}
+  .cell .fill{position:absolute;inset:0;opacity:.9;}
+  .cell span{position:relative;z-index:1;letter-spacing:.05em;}
+  .lvl-high .fill{background:linear-gradient(180deg,rgba(95,182,160,.55),rgba(95,182,160,.18));}
+  .lvl-mid  .fill{background:linear-gradient(180deg,rgba(155,140,224,.4),rgba(155,140,224,.12));}
+  .lvl-low  .fill{background:linear-gradient(180deg,rgba(90,96,142,.3),rgba(90,96,142,.06));}
+  .lvl-off  .fill{background:repeating-linear-gradient(45deg,rgba(40,44,85,.5),rgba(40,44,85,.5) 6px,transparent 6px,transparent 12px);}
+
+  /* two-up */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px;}
+  .mini{background:linear-gradient(180deg,var(--panel),var(--night-2));border:1px solid var(--line);border-radius:16px;padding:24px;}
+  .mini h4{font-family:"Fraunces",serif;font-weight:600;font-size:20px;margin:0 0 4px;}
+  .mini .st{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;margin-bottom:14px;}
+  .mini.on h4{color:var(--moon);} .mini.on .st{color:var(--stem);}
+  .mini.off h4{color:var(--moon);} .mini.off .st{color:var(--faint);}
+  .mini ul{margin:0;padding-left:18px;} .mini li{font-size:14px;color:var(--mute);margin-bottom:7px;}
+  .mini li b{color:var(--moon);font-weight:600;}
+
+  footer{margin-top:74px;padding-top:22px;border-top:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--faint);letter-spacing:.04em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+
+  @media (max-width:740px){.wrap{padding:48px 20px 72px;}.nm{grid-template-columns:100px repeat(3,1fr);}.duo{grid-template-columns:1fr;}}
+  @media (prefers-reduced-motion:reduce){.star{animation:none;}.pulse{animation:none !important;}.wave{stroke-dasharray:none !important;stroke-dashoffset:0 !important;animation:none !important;}}
+</style>
+</head>
+<body>
+<div class="stars" id="stars" aria-hidden="true"></div>
+<div class="wrap">
+
+  <p class="eyebrow">The Sleeping Brain · Memory Workflow</p>
+  <h1>How the brain<br>files a day, <em>overnight</em>.</h1>
+  <p class="lede">Consolidation isn't passive storage. While you sleep, a handful of structures run a tightly timed dialogue — replaying the day, transferring it to long-term cortex, then integrating it and stripping the emotional charge. Here's the circuit, and the rhythms that drive it.</p>
+
+  <!-- ============ 1. THE DIALOGUE (CIRCUIT) ============ -->
+  <p class="section-tag"><span class="n">01</span> &nbsp;The hippocampal–neocortical dialogue</p>
+  <h2>Where the memory moves</h2>
+  <p class="body">A fresh memory is first held by the <span class="term">hippocampus</span> — fast to learn, but fragile. Overnight, slow-wave sleep reactivates it and ferries the trace outward to the <span class="term">neocortex</span> for durable storage, a handoff known as <b>active systems consolidation</b>. The <span class="term">thalamus</span> times the exchange; the <span class="term">amygdala</span> tags what was emotionally charged; brainstem and basal-forebrain nuclei set the chemical weather that decides which stage runs.</p>
+
+  <div class="panel">
+    <svg viewBox="0 0 940 420" role="img" aria-label="Schematic circuit of brain regions involved in sleep memory consolidation, with an animated pulse traveling from hippocampus to neocortex.">
+      <!-- soft brain silhouette backdrop -->
+      <path class="brainblob" d="M150,220 C120,150 180,70 300,62 C400,55 470,72 540,60 C660,40 800,90 815,190 C825,260 780,330 680,348 C600,362 520,350 440,356 C360,362 270,372 210,340 C160,314 165,270 150,220 Z"/>
+
+      <!-- edges -->
+      <path class="edge" id="path-replay" d="M300,250 C380,200 480,170 600,150"/>
+      <path class="edge" d="M455,300 C455,270 455,250 470,210" />
+      <path class="edge" d="M300,250 C290,300 320,330 360,322"/>
+      <path class="edge" d="M650,330 C620,300 610,250 615,165"/>
+      <text class="edge-label" x="395" y="178">replay → transfer</text>
+      <text class="edge-label" x="372" y="296" text-anchor="middle">spindle timing</text>
+      <text class="edge-label" x="300" y="330">emotional tag</text>
+      <text class="edge-label" x="700" y="300">ACh / NE / 5-HT</text>
+
+      <!-- animated replay pulse along the replay edge -->
+      <path class="pulse" id="pulse" d="M300,250 C380,200 480,170 600,150"/>
+
+      <!-- nodes -->
+      <g>
+        <rect class="node-box" x="232" y="226" width="138" height="52" rx="13" style="stroke:var(--hpc)"/>
+        <text class="node-name" x="301" y="250" text-anchor="middle">Hippocampus</text>
+        <text class="node-sub" x="301" y="268" text-anchor="middle" fill="var(--hpc)">replay · ripples · θ</text>
+      </g>
+      <g>
+        <rect class="node-box" x="548" y="122" width="150" height="52" rx="13" style="stroke:var(--ctx)"/>
+        <text class="node-name" x="623" y="146" text-anchor="middle">Neocortex</text>
+        <text class="node-sub" x="623" y="164" text-anchor="middle" fill="var(--ctx)">slow osc · long-term store</text>
+      </g>
+      <g>
+        <rect class="node-box" x="396" y="300" width="130" height="52" rx="13" style="stroke:var(--thal)"/>
+        <text class="node-name" x="461" y="324" text-anchor="middle">Thalamus</text>
+        <text class="node-sub" x="461" y="342" text-anchor="middle" fill="var(--thal)">sleep spindles</text>
+      </g>
+      <g>
+        <rect class="node-box" x="232" y="318" width="120" height="48" rx="13" style="stroke:var(--amy)"/>
+        <text class="node-name" x="292" y="340" text-anchor="middle">Amygdala</text>
+        <text class="node-sub" x="292" y="357" text-anchor="middle" fill="var(--amy)">salience</text>
+      </g>
+      <g>
+        <rect class="node-box" x="600" y="320" width="178" height="48" rx="13" style="stroke:var(--stem)"/>
+        <text class="node-name" x="689" y="342" text-anchor="middle">Brainstem nuclei</text>
+        <text class="node-sub" x="689" y="359" text-anchor="middle" fill="var(--stem)">LC · raphe · cholinergic</text>
+      </g>
+    </svg>
+
+    <div class="legend">
+      <span><i style="background:var(--hpc)"></i> Hippocampus</span>
+      <span><i style="background:var(--ctx)"></i> Neocortex</span>
+      <span><i style="background:var(--thal)"></i> Thalamus</span>
+      <span><i style="background:var(--amy)"></i> Amygdala</span>
+      <span><i style="background:var(--stem)"></i> Brainstem / neuromodulatory nuclei</span>
+    </div>
+  </div>
+
+  <!-- ============ 2. NESTED OSCILLATIONS ============ -->
+  <p class="section-tag"><span class="n">02</span> &nbsp;NREM — the rhythm that drives the handoff</p>
+  <h2>Three oscillations, nested</h2>
+  <p class="body">The transfer only works because three rhythms lock together in a hierarchy. Cortical <span class="term">slow oscillations</span> set the clock, swinging the whole forebrain between <b>down-states</b> (silence) and <b>up-states</b> (excitability). Inside each up-state, the thalamus fires <span class="term">sleep spindles</span>. Nested inside the spindles, the hippocampus discharges <span class="term">sharp-wave ripples</span> — the actual packets of replayed memory. Ripple inside spindle inside slow-oscillation up-state: that triple coupling is the mechanism of consolidation.</p>
+
+  <div class="panel">
+    <svg id="osc" viewBox="0 0 940 380" role="img" aria-label="A decomposition of the nested NREM oscillations: composite signal, slow oscillation, sleep spindle, and hippocampal ripple, aligned to show nesting within the up-state.">
+      <!-- up-state highlight band (drawn first, behind) -->
+      <rect class="upstate" id="upband" x="0" y="30" width="10" height="300" rx="4"/>
+      <text class="upstate-cap" id="upcap" x="0" y="22">up-state</text>
+
+      <!-- lanes: label + freq + wave path injected by JS -->
+      <text class="lane-label" x="14" y="70"  fill="var(--moon)">Composite</text>
+      <text class="lane-freq"  x="14" y="86">electrode view</text>
+      <path class="wave" id="w-comp" style="stroke:var(--moon)"/>
+
+      <text class="lane-label" x="14" y="172" fill="var(--ctx)">Slow oscillation</text>
+      <text class="lane-freq"  x="14" y="188">&lt; 1 Hz · cortex</text>
+      <path class="wave" id="w-so" style="stroke:var(--ctx)"/>
+
+      <text class="lane-label" x="14" y="252" fill="var(--thal)">Spindle</text>
+      <text class="lane-freq"  x="14" y="268">~12–15 Hz · thalamus</text>
+      <path class="wave" id="w-sp" style="stroke:var(--thal)"/>
+
+      <text class="lane-label" x="14" y="328" fill="var(--hpc)">Ripple</text>
+      <text class="lane-freq"  x="14" y="344">~150–250 Hz · hippocampus</text>
+      <path class="wave" id="w-rp" style="stroke:var(--hpc)"/>
+    </svg>
+    <p class="body" style="margin-top:18px;font-size:14px;color:var(--faint)">Read top-down: the messy composite an electrode records (top) decomposes into three clean rhythms. The dashed band marks one up-state — note how the spindle and ripple bursts fall inside it.</p>
+  </div>
+
+  <!-- ============ 3. NEUROCHEMICAL SWITCH ============ -->
+  <p class="section-tag"><span class="n">03</span> &nbsp;The switch — what flips between NREM and REM</p>
+  <h2>A change of chemistry, not just depth</h2>
+  <p class="body">REM is not lighter sleep — it's a different chemical regime. Wake and REM both run high on <span class="term">acetylcholine</span>, but they split on the <span class="term">aminergic</span> systems: in REM the noradrenaline of the <b>locus coeruleus</b> and the serotonin of the <b>raphe</b> fall almost silent. High ACh with the aminergics off is the signature that makes REM associative, emotional, and uncensored.</p>
+
+  <div class="panel">
+    <div class="nm">
+      <div></div>
+      <div class="h">Wake</div><div class="h">NREM</div><div class="h">REM</div>
+
+      <div class="rl">Cholinergic <small>ACh · basal forebrain, pons</small></div>
+      <div class="cell lvl-high"><div class="fill"></div><span>HIGH</span></div>
+      <div class="cell lvl-low"><div class="fill"></div><span>LOW</span></div>
+      <div class="cell lvl-high"><div class="fill"></div><span>HIGH</span></div>
+
+      <div class="rl">Aminergic <small>NE locus coeruleus · 5-HT raphe</small></div>
+      <div class="cell lvl-high"><div class="fill"></div><span>HIGH</span></div>
+      <div class="cell lvl-mid"><div class="fill"></div><span>MID</span></div>
+      <div class="cell lvl-off"><div class="fill"></div><span>OFF</span></div>
+    </div>
+    <p class="body" style="margin-top:18px;font-size:13.5px;color:var(--faint)">Reciprocal-interaction model (Hobson &amp; McCarley): cholinergic "REM-on" cells and aminergic "REM-off" cells gate each other across the night.</p>
+  </div>
+
+  <!-- ============ 4. REM ============ -->
+  <p class="section-tag"><span class="n">04</span> &nbsp;REM — integration &amp; emotion</p>
+  <h2>What comes online when control goes offline</h2>
+  <p class="body">With the aminergic brake released, REM runs on a <span class="term">theta</span> rhythm and pulses of <span class="term">PGO activity</span> (ponto-geniculo-occipital — first mapped in animal models). The emotional and associative machinery is loud while executive oversight is quiet — which is what lets the night connect things waking attention kept apart.</p>
+
+  <div class="duo">
+    <div class="mini on">
+      <h4>Switched on</h4>
+      <div class="st">amplified in REM</div>
+      <ul>
+        <li><b>Amygdala</b> — emotional salience stays fully engaged</li>
+        <li><b>Hippocampus</b> — theta rhythm, associative reactivation</li>
+        <li><b>Visual &amp; limbic cortex</b> — vivid, scene-like imagery</li>
+        <li><b>Cholinergic drive</b> — flexible, far-reaching activation</li>
+      </ul>
+    </div>
+    <div class="mini off">
+      <h4>Switched off</h4>
+      <div class="st">suppressed in REM</div>
+      <ul>
+        <li><b>Dorsolateral prefrontal cortex</b> — logic, self-monitoring, reality-testing</li>
+        <li><b>Locus coeruleus (NE)</b> — focus, vigilance</li>
+        <li><b>Raphe (5-HT)</b> — constraint, mood regulation</li>
+        <li><b>Linear time</b> — the day's narrative order is suspended</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    <span>Hover nothing required — the replay pulse runs on its own.</span>
+    <span>Companion to dream-flow.html · dream-agent-research.md</span>
+  </footer>
+</div>
+
+<script>
+  // starfield
+  (function(){
+    var sky=document.getElementById('stars');
+    var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    for(var i=0;i<64;i++){
+      var s=document.createElement('div');s.className='star';
+      var sz=(Math.random()<0.22?2.4:1.4);
+      s.style.width=s.style.height=sz+'px';
+      s.style.left=(Math.random()*100)+'%';s.style.top=(Math.random()*72)+'%';
+      s.style.opacity=(0.25+Math.random()*0.4).toFixed(2);
+      if(!reduce)s.style.animationDelay=(Math.random()*4)+'s';
+      sky.appendChild(s);
+    }
+  })();
+
+  // animate the replay pulse along the hippocampus->cortex edge
+  (function(){
+    var pulse=document.getElementById('pulse');
+    if(!pulse)return;
+    var len=pulse.getTotalLength();
+    pulse.style.strokeDasharray='14 '+(len);
+    var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduce){pulse.style.strokeDashoffset=0;return;}
+    var t=0;
+    function step(){
+      t=(t+ len/150 )% (len+40);
+      pulse.style.strokeDashoffset=(len - t);
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  })();
+
+  // generate the nested-oscillation waveforms
+  (function(){
+    var x0=120, x1=900, span=x1-x0;
+    function buildPath(baseline, amp, fn){
+      var d='', N=1400;
+      for(var i=0;i<=N;i++){
+        var t=i/N;
+        var x=x0+t*span;
+        var y=baseline - amp*fn(t);
+        d+=(i===0?'M':'L')+x.toFixed(2)+','+y.toFixed(2)+' ';
+      }
+      return d;
+    }
+    var tc=0.62;                 // center of the up-state (where spindle/ripple nest)
+    function gauss(t,c,s){return Math.exp(-((t-c)*(t-c))/(2*s*s));}
+
+    var so = function(t){ return Math.sin(2*Math.PI*(1.15*t) - 0.6); };               // slow oscillation <1Hz
+    var spEnv = function(t){ return gauss(t,tc,0.052); };
+    var sp = function(t){ return spEnv(t)*Math.sin(2*Math.PI*42*t); };                 // spindle ~12-15Hz band
+    var rpEnv = function(t){ return gauss(t,tc,0.022); };
+    var rp = function(t){ return rpEnv(t)*Math.sin(2*Math.PI*210*t); };                // ripple, dense burst
+    var comp = function(t){ return 0.62*so(t) + 0.5*sp(t) + 0.34*rp(t); };             // electrode view
+
+    document.getElementById('w-comp').setAttribute('d', buildPath(64, 30, comp));
+    document.getElementById('w-so').setAttribute('d',   buildPath(160,26, so));
+    document.getElementById('w-sp').setAttribute('d',   buildPath(238,22, sp));
+    document.getElementById('w-rp').setAttribute('d',   buildPath(316,20, rp));
+
+    // place the up-state band over the spindle/ripple window
+    var bandT0=tc-0.075, bandT1=tc+0.075;
+    var bx=x0+bandT0*span, bw=(bandT1-bandT0)*span;
+    var band=document.getElementById('upband');
+    band.setAttribute('x',bx.toFixed(1)); band.setAttribute('width',bw.toFixed(1));
+    var cap=document.getElementById('upcap'); cap.setAttribute('x',(bx+6).toFixed(1));
+
+    // draw-on animation for each wave
+    var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduce)return;
+    ['w-so','w-sp','w-rp','w-comp'].forEach(function(id,k){
+      var p=document.getElementById(id); var L=p.getTotalLength();
+      p.style.strokeDasharray=L; p.style.strokeDashoffset=L;
+      p.style.transition='stroke-dashoffset 1.6s cubic-bezier(.5,.1,.2,1) '+(0.25+k*0.45)+'s';
+      requestAnimationFrame(function(){requestAnimationFrame(function(){p.style.strokeDashoffset=0;});});
+    });
+  })();
+</script>
+</body>
+</html>
