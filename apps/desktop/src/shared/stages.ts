@@ -11,12 +11,12 @@ export interface DreamStage {
 }
 
 export const DREAM_STAGES: DreamStage[] = [
-  { at: 0.0, label: "Waking the dream engine" },
-  { at: 0.14, label: "Replaying the day's sessions" },
-  { at: 0.34, label: "Computing vitals · deep sleep" },
-  { at: 0.56, label: "Finding patterns · REM" },
-  { at: 0.78, label: "Drafting findings & experiments" },
-  { at: 0.92, label: "Assembling your report" },
+  { at: 0.0, label: "Collecting session traces" },
+  { at: 0.14, label: "Replaying decisions" },
+  { at: 0.34, label: "Comparing goals to behavior" },
+  { at: 0.56, label: "Finding repeated friction" },
+  { at: 0.78, label: "Drafting suggested goals" },
+  { at: 0.92, label: "Preparing Sleep Cycle review" },
 ];
 
 /** The stage that is active at a given progress value. */

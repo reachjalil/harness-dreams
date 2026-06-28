@@ -6,59 +6,29 @@
     <span class="splash-shape shape-a"></span>
     <span class="splash-shape shape-b"></span>
     <span class="splash-shape shape-c"></span>
-    <span class="splash-shape shape-d"></span>
   </div>
 
-  <div class="splash-content reveal">
+  <div class="splash-content">
     <div class="splash-icon-cycle" aria-hidden="true">
       <!-- dream — Harness Dreams mark -->
       <span class="splash-icon icon-logo">
         <img src="/logo-white.png" alt="" loading="eager" decoding="async" />
       </span>
 
-      <!-- review — Lucide "file-code-2", from the desktop action language -->
       <span class="splash-icon icon-review">
-        <svg viewBox="0 0 24 24">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
-          <path d="M14 2v6h6"></path>
-          <path d="m10 13-2 2 2 2"></path>
-          <path d="m14 17 2-2-2-2"></path>
-        </svg>
+        <img src="/splash-icons/review.png" alt="" loading="eager" decoding="async" />
       </span>
 
-      <!-- connect — desktop-inspired workflow nodes -->
       <span class="splash-icon icon-connect">
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="4" width="6" height="6" rx="1.5"></rect>
-          <rect x="15" y="4" width="6" height="6" rx="1.5"></rect>
-          <rect x="15" y="14" width="6" height="6" rx="1.5"></rect>
-          <path d="M9 7h6"></path>
-          <path d="M18 10v4"></path>
-          <path d="M6 10v2a4 4 0 0 0 4 4h5"></path>
-        </svg>
+        <img src="/splash-icons/connect.png" alt="" loading="eager" decoding="async" />
       </span>
 
-      <!-- adapt — Lucide "sliders-horizontal" -->
       <span class="splash-icon icon-adapt">
-        <svg viewBox="0 0 24 24">
-          <line x1="21" x2="14" y1="4" y2="4"></line>
-          <line x1="10" x2="3" y1="4" y2="4"></line>
-          <line x1="21" x2="12" y1="12" y2="12"></line>
-          <line x1="8" x2="3" y1="12" y2="12"></line>
-          <line x1="21" x2="16" y1="20" y2="20"></line>
-          <line x1="12" x2="3" y1="20" y2="20"></line>
-          <line x1="14" x2="14" y1="2" y2="6"></line>
-          <line x1="8" x2="8" y1="10" y2="14"></line>
-          <line x1="16" x2="16" y1="18" y2="22"></line>
-        </svg>
+        <img src="/splash-icons/adapt.png" alt="" loading="eager" decoding="async" />
       </span>
 
-      <!-- improve — Lucide "trending-up" -->
       <span class="splash-icon icon-improve">
-        <svg viewBox="0 0 24 24">
-          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
-          <polyline points="16 7 22 7 22 13"></polyline>
-        </svg>
+        <img src="/splash-icons/improve.png" alt="" loading="eager" decoding="async" />
       </span>
     </div>
 
@@ -140,56 +110,46 @@
   .splash-shape {
     position: absolute;
     display: block;
-    background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.025)),
-      rgba(255, 255, 255, 0.03);
-    opacity: 0;
-    transform-origin: center;
+    left: -18vw;
+    width: 136vw;
+    height: clamp(15rem, 31vw, 28rem);
+    opacity: 0.52;
+    transform-origin: 50% 50%;
+    filter: blur(7px);
+    mix-blend-mode: screen;
     will-change: transform, opacity, border-radius;
   }
 
   .shape-a {
-    width: 82vw;
-    height: 52vw;
-    left: -28vw;
-    top: 2vh;
-    border-radius: 52% 48% 58% 42% / 46% 62% 38% 54%;
-    animation: soft-field-a 20s ease-in-out infinite;
+    top: 4vh;
+    border-radius: 43% 57% 61% 39% / 58% 42% 58% 42%;
+    background:
+      radial-gradient(ellipse at 18% 50%, rgba(255, 255, 255, 0.24), transparent 38%),
+      radial-gradient(ellipse at 62% 45%, rgba(169, 224, 255, 0.2), transparent 42%),
+      linear-gradient(92deg, transparent 0%, rgba(255, 255, 255, 0.15) 22%, rgba(255, 255, 255, 0.06) 68%, transparent 100%);
+    animation: wave-layer-a 15s ease-in-out infinite;
   }
 
   .shape-b {
-    width: 74vw;
-    height: 48vw;
-    right: -23vw;
-    top: 11vh;
-    border-radius: 44% 56% 50% 50% / 62% 44% 56% 38%;
+    top: 25vh;
+    border-radius: 55% 45% 48% 52% / 43% 57% 43% 57%;
     background:
-      linear-gradient(160deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.018)),
-      rgba(255, 255, 255, 0.03);
-    animation: soft-field-b 20s ease-in-out infinite;
+      radial-gradient(ellipse at 30% 48%, rgba(196, 179, 255, 0.2), transparent 40%),
+      radial-gradient(ellipse at 76% 52%, rgba(255, 255, 255, 0.17), transparent 38%),
+      linear-gradient(96deg, transparent 0%, rgba(255, 255, 255, 0.11) 20%, rgba(169, 224, 255, 0.12) 58%, transparent 100%);
+    opacity: 0.46;
+    animation: wave-layer-b 19s ease-in-out infinite;
   }
 
   .shape-c {
-    width: 78vw;
-    height: 18vw;
-    left: 10vw;
-    bottom: 13vh;
-    border-radius: 999px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.105), transparent);
-    transform: rotate(-13deg) scaleX(0.78);
-    animation: ribbon-flow 20s ease-in-out infinite;
-  }
-
-  .shape-d {
-    width: 54vw;
-    height: 36vw;
-    right: 12vw;
-    bottom: -20vw;
-    border-radius: 56% 44% 42% 58% / 55% 58% 42% 45%;
+    top: 47vh;
+    border-radius: 49% 51% 54% 46% / 65% 35% 65% 35%;
     background:
-      linear-gradient(30deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.02)),
-      rgba(255, 255, 255, 0.025);
-    animation: soft-field-d 20s ease-in-out infinite;
+      radial-gradient(ellipse at 24% 54%, rgba(255, 255, 255, 0.18), transparent 36%),
+      radial-gradient(ellipse at 70% 46%, rgba(157, 180, 255, 0.18), transparent 40%),
+      linear-gradient(88deg, transparent 0%, rgba(255, 255, 255, 0.1) 28%, rgba(255, 255, 255, 0.15) 58%, transparent 100%);
+    opacity: 0.44;
+    animation: wave-layer-c 24s ease-in-out infinite;
   }
 
   .splash-content {
@@ -262,18 +222,6 @@
     width: 94%;
     height: 94%;
     object-fit: contain;
-    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.18));
-  }
-
-  .splash-icon svg {
-    width: 72%;
-    height: 72%;
-    fill: none;
-    stroke: #fff;
-    stroke-width: 1.9;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.18));
   }
 
   /* Each phase runs on a shared 20s timeline: logo first, then enhancement icons. */
@@ -406,6 +354,48 @@
     transform: rotate(45deg) translateY(-2px);
   }
 
+  @media (prefers-reduced-motion: no-preference) {
+    .splash-icon-cycle,
+    .splash-product,
+    h1,
+    .splash-answer,
+    .splash-lede,
+    .hero-cta,
+    .scroll-cue {
+      opacity: 0;
+      animation: splash-enter 0.82s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform, opacity, filter;
+    }
+
+    .splash-icon-cycle {
+      animation-delay: 0.08s;
+    }
+
+    .splash-product {
+      animation-delay: 0.38s;
+    }
+
+    h1 {
+      animation-delay: 0.52s;
+    }
+
+    .splash-answer {
+      animation-delay: 1.04s;
+    }
+
+    .splash-lede {
+      animation-delay: 1.3s;
+    }
+
+    .hero-cta {
+      animation-delay: 1.5s;
+    }
+
+    .scroll-cue {
+      animation-delay: 1.75s;
+    }
+  }
+
   @keyframes gradient-teal {
     0%,
     18% {
@@ -436,83 +426,95 @@
     }
   }
 
-  @keyframes soft-field-a {
+  @keyframes wave-layer-a {
     0% {
-      opacity: 0;
-      transform: translate3d(-3vw, 2vh, 0) scale(0.8) rotate(-10deg);
-      border-radius: 52% 48% 58% 42% / 46% 62% 38% 54%;
+      opacity: 0.44;
+      transform: translate3d(-5vw, 1vh, 0) rotate(-8deg) scaleX(0.96);
+      border-radius: 43% 57% 61% 39% / 58% 42% 58% 42%;
     }
-    18%,
-    46% {
-      opacity: 0.76;
-      transform: translate3d(3vw, -2vh, 0) scale(1.06) rotate(4deg);
-      border-radius: 44% 56% 50% 50% / 56% 42% 58% 44%;
-    }
-    64%,
-    100% {
-      opacity: 0;
-      transform: translate3d(8vw, -1vh, 0) scale(1.24) rotate(11deg);
-      border-radius: 58% 42% 44% 56% / 42% 58% 46% 54%;
-    }
-  }
-
-  @keyframes soft-field-b {
-    0%,
-    12% {
-      opacity: 0;
-      transform: translate3d(8vw, -4vh, 0) scale(0.82) rotate(8deg);
-    }
-    30%,
-    58% {
-      opacity: 0.66;
-      transform: translate3d(-1vw, 2vh, 0) scale(1.05) rotate(-4deg);
-      border-radius: 58% 42% 48% 52% / 40% 60% 42% 58%;
-    }
-    78%,
-    100% {
-      opacity: 0;
-      transform: translate3d(-8vw, 4vh, 0) scale(1.2) rotate(-10deg);
-    }
-  }
-
-  @keyframes ribbon-flow {
-    0%,
-    16% {
-      opacity: 0;
-      transform: translate3d(-20vw, 8vh, 0) rotate(-13deg) scaleX(0.54);
-    }
-    36%,
-    70% {
-      opacity: 0.56;
-      transform: translate3d(0, 0, 0) rotate(-10deg) scaleX(1.08);
-    }
-    100% {
-      opacity: 0;
-      transform: translate3d(22vw, -9vh, 0) rotate(-8deg) scaleX(0.76);
-    }
-  }
-
-  @keyframes soft-field-d {
-    0%,
-    42% {
-      opacity: 0;
-      transform: translate3d(2vw, 10vh, 0) scale(0.7) rotate(0deg);
-    }
-    58%,
-    86% {
+    35% {
       opacity: 0.62;
-      transform: translate3d(-2vw, -2vh, 0) scale(1.08) rotate(-7deg);
-      border-radius: 46% 54% 56% 44% / 50% 45% 55% 50%;
+      transform: translate3d(3vw, -2vh, 0) rotate(-5deg) scaleX(1.04);
+      border-radius: 55% 45% 48% 52% / 45% 55% 45% 55%;
+    }
+    68% {
+      opacity: 0.5;
+      transform: translate3d(8vw, 2vh, 0) rotate(-10deg) scaleX(1.02);
+      border-radius: 48% 52% 57% 43% / 62% 38% 62% 38%;
     }
     100% {
-      opacity: 0;
-      transform: translate3d(-7vw, -7vh, 0) scale(1.18) rotate(-13deg);
+      opacity: 0.44;
+      transform: translate3d(-5vw, 1vh, 0) rotate(-8deg) scaleX(0.96);
+      border-radius: 43% 57% 61% 39% / 58% 42% 58% 42%;
+    }
+  }
+
+  @keyframes wave-layer-b {
+    0% {
+      opacity: 0.4;
+      transform: translate3d(6vw, -1vh, 0) rotate(7deg) scaleX(1.02);
+      border-radius: 55% 45% 48% 52% / 43% 57% 43% 57%;
+    }
+    38% {
+      opacity: 0.54;
+      transform: translate3d(-4vw, 2vh, 0) rotate(4deg) scaleX(0.96);
+      border-radius: 46% 54% 60% 40% / 58% 42% 58% 42%;
+    }
+    72% {
+      opacity: 0.44;
+      transform: translate3d(-8vw, -2vh, 0) rotate(9deg) scaleX(1.08);
+      border-radius: 60% 40% 45% 55% / 40% 60% 40% 60%;
+    }
+    100% {
+      opacity: 0.4;
+      transform: translate3d(6vw, -1vh, 0) rotate(7deg) scaleX(1.02);
+      border-radius: 55% 45% 48% 52% / 43% 57% 43% 57%;
+    }
+  }
+
+  @keyframes wave-layer-c {
+    0% {
+      opacity: 0.38;
+      transform: translate3d(-7vw, 1vh, 0) rotate(-4deg) scaleX(1.04);
+      border-radius: 49% 51% 54% 46% / 65% 35% 65% 35%;
+    }
+    32% {
+      opacity: 0.5;
+      transform: translate3d(2vw, -2vh, 0) rotate(-7deg) scaleX(0.98);
+      border-radius: 56% 44% 47% 53% / 58% 42% 58% 42%;
+    }
+    66% {
+      opacity: 0.42;
+      transform: translate3d(9vw, 2vh, 0) rotate(-2deg) scaleX(1.08);
+      border-radius: 44% 56% 59% 41% / 62% 38% 62% 38%;
+    }
+    100% {
+      opacity: 0.38;
+      transform: translate3d(-7vw, 1vh, 0) rotate(-4deg) scaleX(1.04);
+      border-radius: 49% 51% 54% 46% / 65% 35% 65% 35%;
     }
   }
 
   @keyframes icon-orbit {
     to {
       transform: rotate(1turn);
+    }
+  }
+
+  @keyframes splash-enter {
+    0% {
+      opacity: 0;
+      filter: blur(8px);
+      transform: translateY(18px) scale(0.96);
+    }
+    65% {
+      opacity: 1;
+      filter: blur(0);
+    }
+    100% {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0) scale(1);
     }
   }
 
@@ -580,8 +582,15 @@
     .hero::after,
     .splash-shape,
     .splash-icon,
+    .splash-icon-cycle,
     .splash-icon-cycle::before,
     .splash-icon-cycle::after,
+    .splash-product,
+    h1,
+    .splash-answer,
+    .splash-lede,
+    .hero-cta,
+    .scroll-cue,
     .answer-word {
       animation: none;
     }

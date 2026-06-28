@@ -1,5 +1,4 @@
 import path from "node:path";
-
 import { BrowserWindow, shell } from "electron";
 
 /**
@@ -11,6 +10,10 @@ import { BrowserWindow, shell } from "electron";
  */
 
 const PRELOAD = path.join(__dirname, "preload.js");
+const DEFAULT_WIDTH = 1180;
+const DEFAULT_HEIGHT = 820;
+const MIN_WIDTH = 980;
+const MIN_HEIGHT = 620;
 
 let mainWin: BrowserWindow | null = null;
 let quitting = false;
@@ -46,16 +49,21 @@ function harden(win: BrowserWindow): void {
 export function getOrCreateMain(): BrowserWindow {
   if (mainWin && !mainWin.isDestroyed()) return mainWin;
   mainWin = new BrowserWindow({
-    width: 480,
-    height: 720,
+    width: DEFAULT_WIDTH,
+    height: DEFAULT_HEIGHT,
+    minWidth: MIN_WIDTH,
+    minHeight: MIN_HEIGHT,
     show: false,
-    resizable: false,
+    resizable: true,
     maximizable: false,
     fullscreenable: false,
     title: "Harness Dreams",
-    titleBarStyle: "hiddenInset",
-    // Native macOS translucency behind the (semi-transparent) UI.
-    vibrancy: "under-window",
+    // Edge-to-edge: no title bar; traffic lights float, inset into the glass
+    // sidebar. The whole window is a single frosted surface.
+    titleBarStyle: "hidden",
+    trafficLightPosition: { x: 19, y: 19 },
+    // Native macOS "glass" — the sidebar material shows through translucent UI.
+    vibrancy: "sidebar",
     visualEffectState: "active",
     backgroundColor: "#00000000",
     webPreferences: {
@@ -79,6 +87,12 @@ export function getOrCreateMain(): BrowserWindow {
 
 export function showMain(): void {
   const win = getOrCreateMain();
+  win.setMinimumSize(MIN_WIDTH, MIN_HEIGHT);
+  const [width, height] = win.getSize();
+  if (width < MIN_WIDTH || height < MIN_HEIGHT) {
+    win.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    win.center();
+  }
   win.show();
   win.focus();
 }

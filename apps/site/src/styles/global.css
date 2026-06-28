@@ -499,10 +499,10 @@ h1,
 
 .insight-statements {
   position: relative;
-  min-height: 210svh;
+  min-height: 150svh;
   display: grid;
   place-items: center;
-  padding-block: clamp(5rem, 10vw, 8rem);
+  padding-block: clamp(3.5rem, 7vw, 5.6rem);
   background: linear-gradient(180deg, #0a4fa4 0%, #087ab5 100%);
   color: #fff;
   overflow: hidden;
@@ -579,7 +579,7 @@ h1,
 }
 
 .statement {
-  min-height: 46svh;
+  min-height: 32svh;
   display: grid;
   place-items: center;
   color: rgba(255, 255, 255, 0.72);

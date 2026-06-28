@@ -2,9 +2,9 @@ import { ipcMain } from "electron";
 import { z } from "zod";
 
 import { Invoke } from "../shared/channels";
-import { MOCK_REPORT } from "../shared/mock";
 import { ConfigPatchSchema } from "../shared/schemas";
 import type { Controller } from "./controller";
+import { getLatest, getReports } from "./reports";
 import { getState } from "./state";
 import { getConfig, setConfig } from "./store";
 
@@ -15,18 +15,27 @@ export function registerIpc(controller: Controller): void {
     setConfig(ConfigPatchSchema.parse(patch))
   );
   ipcMain.handle(Invoke.StateGet, () => getState());
-  ipcMain.handle(Invoke.ReportGet, () => MOCK_REPORT);
+  ipcMain.handle(Invoke.ReportGet, () => getLatest());
+  ipcMain.handle(Invoke.ReportList, () => getReports());
 
   ipcMain.handle(Invoke.DreamNow, () => {
     controller.dreamNow();
+    return getState();
+  });
+  ipcMain.handle(Invoke.PauseDream, () => {
+    controller.pauseDream();
+    return getState();
+  });
+  ipcMain.handle(Invoke.ResumeDream, () => {
+    controller.resumeDream();
     return getState();
   });
   ipcMain.handle(Invoke.CompleteOnboarding, () => {
     controller.completeOnboarding();
     return getConfig();
   });
-  ipcMain.handle(Invoke.MarkReviewed, () => {
-    controller.markReviewed();
+  ipcMain.handle(Invoke.MarkReviewed, (_event, id: unknown) => {
+    controller.markReviewed(z.string().optional().parse(id));
     return getState();
   });
   ipcMain.handle(Invoke.SetLaunchAtLogin, (_event, value: unknown) => {

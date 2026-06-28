@@ -20,6 +20,7 @@ import type { AppConfig } from "../shared/types";
 
 export const DEFAULT_CONFIG: AppConfig = {
   onboarded: false,
+  showOnboardingOnLaunch: false,
   privacyMode: "local",
   schedule: { mode: "nightly", time: "03:00" },
   notifications: true,
