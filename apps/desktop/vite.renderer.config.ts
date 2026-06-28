@@ -3,10 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 
-const workspaceRoot = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  "../.."
-);
+const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 // https://vitejs.dev/config
 export default defineConfig({
@@ -26,7 +23,10 @@ export default defineConfig({
       },
       {
         find: /^react\/jsx-runtime$/,
-        replacement: resolve(workspaceRoot, "node_modules/react/jsx-runtime.js"),
+        replacement: resolve(
+          workspaceRoot,
+          "node_modules/react/jsx-runtime.js"
+        ),
       },
       {
         find: /^react-dom$/,
@@ -34,10 +34,7 @@ export default defineConfig({
       },
       {
         find: /^react-dom\/client$/,
-        replacement: resolve(
-          workspaceRoot,
-          "node_modules/react-dom/client.js"
-        ),
+        replacement: resolve(workspaceRoot, "node_modules/react-dom/client.js"),
       },
     ],
     dedupe: ["react", "react-dom"],

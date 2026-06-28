@@ -67,6 +67,7 @@ const api = {
   },
   actions: {
     dreamNow: (): Promise<RuntimeState> => ipcRenderer.invoke(Invoke.DreamNow),
+    napNow: (): Promise<RuntimeState> => ipcRenderer.invoke(Invoke.NapNow),
     pauseDream: (): Promise<RuntimeState> =>
       ipcRenderer.invoke(Invoke.PauseDream),
     resumeDream: (): Promise<RuntimeState> =>

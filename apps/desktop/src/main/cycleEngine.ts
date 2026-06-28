@@ -1,6 +1,7 @@
 import type {
   AlignmentDetail,
   AnalysisProject,
+  CycleKind,
   CycleWindow,
   DreamReport,
   Experiment,
@@ -21,6 +22,7 @@ import {
   readProjectConfig,
   skillPatch,
 } from "./agentConfig";
+import { startOfDay } from "../shared/timeOfDay";
 import {
   ingestSelectedSessions,
   type LocalSession,
@@ -217,7 +219,7 @@ function topicsFrom(turns: LocalTurn[], counter: Map<string, number>): void {
 
 function analyzeSession(
   session: LocalSession,
-  windowStart: number,
+  windowStart: number
 ): SessionSignals {
   const turns = session.turns.filter((turn) => turn.timestamp >= windowStart);
   const userTurns = turns.filter((turn) => turn.kind === "user");
@@ -396,7 +398,7 @@ function makeCandidates(agg: ProjectAgg): Candidate[] {
   const topics = topTopics(agg, 5);
   const topic = topics[0];
   const reask = Math.round(
-    (agg.corrections / Math.max(1, agg.userTurns)) * 100,
+    (agg.corrections / Math.max(1, agg.userTurns)) * 100
   );
   const health = agg.config.contextHealth;
   const agentsChars = agg.config.agentsMd.length;
@@ -581,7 +583,7 @@ function makeCandidates(agg: ProjectAgg): Candidate[] {
           agg.config,
           task,
           `Steps for the recurring "${task}" task in ${agg.name}.`,
-          agg.name,
+          agg.name
         ),
       }),
     });
@@ -607,7 +609,7 @@ function makeCandidates(agg: ProjectAgg): Candidate[] {
           agg.config,
           "contextdoc",
           `Known-good setup for ${topic ?? agg.name}: document the exact working command so tool calls stop failing.`,
-          agg.name,
+          agg.name
         ),
       }),
     });
@@ -668,7 +670,7 @@ function baseFinding(
     frictionType: FrictionType;
     evidence: string;
     patch?: Finding["patch"];
-  },
+  }
 ): Finding {
   return {
     id: fields.id,
@@ -727,10 +729,10 @@ function selectFindings(aggs: ProjectAgg[]): Finding[] {
  */
 function gradeCarriedExperiments(
   prev: DreamReport | null,
-  insights: ProjectInsight[],
+  insights: ProjectInsight[]
 ): Experiment[] {
   const running = (prev?.experiments ?? []).filter(
-    (exp) => exp.status === "running",
+    (exp) => exp.status === "running"
   );
   return running.map((exp) => {
     const progress = Math.min(1, (exp.progress ?? 0) + 1 / 3);
@@ -820,7 +822,7 @@ function totalsOf(aggs: ProjectAgg[]): Totals {
       toolCalls: 0,
       toolFailures: 0,
       hedges: 0,
-    },
+    }
   );
 }
 
@@ -833,11 +835,11 @@ function makeRings(t: Totals, prev: DreamReport | null): Ring[] {
   const toolFailRate = (t.toolFailures / Math.max(1, t.toolCalls)) * 100;
   const hedgeRate = (t.hedges / assistantTurns) * 100;
   const alignment = clampScore(
-    96 - reaskRate * 0.7 - toolFailRate * 0.3 - hedgeRate * 0.4,
+    96 - reaskRate * 0.7 - toolFailRate * 0.3 - hedgeRate * 0.4
   );
   const efficiency = clampScore(95 - reaskRate * 0.45 - toolFailRate * 0.9);
   const effectiveness = clampScore(
-    93 - reaskRate * 0.3 - hedgeRate * 0.6 - toolFailRate * 0.4,
+    93 - reaskRate * 0.3 - hedgeRate * 0.6 - toolFailRate * 0.4
   );
   const prevScore = (key: string): number =>
     prev?.rings.find((ring) => ring.key === key)?.score ?? 0;
@@ -871,13 +873,13 @@ function makeRings(t: Totals, prev: DreamReport | null): Ring[] {
 function makeMetrics(
   t: Totals,
   aggs: ProjectAgg[],
-  findingCount: number,
+  findingCount: number
 ): Metric[] {
   const reask = Math.round((t.corrections / Math.max(1, t.userTurns)) * 100);
   const toolSuccess = clamp(
     100 - (t.toolFailures / Math.max(1, t.toolCalls)) * 100,
     0,
-    100,
+    100
   );
   const withAgents = aggs.filter((agg) => agg.config.hasAgentsMd).length;
   const coverage = Math.round((withAgents / Math.max(1, aggs.length)) * 100);
@@ -885,7 +887,7 @@ function makeMetrics(
     aggs.reduce((sum, agg) => sum + agg.config.contextHealth.projectChars, 0) +
     Math.max(0, ...aggs.map((agg) => agg.config.contextHealth.globalChars));
   const overloadedContexts = aggs.filter(
-    (agg) => agg.config.contextHealth.status === "overloaded",
+    (agg) => agg.config.contextHealth.status === "overloaded"
   ).length;
   return [
     {
@@ -951,7 +953,7 @@ function makeAlignment(
   t: Totals,
   aggs: ProjectAgg[],
   findings: Finding[],
-  score: number,
+  score: number
 ): AlignmentDetail {
   const reask = Math.round((t.corrections / Math.max(1, t.userTurns)) * 100);
   const busiest = [...aggs].sort((a, b) => b.turns - a.turns)[0];
@@ -1008,7 +1010,7 @@ function computeWindow(
   sessions: LocalSession[],
   start: number,
   end: number,
-  basis: WindowBasis,
+  basis: WindowBasis
 ): CycleWindow {
   let earliest = end;
   let latest = start;
@@ -1068,28 +1070,28 @@ function projectInsightsOf(aggs: ProjectAgg[]): ProjectInsight[] {
     }))
     .sort(
       (a, b) =>
-        b.turns - a.turns || a.contextHealth.score - b.contextHealth.score,
+        b.turns - a.turns || a.contextHealth.score - b.contextHealth.score
     );
 }
 
 function contextSummaryOf(
-  insights: ProjectInsight[],
+  insights: ProjectInsight[]
 ): DreamReport["contextHealth"] {
   if (insights.length === 0) return undefined;
   const scores = insights.map((insight) => insight.contextHealth?.score ?? 100);
   const score = Math.round(
-    scores.reduce((sum, value) => sum + value, 0) / Math.max(1, scores.length),
+    scores.reduce((sum, value) => sum + value, 0) / Math.max(1, scores.length)
   );
   const overloadedProjects = insights.filter(
-    (insight) => insight.contextHealth?.status === "overloaded",
+    (insight) => insight.contextHealth?.status === "overloaded"
   ).length;
   const riskCount = insights.reduce(
     (sum, insight) => sum + (insight.contextHealth?.risks.length ?? 0),
-    0,
+    0
   );
   const suggestions = [
     ...new Set(
-      insights.flatMap((insight) => insight.contextHealth?.suggestions ?? []),
+      insights.flatMap((insight) => insight.contextHealth?.suggestions ?? [])
     ),
   ].slice(0, 3);
   return {
@@ -1100,19 +1102,19 @@ function contextSummaryOf(
     chars:
       insights.reduce(
         (sum, insight) => sum + (insight.contextHealth?.projectChars ?? 0),
-        0,
+        0
       ) +
       Math.max(
         0,
-        ...insights.map((insight) => insight.contextHealth?.globalChars ?? 0),
+        ...insights.map((insight) => insight.contextHealth?.globalChars ?? 0)
       ),
     memoryFiles: insights.reduce(
       (sum, insight) => sum + (insight.contextHealth?.memoryFiles ?? 0),
-      0,
+      0
     ),
     skillCount: insights.reduce(
       (sum, insight) => sum + (insight.contextHealth?.localSkillCount ?? 0),
-      0,
+      0
     ),
     suggestions,
   };
@@ -1123,7 +1125,7 @@ function quietReport(
   projects: AnalysisProject[],
   prev: DreamReport | null,
   now: number,
-  aggs: ProjectAgg[],
+  aggs: ProjectAgg[]
 ): DreamReport {
   const enabled = projects.filter((project) => project.enabled);
   const totals: Totals = {
@@ -1233,6 +1235,11 @@ export interface CycleOptions {
   privacyMode?: PrivacyMode;
   analysisDepth?: "light" | "standard" | "deep";
   remRunner?: RemRunnerConfig;
+  /**
+   * "sleep" (default) is the full overnight pass. "nap" is a fast Deep-Sleep-only
+   * check-in over this morning, capped to the top couple of nudges.
+   */
+  kind?: CycleKind;
 }
 
 /**
@@ -1243,18 +1250,24 @@ export interface CycleOptions {
  */
 export function runSleepCycle(
   projects: AnalysisProject[],
-  options: CycleOptions = {},
+  options: CycleOptions = {}
 ): DreamReport | null {
   const enabled = projects.filter((project) => project.enabled);
   if (enabled.length === 0) return null;
 
   const now = options.now ?? Date.now();
   const prev = options.prev ?? null;
+  const isNap = options.kind === "nap";
   const floor = now - DAY_MS;
   const since = options.since ?? null;
-  const start = since && since > floor ? since : floor;
+  // A nap reviews just this morning; a sleep reviews since the last cycle (24h cap).
+  const start = isNap
+    ? Math.max(startOfDay(now), floor)
+    : since && since > floor
+      ? since
+      : floor;
   const basis: WindowBasis =
-    since && since > floor ? "since-last-cycle" : "last-24h";
+    isNap || (since && since > floor) ? "since-last-cycle" : "last-24h";
 
   const sessions = ingestSelectedSessions(projects, start, now);
   const window = computeWindow(sessions, start, now, basis);
@@ -1262,11 +1275,11 @@ export function runSleepCycle(
     .map((session) => ({
       ...session,
       turns: session.turns.filter(
-        (turn) => turn.timestamp >= start && turn.timestamp <= now,
+        (turn) => turn.timestamp >= start && turn.timestamp <= now
       ),
     }))
     .filter((session) =>
-      session.turns.some((turn) => turn.kind !== "tool_result"),
+      session.turns.some((turn) => turn.kind !== "tool_result")
     );
 
   if (boundedSessions.length === 0) {
@@ -1274,22 +1287,24 @@ export function runSleepCycle(
   }
 
   const signals = boundedSessions.map((session) =>
-    analyzeSession(session, start),
+    analyzeSession(session, start)
   );
   const aggs = [...aggregate(signals).values()].filter((agg) => agg.turns > 0);
   const totals = totalsOf(aggs);
   const rem =
-    options.privacyMode === "cloud" && options.remRunner
+    !isNap && options.privacyMode === "cloud" && options.remRunner
       ? runRemAnalysis(
           enabled,
           boundedSessions,
           options.analysisDepth ?? "standard",
-          options.remRunner,
+          options.remRunner
         )
       : null;
   const heuristicFindings = selectFindings(aggs);
-  const findings =
+  const allFindings =
     rem && rem.findings.length > 0 ? rem.findings : heuristicFindings;
+  // A nap surfaces only the top couple of quick wins.
+  const findings = isNap ? allFindings.slice(0, 2) : allFindings;
   const rings = makeRings(totals, prev);
   const alignmentScore =
     rings.find((ring) => ring.key === "alignment")?.score ?? 70;
@@ -1318,6 +1333,7 @@ export function runSleepCycle(
   return {
     id: `cycle_${now}`,
     timestamp: now,
+    kind: options.kind ?? "sleep",
     reviewStatus: "unreviewed",
     rangeLabel: `${window.label} · ${totals.sessions} session${totals.sessions === 1 ? "" : "s"}${topTopicsAll.length > 0 ? ` · ${topTopicsAll.join(", ")}` : ""}`,
     sessions: totals.sessions,

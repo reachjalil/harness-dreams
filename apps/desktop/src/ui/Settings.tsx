@@ -41,8 +41,7 @@ export default function Settings({
   const [discovered, setDiscovered] = useState<DiscoveredProject[]>([]);
   const [scanning, setScanning] = useState(false);
   const [pairingName, setPairingName] = useState("Jalil's iPhone");
-  const [pairingKind, setPairingKind] =
-    useState<CloudSyncDeviceKind>("iphone");
+  const [pairingKind, setPairingKind] = useState<CloudSyncDeviceKind>("iphone");
   const [pairing, setPairing] = useState<CloudSyncPairing | null>(null);
   const [pairingBusy, setPairingBusy] = useState(false);
   const [pairingError, setPairingError] = useState<string | null>(null);
@@ -137,7 +136,9 @@ export default function Settings({
   }
 
   function shortId(value: string): string {
-    return value.length <= 12 ? value : `${value.slice(0, 8)}…${value.slice(-4)}`;
+    return value.length <= 12
+      ? value
+      : `${value.slice(0, 8)}…${value.slice(-4)}`;
   }
 
   return (
@@ -418,7 +419,11 @@ export default function Settings({
           icon={<Icon name="cloudsync" size={16} />}
         >
           <div className="demo-callout">
-            <b>{config.cloudSync.devBypassPaidPlan ? "Dev demo enabled" : "Paid plan required"}</b>
+            <b>
+              {config.cloudSync.devBypassPaidPlan
+                ? "Dev demo enabled"
+                : "Paid plan required"}
+            </b>
             <span>
               Cloud Sync remains a paid-plan feature. This local build can
               bypass the paywall for demos while keeping the same desktop-owned
@@ -494,12 +499,16 @@ export default function Settings({
               </div>
               <div className="settings-row">
                 <div className="settings-row-main">
-                  <div className="settings-row-label">Desktop-owned user id</div>
+                  <div className="settings-row-label">
+                    Desktop-owned user id
+                  </div>
                   <div className="settings-row-hint">
                     Generated locally for account-free pairing.
                   </div>
                 </div>
-                <code className="mono-chip">{shortId(config.cloudSync.userId)}</code>
+                <code className="mono-chip">
+                  {shortId(config.cloudSync.userId)}
+                </code>
               </div>
               <div className="settings-row">
                 <div className="settings-row-main">

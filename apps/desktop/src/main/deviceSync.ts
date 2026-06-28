@@ -1,4 +1,9 @@
-import { createHmac, createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import {
+  createHmac,
+  createHash,
+  randomUUID,
+  timingSafeEqual,
+} from "node:crypto";
 import http, { type IncomingMessage, type ServerResponse } from "node:http";
 import { networkInterfaces } from "node:os";
 
@@ -90,10 +95,7 @@ function verifyJwt(token: string, secret: string): PairingJwtPayload | null {
   const body = `${encodedHeader}.${encodedPayload}`;
   const expected = createHmac("sha256", secret).update(body).digest();
   const actual = decodeBase64url(encodedSignature);
-  if (
-    actual.length !== expected.length ||
-    !timingSafeEqual(actual, expected)
-  ) {
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
     return null;
   }
 
@@ -305,7 +307,10 @@ async function handleDecisions(
   for (const [findingId, state] of Object.entries(
     body.decisions as Record<string, unknown>
   )) {
-    if (typeof findingId !== "string" || !VALID_DECISION_STATES.has(state as ActionState)) {
+    if (
+      typeof findingId !== "string" ||
+      !VALID_DECISION_STATES.has(state as ActionState)
+    ) {
       continue;
     }
     incoming.push({
@@ -336,7 +341,10 @@ async function handleRequest(
     return;
   }
 
-  const url = new URL(request.url ?? "/", getDeviceSyncUrl() || "http://localhost");
+  const url = new URL(
+    request.url ?? "/",
+    getDeviceSyncUrl() || "http://localhost"
+  );
   if (request.method === "GET" && url.pathname === "/v1/snapshot") {
     await handleSnapshot(request, response);
     return;
@@ -421,7 +429,9 @@ export async function createCloudSyncPairing(input: {
       enabled: true,
       devices: [
         device,
-        ...config.devices.filter((candidate) => candidate.deviceId !== deviceId),
+        ...config.devices.filter(
+          (candidate) => candidate.deviceId !== deviceId
+        ),
       ],
     },
     cloudSyncInterest: true,

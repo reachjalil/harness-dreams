@@ -18,6 +18,7 @@ export const Invoke = {
   DiscoverProjects: "projects:discover",
   AddProject: "projects:add",
   DreamNow: "action:dreamNow",
+  NapNow: "action:napNow",
   PauseDream: "action:pauseDream",
   ResumeDream: "action:resumeDream",
   CompleteOnboarding: "action:completeOnboarding",

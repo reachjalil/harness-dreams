@@ -78,7 +78,7 @@ function cycleCrumbs(
   step: "overview" | "findings" | "queue",
   toList: () => void,
   toOverview: () => void,
-  queueCount: number,
+  queueCount: number
 ): Crumb[] {
   if (step === "overview") {
     return [
@@ -122,7 +122,7 @@ function longDate(ts: number): string {
 
 function listCycleStatus(
   report: DreamReport,
-  isLatest: boolean,
+  isLatest: boolean
 ): CycleReviewStatus {
   if (report.reviewStatus === "reviewed" || report.reviewedAt) {
     return "reviewed";
@@ -163,7 +163,7 @@ function fileName(file: string | undefined): string {
 
 function decisionStats(
   report: DreamReport,
-  decisions: Decisions,
+  decisions: Decisions
 ): {
   accepted: number;
   rejected: number;
@@ -404,7 +404,7 @@ const RUN_LOGS = [
 
 function runPassState(
   progress: number,
-  pass: (typeof RUN_PASSES)[number],
+  pass: (typeof RUN_PASSES)[number]
 ): "pending" | "active" | "done" {
   if (progress >= pass.done) return "done";
   if (progress >= pass.start) return "active";
@@ -582,7 +582,11 @@ function ReviewCompass({
   ];
 
   return (
-    <div className="review-compass" aria-label="Sleep Cycle review progress">
+    <div
+      className="review-compass"
+      role="group"
+      aria-label="Sleep Cycle review progress"
+    >
       <div className="review-compass-line">
         <span
           style={{ width: `${((stageIndex + 1) / stages.length) * 100}%` }}
@@ -687,10 +691,10 @@ function BranchPlan({
   decisions: Decisions;
 }): ReactElement {
   const acceptedFindings = report.findings.filter(
-    (finding) => decisions[finding.id] === "accepted",
+    (finding) => decisions[finding.id] === "accepted"
   );
   const repos = new Set(
-    acceptedFindings.map((finding) => finding.projectPath ?? finding.project),
+    acceptedFindings.map((finding) => finding.projectPath ?? finding.project)
   );
   return (
     <div className="branch-plan">
@@ -800,7 +804,7 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
   const findingCount = report.findings.length;
   const acceptedBranches =
     report.reviewDecisions?.filter(
-      (entry) => entry.state === "accepted" && entry.reviewBranch,
+      (entry) => entry.state === "accepted" && entry.reviewBranch
     ) ?? [];
 
   return (
@@ -835,7 +839,7 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
 
       {report.experiments.some(
         (experiment) =>
-          experiment.status === "running" || experiment.status === "concluded",
+          experiment.status === "running" || experiment.status === "concluded"
       ) ? (
         <Section
           title="Did your last changes help?"
@@ -898,7 +902,7 @@ function FrictionForFinding({
   findingId: string;
 }): ReactElement | null {
   const point = report.alignment?.friction.find(
-    (f) => f.findingId === findingId,
+    (f) => f.findingId === findingId
   );
   if (!point) return null;
   return (
@@ -1176,11 +1180,11 @@ export default function Cycle({
 
   const decisionCount = useMemo(
     () => Object.values(decisions).filter((s) => s !== "open").length,
-    [decisions],
+    [decisions]
   );
   const acceptedGoalCount = useMemo(
     () => Object.values(decisions).filter((s) => s === "accepted").length,
-    [decisions],
+    [decisions]
   );
 
   if (!state) return <p className="card-hint">Loading…</p>;
@@ -1252,7 +1256,7 @@ export default function Cycle({
           step,
           onBackToList,
           () => setActiveId("__overview"),
-          decisionCount,
+          decisionCount
         )}
         title={report.rangeLabel}
         subtitle={

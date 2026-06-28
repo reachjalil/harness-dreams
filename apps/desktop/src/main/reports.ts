@@ -14,6 +14,7 @@ import { makeReport, nextDemoReport, seedDemoReports } from "../shared/mock";
 import type {
   ActionCategory,
   ActionQueueEntry,
+  CycleKind,
   DreamReport,
   Experiment,
   Finding,
@@ -80,7 +81,7 @@ function readJsonFile(file: string): unknown | null {
 function reportFileForCurrentMode(): string {
   return path.join(
     app.getPath("userData"),
-    getConfig().demoMode ? DEMO_REPORTS_FILE : REPORTS_FILE,
+    getConfig().demoMode ? DEMO_REPORTS_FILE : REPORTS_FILE
   );
 }
 
@@ -113,7 +114,7 @@ export function initReports(): void {
   reportsPath = reportFileForCurrentMode();
   const persisted = readJsonFile(reportsPath);
   reports = normalized(
-    Array.isArray(persisted) ? (persisted as DreamReport[]) : seedFromSample(),
+    Array.isArray(persisted) ? (persisted as DreamReport[]) : seedFromSample()
   );
   persistReports();
 }
@@ -130,7 +131,7 @@ export function syncReportsForConfig(): DreamReport[] {
   reportsPath = nextPath;
   const persisted = readJsonFile(reportsPath);
   reports = normalized(
-    Array.isArray(persisted) ? (persisted as DreamReport[]) : seedFromSample(),
+    Array.isArray(persisted) ? (persisted as DreamReport[]) : seedFromSample()
   );
   publish();
   return reports;
@@ -150,17 +151,17 @@ export function getLatest(): DreamReport | null {
  * what's new. Falls back to the sample/mock report only when no projects are
  * enabled.
  */
-export function addDream(): DreamReport {
+export function addDream(kind: CycleKind = "sleep"): DreamReport {
   const now = Date.now();
   const prev = reports[0] ?? null;
   if (getConfig().demoMode) {
-    const fresh = nextDemoReport(now, prev);
+    const fresh = nextDemoReport(now, prev, kind);
     reports = [
       fresh,
       ...reports.map((item) =>
         item.reviewStatus === "unreviewed"
           ? { ...item, reviewStatus: "expired" as const }
-          : item,
+          : item
       ),
     ];
     publish();
@@ -176,6 +177,7 @@ export function addDream(): DreamReport {
       privacyMode: config.privacyMode,
       analysisDepth: config.analysisDepth,
       remRunner: config.remRunner,
+      kind,
     }) ??
     (samplePath
       ? reportsFromDreamLogs(readJsonFile(samplePath), now)[0]
@@ -185,6 +187,7 @@ export function addDream(): DreamReport {
     ...base,
     id: `${base.id}_${now}`,
     timestamp: now,
+    kind,
     reviewStatus: "unreviewed" as const,
     reviewedAt: undefined,
   };
@@ -193,7 +196,7 @@ export function addDream(): DreamReport {
     ...reports.map((item) =>
       item.reviewStatus === "unreviewed"
         ? { ...item, reviewStatus: "expired" as const }
-        : item,
+        : item
     ),
   ];
   publish();
@@ -209,11 +212,11 @@ function categoryForFinding(finding: Finding): ActionCategory {
 
 function experimentFromFinding(
   finding: Finding,
-  report: DreamReport,
+  report: DreamReport
 ): Experiment {
   // Snapshot the target project now, so the next cycle can measure movement.
   const insight = report.projectInsights?.find(
-    (project) => project.path === finding.projectPath,
+    (project) => project.path === finding.projectPath
   );
   return {
     id: `accepted_${finding.id}`,
@@ -240,12 +243,12 @@ function experimentFromFinding(
 
 function applyAcceptedExperiments(
   report: DreamReport,
-  entries: ActionQueueEntry[],
+  entries: ActionQueueEntry[]
 ): Experiment[] {
   const acceptedIds = new Set(
     entries
       .filter((entry) => entry.state === "accepted")
-      .map((entry) => entry.findingId),
+      .map((entry) => entry.findingId)
   );
   const acceptedExperiments = report.findings
     .filter((finding) => acceptedIds.has(finding.id))
@@ -253,7 +256,7 @@ function applyAcceptedExperiments(
   return [
     ...report.experiments.filter(
       (experiment) =>
-        !acceptedExperiments.some((next) => next.id === experiment.id),
+        !acceptedExperiments.some((next) => next.id === experiment.id)
     ),
     ...acceptedExperiments,
   ];
@@ -261,7 +264,7 @@ function applyAcceptedExperiments(
 
 function queueFromDecisions(
   report: DreamReport,
-  decisions: ReviewDecisions = {},
+  decisions: ReviewDecisions = {}
 ): ActionQueueEntry[] {
   const entries: ActionQueueEntry[] = [];
   const decidedAt = Date.now();
@@ -297,10 +300,10 @@ function queueFromDecisions(
  * a PR creation URL when the branch can be pushed to a GitHub origin.
  */
 function applyApprovedGuidance(
-  entries: ActionQueueEntry[],
+  entries: ActionQueueEntry[]
 ): ActionQueueEntry[] {
   const accepted = entries.filter(
-    (entry) => entry.state === "accepted" && !entry.reviewBranch,
+    (entry) => entry.state === "accepted" && !entry.reviewBranch
   );
   if (accepted.length === 0) return entries;
   if (getConfig().demoMode) {
@@ -316,7 +319,7 @@ function applyApprovedGuidance(
           worktreePath: path.join(
             app.getPath("userData"),
             "demo-recommendation-worktrees",
-            slug,
+            slug
           ),
           commit: `demo${index + 31}ab`,
           remote: "origin",
@@ -328,19 +331,19 @@ function applyApprovedGuidance(
   }
   const branchResults = applyAcceptedRecommendationsAsBranches(
     accepted,
-    path.join(app.getPath("userData"), "recommendation-worktrees"),
+    path.join(app.getPath("userData"), "recommendation-worktrees")
   );
   return entries.map((entry) =>
     entry.state === "accepted" && branchResults.has(entry.findingId)
       ? { ...entry, reviewBranch: branchResults.get(entry.findingId) }
-      : entry,
+      : entry
   );
 }
 
 /** Explicit user review. Only the newest cycle is reviewable. */
 export function markReportReviewed(
   id?: string,
-  decisions: ReviewDecisions = {},
+  decisions: ReviewDecisions = {}
 ): DreamReport | null {
   reports = normalized(reports);
   const latest = reports[0] ?? null;
@@ -368,7 +371,7 @@ function decisionTime(report: DreamReport, entry: ActionQueueEntry): number {
 function decisionEntryForFinding(
   finding: Finding,
   remote: SyncedReviewDecision,
-  existing?: ActionQueueEntry,
+  existing?: ActionQueueEntry
 ): ActionQueueEntry {
   return {
     ...(existing ?? {}),
@@ -387,14 +390,14 @@ function decisionEntryForFinding(
 
 function orderedDecisionEntries(
   report: DreamReport,
-  byFinding: Map<string, ActionQueueEntry>,
+  byFinding: Map<string, ActionQueueEntry>
 ): ActionQueueEntry[] {
   const ordered = report.findings
     .map((finding) => byFinding.get(finding.id))
     .filter((entry): entry is ActionQueueEntry => Boolean(entry));
   const known = new Set(ordered.map((entry) => entry.findingId));
   const orphaned = [...byFinding.values()].filter(
-    (entry) => !known.has(entry.findingId),
+    (entry) => !known.has(entry.findingId)
   );
   return [...ordered, ...orphaned];
 }
@@ -424,14 +427,14 @@ export function mergeRemoteReviewDecisions(incoming: SyncedReviewDecision[]): {
     if (!decisions) return report;
 
     const current = new Map<string, ActionQueueEntry>(
-      (report.reviewDecisions ?? []).map((entry) => [entry.findingId, entry]),
+      (report.reviewDecisions ?? []).map((entry) => [entry.findingId, entry])
     );
     let reportChanged = false;
     let reviewedAt = report.reviewedAt ?? 0;
 
     for (const remote of decisions) {
       const finding = report.findings.find(
-        (candidate) => candidate.id === remote.findingId,
+        (candidate) => candidate.id === remote.findingId
       );
       if (!finding) continue;
 
@@ -448,7 +451,7 @@ export function mergeRemoteReviewDecisions(incoming: SyncedReviewDecision[]): {
 
       current.set(
         remote.findingId,
-        decisionEntryForFinding(finding, remote, existing),
+        decisionEntryForFinding(finding, remote, existing)
       );
       reviewedAt = Math.max(reviewedAt, remote.updatedAt);
       reportChanged = true;
@@ -459,7 +462,7 @@ export function mergeRemoteReviewDecisions(incoming: SyncedReviewDecision[]): {
 
     changed = true;
     const reviewDecisions = applyApprovedGuidance(
-      orderedDecisionEntries(report, current),
+      orderedDecisionEntries(report, current)
     );
     return {
       ...report,

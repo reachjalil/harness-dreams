@@ -2,8 +2,10 @@ import { app, Notification, shell } from "electron";
 
 import { Send } from "../shared/channels";
 import { stageForProgress } from "../shared/stages";
+import { timeOfDay } from "../shared/timeOfDay";
 import type {
   AnalysisProject,
+  CycleKind,
   DiscoveredProject,
   ReviewDecisions,
 } from "../shared/types";
@@ -35,6 +37,7 @@ import { broadcastToUi, setQuitting, showMain } from "./windows";
 
 export interface Controller {
   dreamNow(): void;
+  napNow(): void;
   pauseDream(): void;
   resumeDream(): void;
   openSession(id: string): void;
@@ -54,6 +57,9 @@ export interface Controller {
 const DREAM_TICK_MS = 200;
 const DREAM_STEP = 0.02;
 const DEMO_DREAM_STEP = 0.14;
+// A nap is the fast cycle — it fills quicker than a full sleep.
+const NAP_STEP = 0.05;
+const DEMO_NAP_STEP = 0.28;
 
 let dreamTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -65,32 +71,58 @@ function notify(title: string, body: string): void {
   notification.show();
 }
 
-function notifyDreamReady(): void {
+/** Time-of-day lead for the morning nudge, so it feels like a companion. */
+function greetingPrefix(): string {
+  switch (timeOfDay(new Date())) {
+    case "morning":
+      return "Good morning";
+    case "midday":
+      return "Good afternoon";
+    case "evening":
+      return "Good evening";
+    default:
+      return "Hello";
+  }
+}
+
+function notifyCycleReady(kind: CycleKind): void {
   if (!getConfig().notifications) return;
+  if (kind === "nap") {
+    notify(
+      "Your nap reflection is ready ☕",
+      "A quick look at this morning — tap to see the top nudge."
+    );
+    return;
+  }
   notify(
-    "Your dream is ready 🌙",
+    `${greetingPrefix()} — your dream is ready 🌙`,
     "Last night's reflection is in. Tap to review your harness health."
   );
 }
 
-function runDream(): void {
+function stepFor(kind: CycleKind): number {
+  const demo = getConfig().demoMode;
+  if (kind === "nap") return demo ? DEMO_NAP_STEP : NAP_STEP;
+  return demo ? DEMO_DREAM_STEP : DREAM_STEP;
+}
+
+function runDream(kind: CycleKind = "sleep"): void {
   if (getState().phase === "dreaming") return;
+  const step = stepFor(kind);
   patchState({
     phase: "dreaming",
     progress: 0,
-    stage: stageForProgress(0).label,
+    stage: stageForProgress(0, kind).label,
     paused: false,
   });
   dreamTimer = setInterval(() => {
     // While paused, hold position — the icon and UI stay put.
     if (getState().paused) return;
-    const next =
-      getState().progress +
-      (getConfig().demoMode ? DEMO_DREAM_STEP : DREAM_STEP);
+    const next = getState().progress + step;
     if (next >= 1) {
       if (dreamTimer) clearInterval(dreamTimer);
       dreamTimer = null;
-      addDream();
+      addDream(kind);
       patchState({
         phase: "ready",
         progress: 0,
@@ -99,16 +131,17 @@ function runDream(): void {
         lastDreamAt: Date.now(),
         hasUnreviewed: true,
       });
-      notifyDreamReady();
+      notifyCycleReady(kind);
     } else {
-      patchState({ progress: next, stage: stageForProgress(next).label });
+      patchState({ progress: next, stage: stageForProgress(next, kind).label });
     }
   }, DREAM_TICK_MS);
 }
 
 export function createController(): Controller {
   return {
-    dreamNow: () => runDream(),
+    dreamNow: () => runDream("sleep"),
+    napNow: () => runDream("nap"),
     pauseDream: () => {
       if (getState().phase === "dreaming" && !getState().paused) {
         patchState({ paused: true });

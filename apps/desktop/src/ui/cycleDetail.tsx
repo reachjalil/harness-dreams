@@ -211,7 +211,7 @@ export function MeasuredGoals({
 }): ReactElement | null {
   const measured = experiments.filter(
     (experiment) =>
-      experiment.status === "running" || experiment.status === "concluded",
+      experiment.status === "running" || experiment.status === "concluded"
   );
   if (measured.length === 0) return null;
   return (

@@ -613,9 +613,7 @@ export function CloudSyncCTA({
       <span className="cloud-cta-icon">
         <Icon name="cloudsync" size={15} />
       </span>
-      <span className="cloud-cta-title">
-        Set up Cloud Sync
-      </span>
+      <span className="cloud-cta-title">Set up Cloud Sync</span>
       <span className="cloud-cta-arrow" aria-hidden="true">
         ›
       </span>
@@ -1082,7 +1080,8 @@ export function FindingCard({
       <h3 className="finding-name">{finding.title}</h3>
       {!compact ? <p className="finding-body">{finding.body}</p> : null}
       <span className="finding-evidence">{finding.evidence}</span>
-      {!compact && (finding.configGap || finding.evidenceFile || finding.patch) ? (
+      {!compact &&
+      (finding.configGap || finding.evidenceFile || finding.patch) ? (
         <div className="finding-grounding">
           {finding.configGap ? (
             <div className="finding-grounding-item">
@@ -1675,7 +1674,7 @@ export function SettingsGroup({
         {title}
         {tip ? <InfoTip title={title} text={tip} /> : null}
       </h2>
-      {children}
+      <div className="settings-group-body">{children}</div>
     </section>
   );
 }

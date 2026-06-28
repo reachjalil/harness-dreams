@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { DEMO_PROJECTS, nextDemoReport, seedDemoReports } from "../shared/mock";
 import type { ConfigPatch } from "../shared/schemas";
 import { stageForProgress } from "../shared/stages";
+import type { TimeOfDay } from "../shared/timeOfDay";
 import type {
   AnalysisProject,
   AppConfig,
@@ -25,10 +26,14 @@ export interface HarnessDreams {
   cloudSync: Window["hd"]["cloudSync"];
   projects: Window["hd"]["projects"];
   actions: Window["hd"]["actions"];
+  /** Demo-only time-of-day override (null = follow the real clock). */
+  demoTimeOfDay: TimeOfDay | null;
+  setDemoTimeOfDay: (tod: TimeOfDay | null) => void;
 }
 
 const PREVIEW_CONFIG: AppConfig = {
   onboarded: true,
+  userName: "Alex",
   demoMode: true,
   showOnboardingOnLaunch: false,
   privacyMode: "local",
@@ -125,6 +130,7 @@ export function useHarnessDreams(): HarnessDreams {
   const [reports, setReports] = useState<DreamReport[]>([]);
   const [cloudSyncStatus, setCloudSyncStatus] =
     useState<CloudSyncStatus | null>(null);
+  const [demoTimeOfDay, setDemoTimeOfDay] = useState<TimeOfDay | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -200,7 +206,7 @@ export function useHarnessDreams(): HarnessDreams {
                 hasUnreviewed: false,
               });
             },
-            300 + index * 280,
+            300 + index * 280
           );
         });
         window.setTimeout(() => {
@@ -211,7 +217,7 @@ export function useHarnessDreams(): HarnessDreams {
             ...normalizeReports(current).map((report) =>
               report.reviewStatus === "unreviewed"
                 ? { ...report, reviewStatus: "expired" as const }
-                : report,
+                : report
             ),
           ]);
           setState({
@@ -223,6 +229,54 @@ export function useHarnessDreams(): HarnessDreams {
             hasUnreviewed: true,
           });
         }, 1600);
+        return running;
+      },
+      napNow: async () => {
+        const lastDreamAt = state?.lastDreamAt ?? Date.now();
+        const running: RuntimeState = {
+          phase: "dreaming",
+          progress: 0.1,
+          stage: stageForProgress(0.1, "nap").label,
+          paused: false,
+          lastDreamAt,
+          hasUnreviewed: false,
+        };
+        setState(running);
+        [0.45, 0.8].forEach((progress, index) => {
+          window.setTimeout(
+            () => {
+              setState({
+                phase: "dreaming",
+                progress,
+                stage: stageForProgress(progress, "nap").label,
+                paused: false,
+                lastDreamAt,
+                hasUnreviewed: false,
+              });
+            },
+            250 + index * 250
+          );
+        });
+        window.setTimeout(() => {
+          const now = Date.now();
+          const nextReport = nextDemoReport(now, reports[0] ?? null, "nap");
+          setReports((current) => [
+            nextReport,
+            ...normalizeReports(current).map((report) =>
+              report.reviewStatus === "unreviewed"
+                ? { ...report, reviewStatus: "expired" as const }
+                : report
+            ),
+          ]);
+          setState({
+            phase: "ready",
+            progress: 0,
+            stage: null,
+            paused: false,
+            lastDreamAt: now,
+            hasUnreviewed: true,
+          });
+        }, 900);
         return running;
       },
       pauseDream: async () => {
@@ -283,14 +337,14 @@ export function useHarnessDreams(): HarnessDreams {
                 };
               })
               .filter((entry): entry is NonNullable<typeof entry> =>
-                Boolean(entry),
+                Boolean(entry)
               ) ?? [];
           const acceptedExperiments =
             latest?.findings
               .filter((finding) => decisions[finding.id] === "accepted")
               .map((finding) => {
                 const insight = latest.projectInsights?.find(
-                  (project) => project.path === finding.projectPath,
+                  (project) => project.path === finding.projectPath
                 );
                 return {
                   id: `accepted_${finding.id}`,
@@ -332,7 +386,7 @@ export function useHarnessDreams(): HarnessDreams {
               : normalized;
           hasUnreviewed = next.some(
             (report, index) =>
-              index === 0 && report.reviewStatus === "unreviewed",
+              index === 0 && report.reviewStatus === "unreviewed"
           );
           return next;
         });
@@ -361,7 +415,7 @@ export function useHarnessDreams(): HarnessDreams {
       openMain: async () => undefined,
       quit: async () => undefined,
     }),
-    [config, reports, state],
+    [config, reports, state]
   );
 
   const previewProjects = useMemo<Window["hd"]["projects"]>(
@@ -387,14 +441,14 @@ export function useHarnessDreams(): HarnessDreams {
           projects: [
             next,
             ...((current ?? PREVIEW_CONFIG).projects ?? []).filter(
-              (project) => project.path !== projectPath,
+              (project) => project.path !== projectPath
             ),
           ],
         }));
         return next;
       },
     }),
-    [],
+    []
   );
 
   const previewCloudSync = useMemo<Window["hd"]["cloudSync"]>(
@@ -457,7 +511,7 @@ export function useHarnessDreams(): HarnessDreams {
       removeDevice: async (deviceId) => {
         const current = config ?? PREVIEW_CONFIG;
         const devices = current.cloudSync.devices.filter(
-          (device) => device.deviceId !== deviceId,
+          (device) => device.deviceId !== deviceId
         );
         setConfig({
           ...current,
@@ -466,7 +520,7 @@ export function useHarnessDreams(): HarnessDreams {
         return devices;
       },
     }),
-    [cloudSyncStatus, config],
+    [cloudSyncStatus, config]
   );
 
   return {
@@ -479,5 +533,7 @@ export function useHarnessDreams(): HarnessDreams {
     cloudSync: window.hd?.cloudSync ?? previewCloudSync,
     projects: window.hd?.projects ?? previewProjects,
     actions: window.hd?.actions ?? previewActions,
+    demoTimeOfDay,
+    setDemoTimeOfDay,
   };
 }

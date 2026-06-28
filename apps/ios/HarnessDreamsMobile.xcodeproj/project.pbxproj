@@ -7,9 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A00000000000000000000020 /* HarnessDreamsSignal.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* HarnessDreamsSignal.swift */; };
-		A00000000000000000000021 /* HarnessDreamsCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* HarnessDreamsCompanionApp.swift */; };
-		A00000000000000000000022 /* CompanionRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000012 /* CompanionRootView.swift */; };
 		A00000000000000000000023 /* HarnessDreamsSignal.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* HarnessDreamsSignal.swift */; };
 		A00000000000000000000024 /* HarnessDreamsWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000013 /* HarnessDreamsWatchApp.swift */; };
 		A00000000000000000000025 /* WatchRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000014 /* WatchRootView.swift */; };
@@ -17,22 +14,12 @@
 
 /* Begin PBXFileReference section */
 		A00000000000000000000010 /* HarnessDreamsSignal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HarnessDreamsSignal.swift; sourceTree = "<group>"; };
-		A00000000000000000000011 /* HarnessDreamsCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HarnessDreamsCompanionApp.swift; sourceTree = "<group>"; };
-		A00000000000000000000012 /* CompanionRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionRootView.swift; sourceTree = "<group>"; };
 		A00000000000000000000013 /* HarnessDreamsWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HarnessDreamsWatchApp.swift; sourceTree = "<group>"; };
 		A00000000000000000000014 /* WatchRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRootView.swift; sourceTree = "<group>"; };
-		A00000000000000000000015 /* Harness Dreams.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Harness Dreams.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000016 /* Harness Dreams Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Harness Dreams Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A00000000000000000000031 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A00000000000000000000034 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -46,7 +33,6 @@
 		A00000000000000000000002 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000015 /* Harness Dreams.app */,
 				A00000000000000000000016 /* Harness Dreams Watch.app */,
 			);
 			name = Products;
@@ -56,19 +42,9 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000006 /* Shared */,
-				A00000000000000000000004 /* iOS */,
 				A00000000000000000000005 /* watchOS */,
 				A00000000000000000000002 /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		A00000000000000000000004 /* iOS */ = {
-			isa = PBXGroup;
-			children = (
-				A00000000000000000000011 /* HarnessDreamsCompanionApp.swift */,
-				A00000000000000000000012 /* CompanionRootView.swift */,
-			);
-			path = iOS;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000005 /* watchOS */ = {
@@ -91,23 +67,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A00000000000000000000040 /* Harness Dreams */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A00000000000000000000055 /* Build configuration list for PBXNativeTarget "Harness Dreams" */;
-			buildPhases = (
-				A00000000000000000000030 /* Sources */,
-				A00000000000000000000031 /* Frameworks */,
-				A00000000000000000000032 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = "Harness Dreams";
-			productName = "Harness Dreams";
-			productReference = A00000000000000000000015 /* Harness Dreams.app */;
-			productType = "com.apple.product-type.application";
-		};
 		A00000000000000000000041 /* Harness Dreams Watch */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A00000000000000000000058 /* Build configuration list for PBXNativeTarget "Harness Dreams Watch" */;
@@ -135,9 +94,6 @@
 				LastSwiftUpdateCheck = 1610;
 				LastUpgradeCheck = 1610;
 				TargetAttributes = {
-					A00000000000000000000040 = {
-						CreatedOnToolsVersion = 16.1;
-					};
 					A00000000000000000000041 = {
 						CreatedOnToolsVersion = 16.1;
 					};
@@ -156,20 +112,12 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A00000000000000000000040 /* Harness Dreams */,
 				A00000000000000000000041 /* Harness Dreams Watch */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A00000000000000000000032 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A00000000000000000000035 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -180,16 +128,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A00000000000000000000030 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A00000000000000000000020 /* HarnessDreamsSignal.swift in Sources */,
-				A00000000000000000000021 /* HarnessDreamsCompanionApp.swift in Sources */,
-				A00000000000000000000022 /* CompanionRootView.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A00000000000000000000033 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -317,68 +255,6 @@
 			};
 			name = Release;
 		};
-		A00000000000000000000053 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Harness Dreams";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.harnessdreams.mobile;
-				PRODUCT_MODULE_NAME = HarnessDreamsCompanion;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		A00000000000000000000054 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Harness Dreams";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.harnessdreams.mobile;
-				PRODUCT_MODULE_NAME = HarnessDreamsCompanion;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		A00000000000000000000056 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -441,15 +317,6 @@
 			buildConfigurations = (
 				A00000000000000000000050 /* Debug */,
 				A00000000000000000000051 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		A00000000000000000000055 /* Build configuration list for PBXNativeTarget "Harness Dreams" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A00000000000000000000053 /* Debug */,
-				A00000000000000000000054 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

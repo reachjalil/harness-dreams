@@ -77,7 +77,7 @@ function githubUrl(remote: string): string | null {
 function compareUrl(
   remote: string,
   baseBranch: string,
-  branch: string,
+  branch: string
 ): string | undefined {
   const repo = githubUrl(remote);
   if (!repo) return undefined;
@@ -93,7 +93,7 @@ function relativeInside(root: string, file: string): string | null {
 function mapPatchFile(
   patch: ConfigPatchPreview | undefined,
   repoRootPath: string,
-  worktreePath: string,
+  worktreePath: string
 ): string | null {
   if (!patch) return null;
   const rel = relativeInside(repoRootPath, patch.file);
@@ -103,7 +103,7 @@ function mapPatchFile(
 function guidanceFromAction(action: string): string {
   const clean = action.replace(/\s+/g, " ").trim();
   const prefixed = clean.match(
-    /^(?:add (?:a )?rule(?: to [^:]+)?|scaffold skill):\s*(.+)$/i,
+    /^(?:add (?:a )?rule(?: to [^:]+)?|scaffold skill):\s*(.+)$/i
   );
   return prefixed?.[1]?.trim() || clean;
 }
@@ -124,7 +124,7 @@ function guidanceLines(entry: ActionQueueEntry): string[] {
 function applyGroupChanges(
   entries: ActionQueueEntry[],
   repoRootPath: string,
-  worktreePath: string,
+  worktreePath: string
 ): string[] {
   const changed = new Set<string>();
   const agentsByFile = new Map<string, string[]>();
@@ -141,7 +141,7 @@ function applyGroupChanges(
           ? "CLAUDE.md"
           : entry.category === "contextdoc"
             ? "rules.md"
-            : "AGENTS.md",
+            : "AGENTS.md"
       );
     const lines = guidanceLines(entry);
     if (entry.category === "claudemd") {
@@ -186,7 +186,7 @@ function applyGroupChanges(
 function branchGroup(
   group: BranchGroup,
   worktreesRoot: string,
-  stamp: string,
+  stamp: string
 ): ReviewBranch {
   const baseBranch =
     git(group.repoRoot, ["branch", "--show-current"]).stdout ||
@@ -196,7 +196,7 @@ function branchGroup(
   const branch = `codex/harness-dreams-${stamp}-${safeSlug(group.entries[0]?.project ?? "repo")}-${shortHash(idSeed)}`;
   const worktreePath = path.join(
     worktreesRoot,
-    `${path.basename(group.repoRoot)}-${stamp}-${shortHash(group.repoRoot + idSeed)}`,
+    `${path.basename(group.repoRoot)}-${stamp}-${shortHash(group.repoRoot + idSeed)}`
   );
   mkdirSync(path.dirname(worktreePath), { recursive: true });
 
@@ -221,7 +221,7 @@ function branchGroup(
   const changedFiles = applyGroupChanges(
     group.entries,
     group.repoRoot,
-    worktreePath,
+    worktreePath
   );
   if (changedFiles.length === 0) {
     return {
@@ -337,7 +337,7 @@ function groupByRepo(entries: ActionQueueEntry[]): {
 
 export function applyAcceptedRecommendationsAsBranches(
   accepted: ActionQueueEntry[],
-  worktreesRoot: string,
+  worktreesRoot: string
 ): Map<string, ReviewBranch> {
   const result = new Map<string, ReviewBranch>();
   const { groups, failures } = groupByRepo(accepted);

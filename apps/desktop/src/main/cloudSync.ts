@@ -11,8 +11,6 @@ import type {
   CloudSyncConfig,
   CloudSyncStatus,
   DreamReport,
-  Finding,
-  ProjectInsight,
   SyncedReviewDecision,
 } from "../shared/types";
 import {
@@ -22,6 +20,7 @@ import {
 } from "./reports";
 import { getConfig, onConfigChange } from "./store";
 import { getDeviceSyncUrl } from "./deviceSync";
+import { sanitizeCloudText, sanitizeReportForCloud } from "./cloudRedaction";
 
 const CYCLES_COLLECTION = "sleep_cycles";
 const DECISIONS_COLLECTION = "sleep_cycle_decisions";
@@ -137,8 +136,8 @@ function makeStatus(config: EffectiveCloudSyncConfig): CloudSyncStatus {
       ? !allowedByPlan
         ? "Cloud Sync is part of the paid plan. Dev bypass is off."
         : configured
-        ? "Cloud Sync is ready to connect."
-        : "Add an Atlas URI and shared user id to start syncing."
+          ? "Cloud Sync is ready to connect."
+          : "Add an Atlas URI and shared user id to start syncing."
       : "Cloud Sync is off.",
     userId: config.userId,
     deviceId: config.deviceId,
@@ -316,70 +315,6 @@ function reportUpdatedAt(report: DreamReport): number {
   return Math.max(report.timestamp, report.reviewedAt ?? 0, ...decisionTimes);
 }
 
-function sanitizeFinding(
-  finding: Finding
-): Omit<Finding, "evidenceFile" | "projectPath" | "patch"> {
-  const {
-    evidenceFile: _evidenceFile,
-    projectPath: _projectPath,
-    patch: _patch,
-    ...safe
-  } = finding;
-  return safe;
-}
-
-function sanitizeDecision(
-  entry: ActionQueueEntry
-): Omit<ActionQueueEntry, "projectPath" | "patch" | "reviewBranch"> {
-  const {
-    projectPath: _projectPath,
-    patch: _patch,
-    reviewBranch: _reviewBranch,
-    ...safe
-  } = entry;
-  return safe;
-}
-
-function sanitizeProjectInsight(insight: ProjectInsight): unknown {
-  const { path: _path, contextHealth, ...safe } = insight;
-  return {
-    ...safe,
-    contextHealth: contextHealth
-      ? {
-          ...contextHealth,
-          oversizedFiles: contextHealth.oversizedFiles.map(
-            ({ path: _sourcePath, ...source }) => source
-          ),
-        }
-      : undefined,
-  };
-}
-
-function sanitizeReport(report: DreamReport): unknown {
-  return {
-    id: report.id,
-    timestamp: report.timestamp,
-    reviewStatus: report.reviewStatus,
-    reviewedAt: report.reviewedAt,
-    rangeLabel: report.rangeLabel,
-    sessions: report.sessions,
-    projects: report.projects,
-    harness: report.harness,
-    digest: report.digest,
-    rings: report.rings,
-    metrics: report.metrics,
-    findings: report.findings.map(sanitizeFinding),
-    experiments: report.experiments.map(
-      ({ projectPath: _path, ...safe }) => safe
-    ),
-    reviewDecisions: report.reviewDecisions?.map(sanitizeDecision),
-    alignment: report.alignment,
-    window: report.window,
-    projectInsights: report.projectInsights?.map(sanitizeProjectInsight),
-    cloudRedactionPreview: report.cloudRedactionPreview,
-  };
-}
-
 function cycleDoc(
   report: DreamReport,
   config: EffectiveCloudSyncConfig
@@ -394,8 +329,8 @@ function cycleDoc(
     updatedAt: reportUpdatedAt(report),
     reviewStatus: report.reviewStatus,
     reviewedAt: report.reviewedAt ?? null,
-    digest: report.digest,
-    cycle: sanitizeReport(report),
+    digest: sanitizeCloudText(report.digest),
+    cycle: sanitizeReportForCloud(report),
   };
 }
 

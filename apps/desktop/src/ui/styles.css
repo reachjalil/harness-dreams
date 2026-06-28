@@ -1942,11 +1942,12 @@ button {
 
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--grid-gap);
-  align-items: start;
+  align-items: stretch;
 }
 .settings-group {
+  --settings-group-height: clamp(300px, 42vh, 460px);
   display: flex;
   flex-direction: column;
   background: var(--ink-800);
@@ -1954,7 +1955,9 @@ button {
   border-radius: var(--radius);
   box-shadow: var(--elev-1);
   padding: var(--card-pad);
+  height: var(--settings-group-height);
   min-width: 0;
+  overflow: hidden;
 }
 .settings-group.danger {
   border-color: var(--negative-weak);
@@ -1966,10 +1969,18 @@ button {
   font-size: var(--t-section);
   font-weight: var(--w-semi);
   margin-bottom: var(--s-2);
+  flex: 0 0 auto;
 }
 .settings-group-icon {
   display: inline-flex;
   color: var(--accent);
+}
+.settings-group-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: var(--s-1);
+  scrollbar-gutter: stable;
 }
 .settings-row {
   display: flex;
@@ -2011,6 +2022,24 @@ button {
 }
 .demo-callout b {
   color: var(--text);
+}
+
+@media (min-width: 1040px) {
+  .settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .settings-group {
+    height: auto;
+    min-height: 0;
+  }
+
+  .settings-group-body {
+    overflow: visible;
+    padding-right: 0;
+  }
 }
 
 .connector-row {
@@ -4360,9 +4389,6 @@ body {
   background: var(--violet-weak);
   color: var(--text);
 }
-.review-compass-card.done .review-compass-icon {
-  color: var(--teal);
-}
 .review-compass-icon {
   display: inline-flex;
   align-items: center;
@@ -4372,6 +4398,9 @@ body {
   border-radius: var(--r-pill);
   background: var(--glass-sunken);
   color: var(--violet);
+}
+.review-compass-card.done .review-compass-icon {
+  color: var(--teal);
 }
 .review-compass-main {
   display: grid;

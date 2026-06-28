@@ -5,10 +5,7 @@ import { Invoke } from "../shared/channels";
 import { ConfigPatchSchema } from "../shared/schemas";
 import { getCloudSyncStatus, syncCloudNow } from "./cloudSync";
 import type { Controller } from "./controller";
-import {
-  createCloudSyncPairing,
-  removeCloudSyncDevice,
-} from "./deviceSync";
+import { createCloudSyncPairing, removeCloudSyncDevice } from "./deviceSync";
 import { getLatest, getReports, syncReportsForConfig } from "./reports";
 import { getState } from "./state";
 import { getConfig, setConfig } from "./store";
@@ -48,6 +45,10 @@ export function registerIpc(controller: Controller): void {
 
   ipcMain.handle(Invoke.DreamNow, () => {
     controller.dreamNow();
+    return getState();
+  });
+  ipcMain.handle(Invoke.NapNow, () => {
+    controller.napNow();
     return getState();
   });
   ipcMain.handle(Invoke.PauseDream, () => {

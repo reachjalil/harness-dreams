@@ -16,6 +16,7 @@ let controllerRef: Controller | null = null;
 let menu: Menu | null = null;
 let lastIconSig = "";
 let lastMenuSig = "";
+let cycleFrame = 0;
 
 function staticKind(state: RuntimeState): TrayKind {
   if (state.phase === "ready" && state.hasUnreviewed) return "ready";
@@ -30,7 +31,7 @@ function statusLine(state: RuntimeState): string {
       : `${state.stage ?? "Dreaming"} · ${pct}%`;
   }
   if (state.phase === "ready" && state.hasUnreviewed) {
-    return "Dream ready to review";
+    return "Sleep Cycle ready to review";
   }
   return "Resting";
 }
@@ -40,16 +41,19 @@ function tooltip(state: RuntimeState): string {
 }
 
 function quickInfo(report: DreamReport | null): MenuItemConstructorOptions[] {
-  if (!report) return [{ label: "No sessions yet", enabled: false }];
+  if (!report) {
+    return [{ label: "No completed Sleep Cycles yet", enabled: false }];
+  }
   const eff = report.rings.find((r) => r.key === "efficiency");
   const tok = report.metrics.find((m) => m.key === "tokens_per_change");
   const effText = eff
     ? `Efficiency ${eff.score} (${eff.delta >= 0 ? "+" : ""}${eff.delta})`
     : "";
   const tokText = tok ? `${tok.value} tok/change` : "";
+  const summary = [effText, tokText].filter(Boolean).join(" · ");
   return [
-    { label: `Last: ${report.rangeLabel}`, enabled: false },
-    { label: `   ${effText} · ${tokText}`, enabled: false },
+    { label: `Latest: ${report.rangeLabel}`, enabled: false },
+    ...(summary ? [{ label: summary, enabled: false }] : []),
   ];
 }
 
@@ -57,41 +61,55 @@ function recentSessions(): MenuItemConstructorOptions {
   const c = (): Controller => controllerRef as Controller;
   const items: MenuItemConstructorOptions[] = getReports()
     .slice(0, 7)
-    .map((r) => ({ label: r.rangeLabel, click: () => c().openSession(r.id) }));
+    .map((r) => ({
+      label:
+        r.reviewStatus === "unreviewed"
+          ? `${r.rangeLabel} · needs review`
+          : r.rangeLabel,
+      click: () => c().openSession(r.id),
+    }));
   return {
-    label: "Recent sessions",
+    label: "Recent Sleep Cycles",
     submenu: items.length
       ? items
-      : [{ label: "No sessions yet", enabled: false }],
+      : [{ label: "No completed Sleep Cycles yet", enabled: false }],
   };
 }
 
 function buildMenu(state: RuntimeState): Menu {
   const c = (): Controller => controllerRef as Controller;
   const dreaming = state.phase === "dreaming";
+  const latest = getLatest();
   const template: MenuItemConstructorOptions[] = [
-    { label: `Harness Dreams: ${statusLine(state)}`, enabled: false },
-    ...quickInfo(getLatest()),
+    { label: "Harness Dreams", enabled: false },
+    { label: statusLine(state), enabled: false },
+    ...quickInfo(latest),
     { type: "separator" },
   ];
   if (dreaming) {
     template.push(
       state.paused
-        ? { label: "Resume dream", click: () => c().resumeDream() }
-        : { label: "Pause dream", click: () => c().pauseDream() }
+        ? { label: "Resume Sleep Cycle", click: () => c().resumeDream() }
+        : { label: "Pause Sleep Cycle", click: () => c().pauseDream() }
     );
+  } else if (state.phase === "ready" && state.hasUnreviewed) {
+    template.push({
+      label: "Review Latest Sleep Cycle",
+      click: () => (latest ? c().openSession(latest.id) : c().openMain()),
+    });
   } else {
     template.push({
-      label: "Start dream session",
+      label: "Start Sleep Cycle",
       click: () => c().dreamNow(),
     });
   }
   template.push(
     {
-      label: "Open Home",
+      label: "Open Dashboard",
       accelerator: "Cmd+O",
       click: () => c().openMain(),
     },
+    { type: "separator" },
     recentSessions(),
     { type: "separator" },
     {
@@ -105,7 +123,7 @@ function buildMenu(state: RuntimeState): Menu {
 
 function iconSignature(state: RuntimeState): string {
   if (state.phase === "dreaming") {
-    return `d:${Math.round(state.progress * 20)}:${state.paused}`;
+    return `d:${Math.round(state.progress * 20)}:${state.paused}:${cycleFrame}`;
   }
   return staticKind(state);
 }
@@ -124,12 +142,17 @@ function menuSignature(state: RuntimeState): string {
 
 function paintIcon(state: RuntimeState): void {
   if (!tray) return;
+  if (state.phase === "dreaming" && !state.paused) {
+    cycleFrame += 1;
+  } else if (state.phase !== "dreaming") {
+    cycleFrame = 0;
+  }
   const sig = iconSignature(state);
   if (sig === lastIconSig) return;
   lastIconSig = sig;
   tray.setImage(
     state.phase === "dreaming"
-      ? moonForProgress(state.progress, state.paused)
+      ? moonForProgress(state.progress, state.paused, cycleFrame)
       : getTrayIcon(staticKind(state))
   );
 }

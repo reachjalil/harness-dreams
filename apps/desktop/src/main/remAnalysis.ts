@@ -98,7 +98,7 @@ function redact(text: string, count: { value: number }): string {
 
 function resolveBinary(
   provider: RemRunnerConfig["provider"],
-  configured: string,
+  configured: string
 ): string {
   if (
     configured &&
@@ -119,7 +119,7 @@ function resolveBinary(
             "standalone",
             "current",
             "bin",
-            "codex",
+            "codex"
           ),
           path.join(home, ".local", "bin", "codex"),
           process.platform === "darwin"
@@ -202,7 +202,7 @@ function categoryFor(target: RemJsonFinding["target"]): ActionCategory {
 
 function makePayload(
   projects: AnalysisProject[],
-  sessions: LocalSession[],
+  sessions: LocalSession[]
 ): { payload: RemProjectPayload[]; redactions: number } {
   const count = { value: 0 };
   const byProject = new Map<string, LocalSession[]>();
@@ -226,7 +226,7 @@ function makePayload(
               kind: turn.kind,
               timestamp: new Date(turn.timestamp).toISOString(),
               content: redact(short(turn.content, MAX_TURN_CHARS), count),
-            })),
+            }))
         )
         .slice(-MAX_TURNS_PER_PROJECT);
       return {
@@ -266,7 +266,7 @@ function makePayload(
 
 function findEvidence(
   quote: string,
-  sessions: LocalSession[],
+  sessions: LocalSession[]
 ): { projectPath: string; project: string; file: string } | null {
   const needle = quote.trim();
   if (!needle) return null;
@@ -284,7 +284,7 @@ function findEvidence(
 
 function findingsFromJson(
   parsed: RemJson,
-  sessions: LocalSession[],
+  sessions: LocalSession[]
 ): Finding[] {
   const out: Finding[] = [];
   for (const [index, item] of (parsed.findings ?? []).entries()) {
@@ -303,7 +303,7 @@ function findingsFromJson(
             config,
             item.skillName?.trim() || item.title?.trim() || "rem-analysis",
             rule,
-            evidence.project,
+            evidence.project
           )
         : category === "contextdoc"
           ? contextRulesPatch(config, rule, evidence.project)
@@ -345,7 +345,7 @@ export function runRemAnalysis(
   projects: AnalysisProject[],
   sessions: LocalSession[],
   depth: AnalysisDepth,
-  config: RemRunnerConfig,
+  config: RemRunnerConfig
 ): RemAnalysisResult | null {
   if (sessions.length === 0) return null;
   const { payload, redactions } = makePayload(projects, sessions);
@@ -353,7 +353,7 @@ export function runRemAnalysis(
   const prompt = promptFor(payload, depth);
   const bin = resolveBinary(
     config.provider,
-    config.provider === "codex" ? config.codexPath : config.claudePath,
+    config.provider === "codex" ? config.codexPath : config.claudePath
   );
   const args = argvFor(config, prompt);
   const proc = spawnSync(bin, args, {

@@ -45,6 +45,7 @@ const CloudSyncSchema = z.object({
 
 export const AppConfigSchema = z.object({
   onboarded: z.boolean(),
+  userName: z.string(),
   demoMode: z.boolean(),
   showOnboardingOnLaunch: z.boolean(),
   privacyMode: PrivacyModeSchema,
@@ -85,6 +86,7 @@ export const AppConfigSchema = z.object({
 export const ConfigPatchSchema = z
   .object({
     onboarded: z.boolean(),
+    userName: z.string(),
     demoMode: z.boolean(),
     showOnboardingOnLaunch: z.boolean(),
     privacyMode: PrivacyModeSchema,

@@ -1,12 +1,11 @@
-# Harness Dreams Mobile
+# Harness Dreams Watch
 
-Native SwiftUI scaffold for the Harness Dreams companion surfaces:
+Native SwiftUI watchOS scaffold for the Harness Dreams companion surface:
 
-- `Harness Dreams`: iPhone/iPad companion app for reviewing the latest cycle signal.
-- `Harness Dreams Watch`: Apple Watch glance for the same redacted signal.
+- `Harness Dreams Watch`: Apple Watch glance for the redacted cycle signal.
 - `HarnessDreamsMobileCore`: shared Swift model that mirrors the desktop app's sync boundary.
 
-The scaffold intentionally carries only cycle signal data: scores, metrics, findings, and goals. Code, transcripts, evidence files, and secrets stay on the Mac.
+The iPhone/iPad companion now lives in `apps/mobile` as a modern Expo app. This Xcode project remains for watchOS, where Expo does not provide a direct app target.
 
 ## Open in Xcode
 
@@ -14,7 +13,7 @@ The scaffold intentionally carries only cycle signal data: scores, metrics, find
 open apps/ios/HarnessDreamsMobile.xcodeproj
 ```
 
-Select the `Harness Dreams` or `Harness Dreams Watch` scheme and run on a simulator. The first version uses fixture data from `Shared/HarnessDreamsSignal.swift`; the sync button currently refreshes the local timestamp and marks the future integration point for CloudKit or WatchConnectivity.
+Select the `Harness Dreams Watch` scheme. The current watch app uses fixture data from `Shared/HarnessDreamsSignal.swift`; the sync button currently refreshes the local timestamp and marks the future integration point for WatchConnectivity or a cloud bridge.
 
 ## Verify the shared model
 

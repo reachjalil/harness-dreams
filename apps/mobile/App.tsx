@@ -112,7 +112,9 @@ async function tokenHash(token: string): Promise<string> {
 
 function compositeScore(rings: Ring[]): number {
   if (rings.length === 0) return 0;
-  return Math.round(rings.reduce((sum, ring) => sum + ring.score, 0) / rings.length);
+  return Math.round(
+    rings.reduce((sum, ring) => sum + ring.score, 0) / rings.length
+  );
 }
 
 export default function App() {
@@ -127,7 +129,7 @@ export default function App() {
   const paired = Boolean(pairing);
   const score = useMemo(
     () => compositeScore(snapshot?.report?.rings ?? []),
-    [snapshot?.report?.rings],
+    [snapshot?.report?.rings]
   );
 
   const pair = useCallback(async (next: Pairing) => {
@@ -147,7 +149,10 @@ export default function App() {
       if (!response.ok) throw new Error(`Sync failed: ${response.status}`);
       setSnapshot((await response.json()) as Snapshot);
     } catch (err) {
-      Alert.alert("Sync failed", err instanceof Error ? err.message : String(err));
+      Alert.alert(
+        "Sync failed",
+        err instanceof Error ? err.message : String(err)
+      );
     } finally {
       setLoading(false);
     }
@@ -181,7 +186,10 @@ export default function App() {
   async function pairManual(): Promise<void> {
     const next = parsePairingUrl(manualUrl.trim());
     if (!next) {
-      Alert.alert("Invalid pairing link", "Paste the link from the desktop QR card.");
+      Alert.alert(
+        "Invalid pairing link",
+        "Paste the link from the desktop QR card."
+      );
       return;
     }
     await pair(next);
@@ -253,7 +261,10 @@ export default function App() {
               autoCorrect={false}
               style={styles.input}
             />
-            <Pressable style={styles.secondaryButton} onPress={() => void pairManual()}>
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={() => void pairManual()}
+            >
               <Text style={styles.secondaryButtonText}>Pair from link</Text>
             </Pressable>
           </View>
@@ -267,13 +278,18 @@ export default function App() {
                     {snapshot?.desktopDeviceName ?? "Desktop"}
                   </Text>
                 </View>
-                <Pressable style={styles.smallButton} onPress={() => void refresh()}>
+                <Pressable
+                  style={styles.smallButton}
+                  onPress={() => void refresh()}
+                >
                   <Text style={styles.smallButtonText}>
                     {loading ? "Syncing" : "Sync"}
                   </Text>
                 </Pressable>
               </View>
-              <Text style={styles.meta}>Token hash {lastTokenHash.slice(0, 12)}</Text>
+              <Text style={styles.meta}>
+                Token hash {lastTokenHash.slice(0, 12)}
+              </Text>
               <Text style={styles.meta}>{pairing?.syncBaseUrl}</Text>
             </View>
 
@@ -282,12 +298,15 @@ export default function App() {
             ) : snapshot?.report ? (
               <>
                 <View style={styles.heroCard}>
-                  <Text style={styles.eyebrow}>{snapshot.report.rangeLabel}</Text>
+                  <Text style={styles.eyebrow}>
+                    {snapshot.report.rangeLabel}
+                  </Text>
                   <Text style={styles.score}>{score}</Text>
                   <Text style={styles.sectionTitle}>Harness health</Text>
                   <Text style={styles.body}>{snapshot.report.digest}</Text>
                   <Text style={styles.meta}>
-                    {snapshot.report.sessions} sessions · {snapshot.report.projects} projects
+                    {snapshot.report.sessions} sessions ·{" "}
+                    {snapshot.report.projects} projects
                   </Text>
                 </View>
 
@@ -296,7 +315,10 @@ export default function App() {
                     <View key={ring.key} style={styles.tile}>
                       <Text style={styles.tileValue}>{ring.score}</Text>
                       <Text style={styles.tileLabel}>{ring.label}</Text>
-                      <Text style={styles.delta}>{ring.delta >= 0 ? "+" : ""}{ring.delta}</Text>
+                      <Text style={styles.delta}>
+                        {ring.delta >= 0 ? "+" : ""}
+                        {ring.delta}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -315,11 +337,16 @@ export default function App() {
             ) : (
               <View style={styles.card}>
                 <Text style={styles.sectionTitle}>No cycle yet</Text>
-                <Text style={styles.body}>Run a Sleep Cycle on the desktop app.</Text>
+                <Text style={styles.body}>
+                  Run a Sleep Cycle on the desktop app.
+                </Text>
               </View>
             )}
 
-            <Pressable style={styles.dangerButton} onPress={() => void unpair()}>
+            <Pressable
+              style={styles.dangerButton}
+              onPress={() => void unpair()}
+            >
               <Text style={styles.dangerButtonText}>Remove pairing</Text>
             </Pressable>
           </>
@@ -416,7 +443,17 @@ const styles = StyleSheet.create({
   tileValue: { color: "#f8fafc", fontSize: 24, fontWeight: "900" },
   tileLabel: { color: "#cbd5e1", fontSize: 12, fontWeight: "700" },
   delta: { color: "#86efac", fontSize: 12, fontWeight: "800" },
-  finding: { gap: 4, borderTopWidth: 1, borderTopColor: "#263244", paddingTop: 12 },
-  findingType: { color: "#5eead4", fontSize: 11, fontWeight: "800", textTransform: "uppercase" },
+  finding: {
+    gap: 4,
+    borderTopWidth: 1,
+    borderTopColor: "#263244",
+    paddingTop: 12,
+  },
+  findingType: {
+    color: "#5eead4",
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
   findingTitle: { color: "#f8fafc", fontSize: 16, fontWeight: "800" },
 });

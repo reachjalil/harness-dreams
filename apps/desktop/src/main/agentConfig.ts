@@ -81,7 +81,7 @@ function sourceSummary(
   kind: ContextSourceKind,
   label: string,
   file: string,
-  content = read(file),
+  content = read(file)
 ): ContextSourceSummary | null {
   if (!content.trim()) return null;
   return {
@@ -108,7 +108,7 @@ function shallowMarkdownFilesIn(
   dir: string,
   kind: ContextSourceKind,
   labelPrefix: string,
-  limit = 16,
+  limit = 16
 ): ContextSourceSummary[] {
   try {
     if (!existsSync(dir)) return [];
@@ -126,7 +126,7 @@ function shallowMarkdownFilesIn(
 }
 
 function skillFilesIn(
-  dir: string,
+  dir: string
 ): Array<{ name: string; file: string; content: string }> {
   try {
     if (!existsSync(dir)) return [];
@@ -171,7 +171,7 @@ function globalClaudeContextFiles(): ContextSourceSummary[] {
     ...shallowMarkdownFilesIn(
       path.join(root, "memory"),
       "memory",
-      "~/.claude/memory",
+      "~/.claude/memory"
     ),
   ];
 }
@@ -222,12 +222,12 @@ function projectMemoryFiles(projectPath: string): ContextSourceSummary[] {
     ...shallowMarkdownFilesIn(
       path.join(projectPath, "memory"),
       "memory",
-      "memory",
+      "memory"
     ),
     ...shallowMarkdownFilesIn(
       path.join(projectPath, ".claude", "memory"),
       "memory",
-      ".claude/memory",
+      ".claude/memory"
     ),
   ];
 }
@@ -242,7 +242,7 @@ function healthFrom(
   memoryFiles: ContextSourceSummary[],
   localSkillCount: number,
   globalSkillCount: number,
-  hasRulesMd: boolean,
+  hasRulesMd: boolean
 ): ContextHealth {
   const totalChars = files.reduce((sum, file) => sum + file.chars, 0);
   const projectChars = files
@@ -251,7 +251,7 @@ function healthFrom(
         file.kind === "agentsmd" ||
         file.kind === "claudemd" ||
         file.kind === "rules" ||
-        file.kind === "memory",
+        file.kind === "memory"
     )
     .filter((file) => !file.label.startsWith("~/"))
     .reduce((sum, file) => sum + file.chars, 0);
@@ -264,22 +264,22 @@ function healthFrom(
       (file.kind === "agentsmd" && (file.chars > 9_000 || file.lines > 140)) ||
       (file.kind === "claudemd" && (file.chars > 9_000 || file.lines > 160)) ||
       (file.kind === "memory" && file.chars > 10_000) ||
-      (file.label.startsWith("~/") && file.chars > 8_000),
+      (file.label.startsWith("~/") && file.chars > 8_000)
   );
   const risks: string[] = [];
   if (oversizedFiles.length > 0) {
     risks.push(
-      `${oversizedFiles.length} oversized context file${oversizedFiles.length === 1 ? "" : "s"}`,
+      `${oversizedFiles.length} oversized context file${oversizedFiles.length === 1 ? "" : "s"}`
     );
   }
   if (totalChars > 24_000) {
     risks.push(
-      `context load is ${compactChars(totalChars)} before transcripts`,
+      `context load is ${compactChars(totalChars)} before transcripts`
     );
   }
   if (localSkillCount > 8 || localSkillCount + globalSkillCount > 22) {
     risks.push(
-      `${localSkillCount + globalSkillCount} skills can make routing noisy`,
+      `${localSkillCount + globalSkillCount} skills can make routing noisy`
     );
   }
   if (
@@ -295,22 +295,22 @@ function healthFrom(
   const suggestions: string[] = [];
   if (!hasRulesMd && risks.some((risk) => risk.includes("AGENTS.md"))) {
     suggestions.push(
-      "Create rules.md for detailed project rules and keep AGENTS.md focused on routing, safety, and links.",
+      "Create rules.md for detailed project rules and keep AGENTS.md focused on routing, safety, and links."
     );
   }
   if (localSkillCount > 8 || localSkillCount + globalSkillCount > 22) {
     suggestions.push(
-      "Archive or project-scope rarely used skills so the agent chooses from a smaller routing set.",
+      "Archive or project-scope rarely used skills so the agent chooses from a smaller routing set."
     );
   }
   if (memoryFiles.length > 10 || memoryChars > 16_000) {
     suggestions.push(
-      "Consolidate Claude memory into a short indexed MEMORY.md with stale notes pruned.",
+      "Consolidate Claude memory into a short indexed MEMORY.md with stale notes pruned."
     );
   }
   if (globalChars > 10_000) {
     suggestions.push(
-      "Move project-specific home-directory Claude/Codex guidance into project files.",
+      "Move project-specific home-directory Claude/Codex guidance into project files."
     );
   }
 
@@ -373,8 +373,8 @@ export function readProjectConfig(projectPath: string): ProjectConfig {
         "skill",
         `.claude/skills/${skill.name}`,
         skill.file,
-        skill.content,
-      ),
+        skill.content
+      )
     ),
   ].filter((item): item is ContextSourceSummary => Boolean(item));
   const memoryFiles = [
@@ -387,7 +387,7 @@ export function readProjectConfig(projectPath: string): ProjectConfig {
     memoryFiles,
     localSkills.length,
     globalSkills.length,
-    rules.trim().length > 0,
+    rules.trim().length > 0
   );
   return {
     path: projectPath,
@@ -427,7 +427,7 @@ function buildManagedBlock(
   lines: string[],
   start: string,
   end: string,
-  title: string,
+  title: string
 ): string {
   return [
     start,
@@ -447,7 +447,7 @@ export function buildAgentsBlock(lines: string[]): string {
     lines,
     MANAGED_START,
     MANAGED_END,
-    "## Harness Dreams — accepted guidance",
+    "## Harness Dreams — accepted guidance"
   );
 }
 
@@ -456,7 +456,7 @@ export function buildClaudeBlock(lines: string[]): string {
     lines,
     CLAUDE_MANAGED_START,
     CLAUDE_MANAGED_END,
-    "## Harness Dreams — Claude guidance",
+    "## Harness Dreams — Claude guidance"
   );
 }
 
@@ -465,7 +465,7 @@ export function buildContextBlock(lines: string[]): string {
     lines,
     CONTEXT_MANAGED_START,
     CONTEXT_MANAGED_END,
-    "## Harness Dreams — context hygiene",
+    "## Harness Dreams — context hygiene"
   );
 }
 
@@ -474,7 +474,7 @@ export function agentsPatch(
   config: ProjectConfig,
   category: ActionCategory,
   line: string,
-  projectName: string,
+  projectName: string
 ): ConfigPatchPreview {
   return {
     target: category,
@@ -489,7 +489,7 @@ export function agentsPatch(
 export function claudePatch(
   config: ProjectConfig,
   line: string,
-  projectName: string,
+  projectName: string
 ): ConfigPatchPreview {
   return {
     target: "claudemd",
@@ -504,7 +504,7 @@ export function claudePatch(
 export function contextRulesPatch(
   config: ProjectConfig,
   line: string,
-  projectName: string,
+  projectName: string
 ): ConfigPatchPreview {
   return {
     target: "contextdoc",
@@ -520,7 +520,7 @@ export function skillPatch(
   config: ProjectConfig,
   taskLabel: string,
   description: string,
-  projectName: string,
+  projectName: string
 ): ConfigPatchPreview {
   const slug = slugify(taskLabel);
   const file = path.join(config.skillsDir, slug, "SKILL.md");
@@ -554,7 +554,7 @@ export function skillPatch(
  */
 export function applyAgentsBlock(
   agentsMdPath: string,
-  lines: string[],
+  lines: string[]
 ): string | null {
   if (lines.length === 0) return null;
   const block = buildAgentsBlock(lines);
@@ -564,7 +564,7 @@ export function applyAgentsBlock(
   const next = existing.includes(MANAGED_START)
     ? existing.replace(
         new RegExp(`${MANAGED_START}[\\s\\S]*?${MANAGED_END}\\n?`),
-        block,
+        block
       )
     : `${existing.trimEnd()}\n\n${block}`;
   try {
@@ -579,7 +579,7 @@ export function applyAgentsBlock(
 /** Apply accepted CLAUDE.md guidance as a single idempotent managed block. */
 export function applyClaudeBlock(
   claudeMdPath: string,
-  lines: string[],
+  lines: string[]
 ): string | null {
   if (lines.length === 0) return null;
   const block = buildClaudeBlock(lines);
@@ -589,9 +589,9 @@ export function applyClaudeBlock(
   const next = existing.includes(CLAUDE_MANAGED_START)
     ? existing.replace(
         new RegExp(
-          `${CLAUDE_MANAGED_START}[\\s\\S]*?${CLAUDE_MANAGED_END}\\n?`,
+          `${CLAUDE_MANAGED_START}[\\s\\S]*?${CLAUDE_MANAGED_END}\\n?`
         ),
-        block,
+        block
       )
     : `${existing.trimEnd()}\n\n${block}`;
   try {
@@ -606,7 +606,7 @@ export function applyClaudeBlock(
 /** Apply accepted context guidance as a single idempotent managed block. */
 export function applyContextDocBlock(
   contextPath: string,
-  lines: string[],
+  lines: string[]
 ): string | null {
   if (lines.length === 0) return null;
   const block = buildContextBlock(lines);
@@ -616,9 +616,9 @@ export function applyContextDocBlock(
   const next = existing.includes(CONTEXT_MANAGED_START)
     ? existing.replace(
         new RegExp(
-          `${CONTEXT_MANAGED_START}[\\s\\S]*?${CONTEXT_MANAGED_END}\\n?`,
+          `${CONTEXT_MANAGED_START}[\\s\\S]*?${CONTEXT_MANAGED_END}\\n?`
         ),
-        block,
+        block
       )
     : `${existing.trimEnd()}\n\n${block}`;
   try {

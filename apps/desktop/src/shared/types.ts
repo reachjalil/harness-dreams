@@ -9,6 +9,13 @@
 /** Where the overnight reflection currently is. Drives the menu-bar icon. */
 export type DreamPhase = "resting" | "dreaming" | "ready";
 
+/**
+ * What kind of reflection a cycle is. A "sleep" cycle is the full overnight
+ * pass; a "nap" is a faster, lighter mid-day check-in (Deep Sleep only, a
+ * short morning window, just the top nudge or two).
+ */
+export type CycleKind = "sleep" | "nap";
+
 /** Local-first by default; cloud analysis is an explicit opt-in. */
 export type PrivacyMode = "local" | "cloud";
 
@@ -129,6 +136,8 @@ export interface DiscoveredProject {
 /** Persisted, user-facing configuration. */
 export interface AppConfig {
   onboarded: boolean;
+  /** What the app calls the user in greetings. Empty until they tell us. */
+  userName: string;
   /** Use persisted fictional projects/cycles for product demos and walkthroughs. */
   demoMode: boolean;
   /** Replay the welcome/setup flow on every app launch (until turned off). */
@@ -314,11 +323,18 @@ export type ActionCategory =
 
 /** A user's decision on a finding's recommended action. */
 export type ActionState =
-  "open" | "accepted" | "rejected" | "snoozed" | "queued";
+  | "open"
+  | "accepted"
+  | "rejected"
+  | "snoozed"
+  | "queued";
 
 /** The kind of friction a finding surfaced between human and agent. */
 export type FrictionType =
-  "config-conflict" | "missing-skill" | "wrong-domain" | "unclear-prompt";
+  | "config-conflict"
+  | "missing-skill"
+  | "wrong-domain"
+  | "unclear-prompt";
 
 /** A single point of friction, linked 1:1 to the finding that explains it. */
 export interface FrictionPoint {
@@ -477,6 +493,8 @@ export interface DreamReport {
   id: string;
   /** Epoch ms the dream completed — used for ordering and history labels. */
   timestamp: number;
+  /** Full overnight "sleep" cycle or a faster mid-day "nap". Defaults to sleep. */
+  kind?: CycleKind;
   /** Review lifecycle. Starting a newer cycle expires older unreviewed cycles. */
   reviewStatus?: CycleReviewStatus;
   /** Epoch ms when the user marked the cycle reviewed. */

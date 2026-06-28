@@ -21,6 +21,7 @@ import type { AppConfig } from "../shared/types";
 
 export const DEFAULT_CONFIG: AppConfig = {
   onboarded: false,
+  userName: "",
   demoMode: false,
   showOnboardingOnLaunch: false,
   privacyMode: "local",
@@ -98,8 +99,7 @@ function withRuntimeDefaults(next: AppConfig): AppConfig {
       databaseName:
         cloudSync.databaseName || DEFAULT_CONFIG.cloudSync.databaseName,
       userId: cloudSync.userId || randomUUID(),
-      jwtSecret:
-        cloudSync.jwtSecret || randomBytes(32).toString("base64url"),
+      jwtSecret: cloudSync.jwtSecret || randomBytes(32).toString("base64url"),
       deviceId: cloudSync.deviceId || randomUUID(),
       deviceName: cloudSync.deviceName || hostname() || "Desktop",
       syncIntervalMs: Math.max(

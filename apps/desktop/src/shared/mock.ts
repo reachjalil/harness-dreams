@@ -3,6 +3,7 @@ import type {
   AlignmentBand,
   AlignmentDetail,
   AnalysisProject,
+  CycleKind,
   CycleReviewStatus,
   DreamReport,
   Experiment,
@@ -913,11 +914,41 @@ export function seedReports(now: number): DreamReport[] {
   );
 }
 
+/**
+ * Shape a full demo cycle into a "nap": lighter and morning-framed. A nap is a
+ * fast Deep-Sleep-only check-in, so it keeps the vitals but trims to the single
+ * most useful nudge and a short "this morning" window.
+ */
+function napifyDemo(report: DreamReport): DreamReport {
+  const napSessions = Math.max(2, Math.round(report.sessions / 3));
+  return {
+    ...report,
+    kind: "nap",
+    sessions: napSessions,
+    findings: report.findings.slice(0, 1),
+    reviewDecisions: undefined,
+    rangeLabel: `This morning · ${napSessions} session${napSessions === 1 ? "" : "s"}`,
+    digest:
+      "A quick mid-day look at this morning's work — just the most useful nudge to keep your momentum.",
+    alignment: report.alignment
+      ? { ...report.alignment, friction: report.alignment.friction.slice(0, 1) }
+      : report.alignment,
+    window: report.window
+      ? {
+          ...report.window,
+          label: "This morning",
+          sessionsInWindow: napSessions,
+        }
+      : report.window,
+  };
+}
+
 export function makeDemoReport(
   timestamp: number,
   cycleNumber: number,
   reviewStatus: CycleReviewStatus = "unreviewed",
-  previous?: DreamReport | null
+  previous?: DreamReport | null,
+  kind: CycleKind = "sleep"
 ): DreamReport {
   const seed = 240 + cycleNumber * 19;
   const base = makeReport(timestamp, seed, reviewStatus);
@@ -947,7 +978,7 @@ export function makeDemoReport(
     cycleNumber,
     previous
   );
-  return {
+  const report: DreamReport = {
     ...base,
     id: `demo_cycle_${timestamp}_${cycleNumber}`,
     timestamp,
@@ -1043,6 +1074,7 @@ export function makeDemoReport(
           }
         : undefined,
   };
+  return kind === "nap" ? napifyDemo(report) : report;
 }
 
 export function seedDemoReports(now: number): DreamReport[] {
@@ -1062,7 +1094,8 @@ export function seedDemoReports(now: number): DreamReport[] {
 
 export function nextDemoReport(
   now: number,
-  previous?: DreamReport | null
+  previous?: DreamReport | null,
+  kind: CycleKind = "sleep"
 ): DreamReport {
   const count = previous?.id.startsWith("demo_cycle_")
     ? Number(previous.id.split("_").at(-1) ?? 0) + 1
@@ -1071,6 +1104,7 @@ export function nextDemoReport(
     now,
     Number.isFinite(count) ? count : 1,
     "unreviewed",
-    previous
+    previous,
+    kind
   );
 }
