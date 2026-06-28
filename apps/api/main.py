@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import json
+import uuid
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -104,29 +105,95 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
-    context_date: str | None = None  # YYYY-MM-DD; defaults to most recent log
+    context_date: str | None = None
+    session_id: str | None = None
 
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
     messages = [{"role": m.role, "content": m.content} for m in req.messages]
+    db = get_db()
+    now = datetime.now(timezone.utc)
+
+    # Resolve or create session
+    session_id = req.session_id
+    if session_id:
+        exists = await db.chat_sessions.find_one({"session_id": session_id}, {"_id": 1})
+        if not exists:
+            session_id = None
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        await db.chat_sessions.insert_one({
+            "session_id": session_id,
+            "kind": "text",
+            "created_at": now,
+            "updated_at": now,
+            "messages": [],
+        })
+
+    # Save user message immediately
+    user_msg = messages[-1]
+    await db.chat_sessions.update_one(
+        {"session_id": session_id},
+        {"$push": {"messages": {**user_msg, "at": now}}, "$set": {"updated_at": now}},
+    )
 
     async def event_stream():
+        yield f"data: {json.dumps({'type': 'session_id', 'session_id': session_id})}\n\n"
+        assistant_tokens: list[str] = []
         try:
             async for event in stream_chat(messages, req.context_date):
                 if event.get("type") == "error":
                     yield f"data: {json.dumps({'error': event.get('message', 'Unknown error')})}\n\n"
                 else:
+                    if event.get("type") == "token":
+                        assistant_tokens.append(event["data"])
                     yield f"data: {json.dumps(event)}\n\n"
-            yield f"data: {json.dumps({'done': True})}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        finally:
+            if assistant_tokens:
+                full = "".join(assistant_tokens)
+                await db.chat_sessions.update_one(
+                    {"session_id": session_id},
+                    {
+                        "$push": {"messages": {"role": "assistant", "content": full, "at": datetime.now(timezone.utc)}},
+                        "$set": {"updated_at": datetime.now(timezone.utc)},
+                    },
+                )
+            yield f"data: {json.dumps({'done': True})}\n\n"
 
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.get("/chat/sessions")
+async def list_chat_sessions(limit: int = 20):
+    db = get_db()
+    docs = await db.chat_sessions.find(
+        {},
+        {"session_id": 1, "kind": 1, "created_at": 1, "updated_at": 1, "messages": {"$slice": 1}},
+    ).sort("updated_at", -1).limit(limit).to_list(limit)
+    for d in docs:
+        d.pop("_id", None)
+        # Surface first user message as preview
+        first = next((m for m in d.get("messages", []) if m.get("role") == "user"), None)
+        d["preview"] = first["content"][:80] if first else ""
+        d.pop("messages", None)
+    return docs
+
+
+@app.get("/chat/sessions/{session_id}")
+async def get_chat_session(session_id: str):
+    db = get_db()
+    doc = await db.chat_sessions.find_one({"session_id": session_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Session not found")
+    doc.pop("_id", None)
+    return doc
 
 
 @app.post("/voice/token")

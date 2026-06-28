@@ -44,6 +44,43 @@ const SUGGESTIONS = [
   { label: "How was my week?", sub: "Trend across the last 7 days" },
 ];
 
+const REPLY_POOL = [
+  "What should I clean up from this?",
+  "What pattern keeps repeating?",
+  "How do I set up my next session better?",
+  "Which sessions are worth keeping?",
+  "Where did the agent get stuck most?",
+  "What context should I carry forward?",
+  "What would a good handoff look like?",
+  "What's creating the most friction right now?",
+  "How can I avoid this next time?",
+];
+
+function ReplyChips({
+  turn,
+  onSuggest,
+}: {
+  turn: number;
+  onSuggest: (text: string) => void;
+}): ReactElement {
+  const start = (turn * 3) % REPLY_POOL.length;
+  const chips = [0, 1, 2].map((i) => REPLY_POOL[(start + i) % REPLY_POOL.length]);
+  return (
+    <div className="chat-reply-chips">
+      {chips.map((c) => (
+        <button
+          key={c}
+          type="button"
+          className="chat-reply-chip"
+          onClick={() => onSuggest(c)}
+        >
+          {c}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function AssistantIcon(): ReactElement {
   return (
     <div className="chat-ai-icon" aria-hidden="true">
@@ -162,15 +199,41 @@ function MessageRow({ item }: { item: ChatItem }): ReactElement {
   );
 }
 
+const SESSION_KEY = "dream-chat-session-id";
+
 function TextChat(): ReactElement {
   const [items, setItems] = useState<ChatItem[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(
+    typeof localStorage !== "undefined" ? localStorage.getItem(SESSION_KEY) : null
+  );
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Load previous session on mount
+  useEffect(() => {
+    const sid = sessionIdRef.current;
+    if (!sid) return;
+    fetch(`${API_URL}/chat/sessions/${sid}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((doc) => {
+        if (!doc?.messages?.length) return;
+        const loaded: TextMessage[] = doc.messages
+          .filter((m: { role: string }) => m.role === "user" || m.role === "assistant")
+          .map((m: { role: string; content: string }, i: number) => ({
+            kind: "text" as const,
+            id: `loaded-${i}`,
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          }));
+        setItems(loaded);
+      })
+      .catch(() => {});
+  }, []);
 
   const itemCount = items.length;
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom on new items
@@ -227,7 +290,7 @@ function TextChat(): ReactElement {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, session_id: sessionIdRef.current }),
         signal: abort.signal,
       });
 
@@ -249,7 +312,10 @@ function TextChat(): ReactElement {
             const payload = JSON.parse(line.slice(6));
             if (payload.done) break;
             if (payload.error) throw new Error(payload.error);
-            if (payload.type === "tool_call") {
+            if (payload.type === "session_id") {
+              sessionIdRef.current = payload.session_id;
+              localStorage.setItem(SESSION_KEY, payload.session_id);
+            } else if (payload.type === "tool_call") {
               setThinking(false);
               const toolItem: ToolEvent = {
                 kind: "tool",
@@ -340,7 +406,29 @@ function TextChat(): ReactElement {
         {items.length === 0 ? (
           <EmptyState onSuggest={(t) => void send(t)} />
         ) : (
-          items.map((item) => <MessageRow key={item.id} item={item} />)
+          (() => {
+            const assistantTurns = items.filter(
+              (it): it is TextMessage => it.kind === "text" && it.role === "assistant"
+            ).length;
+            const lastItem = items[items.length - 1];
+            const showChips =
+              !busy &&
+              !thinking &&
+              lastItem?.kind === "text" &&
+              lastItem.role === "assistant" &&
+              !lastItem.streaming;
+            return (
+              <>
+                {items.map((item) => <MessageRow key={item.id} item={item} />)}
+                {showChips && (
+                  <ReplyChips
+                    turn={assistantTurns - 1}
+                    onSuggest={(t) => void send(t)}
+                  />
+                )}
+              </>
+            );
+          })()
         )}
         {thinking && <ThinkingRow />}
         {error && <p className="chat-error">{error}</p>}
@@ -387,9 +475,23 @@ function TextChat(): ReactElement {
             </button>
           )}
         </div>
-        <p className="chat-footer-hint">
-          Dream can make mistakes. Check important info.
-        </p>
+        <div className="chat-footer-row">
+          <p className="chat-footer-hint">Dream can make mistakes. Check important info.</p>
+          {items.length > 0 && !busy && (
+            <button
+              type="button"
+              className="chat-new-btn"
+              onClick={() => {
+                sessionIdRef.current = null;
+                localStorage.removeItem(SESSION_KEY);
+                setItems([]);
+                setError(null);
+              }}
+            >
+              New chat
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

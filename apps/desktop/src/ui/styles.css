@@ -5978,11 +5978,32 @@ body {
   }
 }
 
+.chat-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-4);
+  margin-top: var(--s-2);
+}
 .chat-footer-hint {
   font-size: 11px;
   color: var(--faint);
-  text-align: center;
-  margin-top: var(--s-2);
+}
+.chat-new-btn {
+  font-size: 11px;
+  color: var(--text-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: var(--font);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  opacity: 0.6;
+  transition: opacity var(--dur-1);
+}
+.chat-new-btn:hover {
+  opacity: 1;
 }
 
 /* ── Voice mode ───────────────────────────────────────────────────────────── */
