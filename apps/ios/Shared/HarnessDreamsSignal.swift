@@ -169,6 +169,21 @@ public struct DreamSignalSnapshot: Codable, Hashable, Identifiable, Sendable {
 }
 
 public extension DreamSignalSnapshot {
+    static let empty = DreamSignalSnapshot(
+        id: "no-cycle",
+        completedAt: .now,
+        lastSyncedAt: .now,
+        rangeLabel: "Local Mac",
+        harness: "Harness Dreams",
+        digest: "Run a Sleep Cycle on the desktop app.",
+        sessions: 0,
+        projects: 0,
+        rings: [],
+        metrics: [],
+        findings: [],
+        goals: []
+    )
+
     static let preview = DreamSignalSnapshot(
         id: "cycle-2026-06-28",
         completedAt: Date(timeIntervalSince1970: 1_782_655_100),
@@ -258,12 +273,209 @@ public extension DreamSignalSnapshot {
 @MainActor
 public final class HarnessDreamsSignalStore: ObservableObject {
     @Published public private(set) var snapshot: DreamSignalSnapshot
+    @Published public private(set) var syncStatus: String
 
-    public init(snapshot: DreamSignalSnapshot = .preview) {
+    private let devSyncClient: HarnessDreamsDevSyncClient
+    private var pairing: HarnessDreamsDevPairing?
+
+    public init(
+        snapshot: DreamSignalSnapshot = .preview,
+        devSyncClient: HarnessDreamsDevSyncClient = HarnessDreamsDevSyncClient(),
+        autoConnectDevMode: Bool = HarnessDreamsDevSyncClient.devAutoConnectEnabled
+    ) {
         self.snapshot = snapshot
+        self.syncStatus = autoConnectDevMode ? "Connecting to local Mac..." : "Preview signal"
+        self.devSyncClient = devSyncClient
+
+        if autoConnectDevMode {
+            Task { [weak self] in
+                await self?.autoConnectDevMode()
+            }
+        }
     }
 
     public func refreshFromDesktopSignal() {
+        if HarnessDreamsDevSyncClient.devAutoConnectEnabled {
+            Task { [weak self] in
+                await self?.autoConnectDevMode()
+            }
+            return
+        }
         snapshot = snapshot.refreshed()
+    }
+
+    public func autoConnectDevMode() async {
+        syncStatus = "Connecting to local Mac..."
+
+        do {
+            let nextPairing = try await devSyncClient.autoPairWatch()
+            pairing = nextPairing
+
+            if let nextSnapshot = try await devSyncClient.fetchSnapshot(pairing: nextPairing) {
+                snapshot = nextSnapshot
+                syncStatus = "Synced with local Mac"
+            } else {
+                snapshot = DreamSignalSnapshot.empty.refreshed()
+                syncStatus = "Connected; no Sleep Cycle yet"
+            }
+        } catch {
+            snapshot = snapshot.refreshed()
+            syncStatus = "Waiting for local Mac"
+        }
+    }
+}
+
+public struct HarnessDreamsDevPairing: Sendable {
+    public var token: String
+    public var syncBaseURL: URL
+
+    public init(token: String, syncBaseURL: URL) {
+        self.token = token
+        self.syncBaseURL = syncBaseURL
+    }
+}
+
+public enum HarnessDreamsDevSyncError: Error, LocalizedError, Sendable {
+    case badStatus(Int)
+    case invalidURL
+    case invalidResponse
+
+    public var errorDescription: String? {
+        switch self {
+        case let .badStatus(status):
+            return "Dev sync returned HTTP \(status)."
+        case .invalidURL:
+            return "Dev sync URL was invalid."
+        case .invalidResponse:
+            return "Dev sync response was invalid."
+        }
+    }
+}
+
+public struct HarnessDreamsDevSyncClient: Sendable {
+    public static let defaultBaseURL = URL(string: "http://127.0.0.1:39391")!
+
+    public static var devAutoConnectEnabled: Bool {
+        #if DEBUG
+        let environment = ProcessInfo.processInfo.environment
+        return environment["HARNESS_DREAMS_WATCH_DEV_AUTO_CONNECT"] != "0"
+            && environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1"
+        #else
+        return false
+        #endif
+    }
+
+    public var baseURL: URL
+
+    public init(baseURL: URL = HarnessDreamsDevSyncClient.defaultBaseURL) {
+        self.baseURL = baseURL
+    }
+
+    public func autoPairWatch() async throws -> HarnessDreamsDevPairing {
+        var components = URLComponents(
+            url: baseURL
+                .appendingPathComponent("v1")
+                .appendingPathComponent("dev")
+                .appendingPathComponent("pair"),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [
+            URLQueryItem(name: "kind", value: "watch"),
+            URLQueryItem(name: "deviceName", value: "Dev Apple Watch Simulator")
+        ]
+        guard let url = components?.url else {
+            throw HarnessDreamsDevSyncError.invalidURL
+        }
+
+        let data = try await data(from: URLRequest(url: url))
+        let response = try JSONDecoder().decode(DevPairResponse.self, from: data)
+        guard let syncBaseURL = URL(string: response.devSyncBaseUrl) else {
+            throw HarnessDreamsDevSyncError.invalidResponse
+        }
+        return HarnessDreamsDevPairing(token: response.token, syncBaseURL: syncBaseURL)
+    }
+
+    public func fetchSnapshot(pairing: HarnessDreamsDevPairing) async throws -> DreamSignalSnapshot? {
+        let url = pairing.syncBaseURL
+            .appendingPathComponent("v1")
+            .appendingPathComponent("snapshot")
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(pairing.token)", forHTTPHeaderField: "Authorization")
+
+        let data = try await data(from: request)
+        let response = try JSONDecoder().decode(DesktopSnapshotResponse.self, from: data)
+        return response.report?.snapshot()
+    }
+
+    private func data(from request: URLRequest) async throws -> Data {
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw HarnessDreamsDevSyncError.invalidResponse
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw HarnessDreamsDevSyncError.badStatus(http.statusCode)
+        }
+        return data
+    }
+}
+
+private struct DevPairResponse: Decodable {
+    var token: String
+    var devSyncBaseUrl: String
+}
+
+private struct DesktopSnapshotResponse: Decodable {
+    var report: DesktopReport?
+}
+
+private struct DesktopReport: Decodable {
+    var id: String
+    var timestamp: Double
+    var rangeLabel: String
+    var sessions: Int
+    var projects: Int
+    var harness: String
+    var digest: String
+    var rings: [DreamRing]
+    var metrics: [DreamMetric]
+    var findings: [DesktopFinding]
+
+    func snapshot(now: Date = .now) -> DreamSignalSnapshot {
+        DreamSignalSnapshot(
+            id: id,
+            completedAt: Date(timeIntervalSince1970: timestamp / 1_000),
+            lastSyncedAt: now,
+            rangeLabel: rangeLabel,
+            harness: harness,
+            digest: digest,
+            sessions: sessions,
+            projects: projects,
+            rings: rings,
+            metrics: metrics,
+            findings: findings.map { $0.finding() },
+            goals: []
+        )
+    }
+}
+
+private struct DesktopFinding: Decodable {
+    var id: String
+    var type: DreamFindingKind
+    var title: String
+    var summary: String
+    var action: String
+    var confidence: String
+    var project: String
+
+    func finding() -> DreamFinding {
+        DreamFinding(
+            id: id,
+            kind: type,
+            title: title,
+            summary: summary,
+            action: action,
+            project: project,
+            confidence: confidence
+        )
     }
 }

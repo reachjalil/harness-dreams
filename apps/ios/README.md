@@ -13,7 +13,7 @@ The iPhone/iPad companion now lives in `apps/mobile` as a modern Expo app. This 
 open apps/ios/HarnessDreamsMobile.xcodeproj
 ```
 
-Select the `Harness Dreams Watch` scheme. The current watch app uses fixture data from `Shared/HarnessDreamsSignal.swift`; the sync button currently refreshes the local timestamp and marks the future integration point for WatchConnectivity or a cloud bridge.
+Select the `Harness Dreams Watch` scheme. In debug builds, the watch simulator auto-pairs with the desktop app at `http://127.0.0.1:39391` and reads the latest cycle signal from the desktop-owned sync endpoint. The fixture data in `Shared/HarnessDreamsSignal.swift` remains the offline fallback.
 
 ## Verify the shared model
 
