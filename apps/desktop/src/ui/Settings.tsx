@@ -11,6 +11,7 @@ import type {
   CloudSyncDeviceKind,
   CloudSyncPairing,
   DiscoveredProject,
+  GuidanceApplyMode,
   RemRunnerProvider,
 } from "../shared/types";
 import {
@@ -244,7 +245,7 @@ export default function Settings({
             <div className="demo-callout">
               <b>Demo mode is active</b>
               <span>
-                Review choices, accepted branch links, and measured verdicts are
+                Review choices, accepted change links, and measured verdicts are
                 saved to a separate demo report file.
               </span>
             </div>
@@ -337,7 +338,7 @@ export default function Settings({
               <div className="settings-row-hint">
                 {config.privacyMode === "cloud"
                   ? "Runs the selected CLI locally for the REM pass."
-                  : "Selected now; Local-only cycles skip the REM CLI pass."}
+                  : "Runs the selected CLI locally; cloud sync is separate."}
               </div>
             </div>
             <Segmented<RemRunnerProvider>
@@ -447,6 +448,24 @@ export default function Settings({
                 { value: "light", label: "Light" },
                 { value: "standard", label: "Standard" },
                 { value: "deep", label: "Deep" },
+              ]}
+            />
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Accepted file changes</div>
+              <div className="settings-row-hint">
+                Branch mode creates a review branch and PR link for GitHub
+                repos; direct mode edits the target file immediately.
+              </div>
+            </div>
+            <Segmented<GuidanceApplyMode>
+              ariaLabel="Accepted file changes"
+              value={config.guidanceApplyMode}
+              onChange={(guidanceApplyMode) => patch({ guidanceApplyMode })}
+              options={[
+                { value: "branch", label: "Branch + PR" },
+                { value: "direct", label: "Direct edit" },
               ]}
             />
           </div>

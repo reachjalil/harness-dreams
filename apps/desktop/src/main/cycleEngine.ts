@@ -872,6 +872,27 @@ function makeRings(t: Totals, prev: DreamReport | null): Ring[] {
   ];
 }
 
+function makeRingsFromRem(
+  t: Totals,
+  prev: DreamReport | null,
+  rem: RemAnalysisResult | null
+): Ring[] {
+  const rings = makeRings(t, prev);
+  if (!rem || rem.error || !rem.scores) return rings;
+  return rings.map((ring) => {
+    const score = rem.scores?.[ring.key];
+    if (score == null) return ring;
+    const next = clampScore(score);
+    const previous =
+      prev?.rings.find((prevRing) => prevRing.key === ring.key)?.score ?? 0;
+    return {
+      ...ring,
+      score: next,
+      delta: prev ? clamp(next - previous, -40, 40) : 0,
+    };
+  });
+}
+
 function makeMetrics(
   t: Totals,
   aggs: ProjectAgg[],
@@ -1366,8 +1387,9 @@ export function runSleepCycle(
   );
   const aggs = [...aggregate(signals).values()].filter((agg) => agg.turns > 0);
   const totals = totalsOf(aggs);
+  const shouldRunRem = !isNap && Boolean(options.remRunner);
   const rem =
-    !isNap && options.privacyMode === "cloud" && options.remRunner
+    shouldRunRem && options.remRunner
       ? runRemAnalysis(
           enabled,
           boundedSessions,
@@ -1375,12 +1397,12 @@ export function runSleepCycle(
           options.remRunner
         )
       : null;
+  const remSucceeded = rem != null && !rem.error;
   const heuristicFindings = selectFindings(aggs);
-  const allFindings =
-    rem && rem.findings.length > 0 ? rem.findings : heuristicFindings;
+  const allFindings = remSucceeded ? rem.findings : heuristicFindings;
   // A nap surfaces only the top couple of quick wins.
   const findings = isNap ? allFindings.slice(0, 2) : allFindings;
-  const rings = makeRings(totals, prev);
+  const rings = makeRingsFromRem(totals, prev, rem);
   const alignmentScore =
     rings.find((ring) => ring.key === "alignment")?.score ?? 70;
   const insights = projectInsightsOf(aggs);
@@ -1402,10 +1424,11 @@ export function runSleepCycle(
         : "A rough day with the agent";
   const focus =
     topTopicsAll.length > 0 ? ` around ${topTopicsAll.join(", ")}` : "";
-  const digest =
+  const fallbackDigest =
     recCount > 0
       ? `${bandPhrase} — alignment ${alignmentScore}. ${recCount} improvement${recCount === 1 ? "" : "s"} to review from ${totals.sessions} session${totals.sessions === 1 ? "" : "s"}${focus}.`
       : `${bandPhrase} — alignment ${alignmentScore}. ${totals.sessions} session${totals.sessions === 1 ? "" : "s"} reviewed, nothing to change.`;
+  const digest = remSucceeded && rem.digest ? rem.digest : fallbackDigest;
 
   return {
     id: `cycle_${now}`,
@@ -1434,7 +1457,7 @@ export function runSleepCycle(
       sources,
       now,
       rem,
-      remConfigured: !isNap && options.privacyMode === "cloud",
+      remConfigured: shouldRunRem,
     }),
   };
 }

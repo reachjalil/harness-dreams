@@ -62,10 +62,12 @@ export interface Controller {
 }
 
 const DREAM_TICK_MS = 200;
-const DREAM_STEP = 0.02;
+// Real full cycles run local ingest plus the configured CLI analyzer, so keep
+// the visible progress paced like a real end-to-end pass instead of a demo.
+const DREAM_STEP = 0.006;
 const DEMO_DREAM_STEP = 0.14;
 // A nap is the fast cycle — it fills quicker than a full sleep.
-const NAP_STEP = 0.05;
+const NAP_STEP = 0.02;
 const DEMO_NAP_STEP = 0.28;
 
 let dreamTimer: ReturnType<typeof setInterval> | null = null;

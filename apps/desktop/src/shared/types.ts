@@ -21,6 +21,7 @@ export type PrivacyMode = "local" | "cloud";
 
 /** How deep the opt-in REM analysis pass goes. */
 export type AnalysisDepth = "light" | "standard" | "deep";
+export type GuidanceApplyMode = "branch" | "direct";
 
 /** When dreams run. */
 export type ScheduleMode = "nightly" | "manual";
@@ -150,6 +151,8 @@ export interface AppConfig {
   };
   notifications: boolean;
   analysisDepth: AnalysisDepth;
+  /** How accepted guidance changes are applied after review. */
+  guidanceApplyMode: GuidanceApplyMode;
   /** CLI runner used for opt-in cloud REM analysis. */
   remRunner: RemRunnerConfig;
   launchAtLogin: boolean;
@@ -386,12 +389,15 @@ export interface ActionQueueEntry {
   patch?: ConfigPatchPreview;
   /** Feature branch / PR metadata created when the recommendation is accepted. */
   reviewBranch?: {
+    mode?: GuidanceApplyMode;
     branch: string;
     baseBranch?: string;
     worktreePath?: string;
     commit?: string;
     remote?: string;
     prUrl?: string;
+    changedFiles?: string[];
+    appliedDirectly?: boolean;
     pushed: boolean;
     error?: string;
   };

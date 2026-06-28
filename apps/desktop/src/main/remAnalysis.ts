@@ -9,6 +9,7 @@ import type {
   AnalysisProject,
   Finding,
   RemRunnerConfig,
+  RingKey,
 } from "../shared/types";
 import {
   agentsPatch,
@@ -70,11 +71,17 @@ interface RemJsonFinding {
 }
 
 interface RemJson {
+  digest?: string;
+  alignmentScore?: number;
+  efficiencyScore?: number;
+  effectivenessScore?: number;
   findings?: RemJsonFinding[];
 }
 
 export interface RemAnalysisResult {
   findings: Finding[];
+  digest?: string;
+  scores?: Partial<Record<RingKey, number>>;
   redactionPreview: {
     runner: string;
     model: string;
@@ -193,12 +200,18 @@ function promptFor(payload: RemProjectPayload[], depth: AnalysisDepth): string {
     "Find config-versus-behavior gaps where a durable rule, context doc, or skill would reduce future friction.",
     "Requirements:",
     "- Return at most 3 findings.",
+    "- Build digest, alignmentScore, efficiencyScore, and effectivenessScore from the provided real turns only.",
+    "- Scores must be integers from 0 to 100.",
+    "- Suggest an improvement only when it would change future agent behavior, reduce repeated user correction, or preserve a durable project convention.",
+    "- Prefer file-backed improvements: AGENTS.md rules for project behavior, CLAUDE.md rules for Claude-specific behavior, rules.md/context docs for durable project context, and skills for repeated workflows.",
+    "- Do not suggest vague habits. ruleOrDescription must be specific enough that it can be written into the target file exactly as-is.",
+    "- If the evidence only shows a one-off task with no reusable lesson, return no finding for it.",
     "- Every finding must include evidenceQuote copied verbatim from a provided turn.",
     "- Name the specific configGap.",
     "- target must be agentsmd, claudemd, contextdoc, or skill.",
     "- ruleOrDescription must be an exact apply-ready rule/description, not generic advice.",
     `Analysis depth: ${depth}.`,
-    'JSON shape: {"findings":[{"title":"","body":"","evidenceQuote":"","configGap":"","target":"agentsmd|claudemd|contextdoc|skill","ruleOrDescription":"","skillName":""}]}',
+    'JSON shape: {"digest":"","alignmentScore":0,"efficiencyScore":0,"effectivenessScore":0,"findings":[{"title":"","body":"","evidenceQuote":"","configGap":"","target":"agentsmd|claudemd|contextdoc|skill","ruleOrDescription":"","skillName":""}]}',
     "",
     JSON.stringify({ projects: payload }),
   ].join("\n");
@@ -234,6 +247,22 @@ function parseJson(stdout: string): RemJson | null {
       return null;
     }
   }
+}
+
+function scoreFrom(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function scoresFrom(parsed: RemJson): Partial<Record<RingKey, number>> {
+  const scores: Partial<Record<RingKey, number>> = {};
+  const alignment = scoreFrom(parsed.alignmentScore);
+  const efficiency = scoreFrom(parsed.efficiencyScore);
+  const effectiveness = scoreFrom(parsed.effectivenessScore);
+  if (alignment != null) scores.alignment = alignment;
+  if (efficiency != null) scores.efficiency = efficiency;
+  if (effectiveness != null) scores.effectiveness = effectiveness;
+  return scores;
 }
 
 function categoryFor(target: RemJsonFinding["target"]): ActionCategory {
@@ -430,6 +459,11 @@ export function runRemAnalysis(
   }
   return {
     findings: findingsFromJson(parsed, sessions),
+    digest:
+      typeof parsed.digest === "string" && parsed.digest.trim()
+        ? short(parsed.digest, 260)
+        : undefined,
+    scores: scoresFrom(parsed),
     redactionPreview: preview,
   };
 }

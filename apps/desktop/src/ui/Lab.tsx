@@ -5,9 +5,9 @@ import type {
   Experiment,
   ExperimentStatus,
   GoalDisposition,
-  Metric,
+  ProjectInsight,
 } from "../shared/types";
-import { MetricCell, PageHeader, Pill, SummaryCard } from "./components";
+import { PageHeader, Pill, SummaryCard } from "./components";
 import { TERM } from "./explainers";
 import type { HarnessDreams } from "./useHarnessDreams";
 
@@ -35,18 +35,181 @@ const VERDICT_TONE = {
   worse: "danger",
 } as const;
 
-/** Metrics worth surfacing as the things a Sleep Cycle keeps measuring. */
-const TRACKED_KEYS = ["reask", "tokens_per_change", "tool_success", "cache"];
-
 function composite(report: DreamReport): number {
   const sum = report.rings.reduce((acc, ring) => acc + ring.score, 0);
   return Math.round(sum / Math.max(1, report.rings.length));
 }
 
-function trackedMetrics(report: DreamReport): Metric[] {
-  return TRACKED_KEYS.map((key) =>
-    report.metrics.find((item) => item.key === key)
-  ).filter((item): item is Metric => Boolean(item));
+function fmtSigned(value: number, unit = ""): string {
+  if (value === 0) return `0${unit}`;
+  return `${value > 0 ? "+" : ""}${value}${unit}`;
+}
+
+function average(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+}
+
+function insightForGoal(
+  report: DreamReport,
+  goal: Experiment
+): ProjectInsight | null {
+  return (
+    report.projectInsights?.find((project) => project.path === goal.projectPath) ??
+    null
+  );
+}
+
+function uniqueTargetInsights(
+  report: DreamReport,
+  goals: Experiment[]
+): ProjectInsight[] {
+  const byPath = new Map<string, ProjectInsight>();
+  for (const goal of goals) {
+    const insight = insightForGoal(report, goal);
+    if (insight) byPath.set(insight.path, insight);
+  }
+  return [...byPath.values()];
+}
+
+function goalMeasurementText(report: DreamReport, goal: Experiment): string {
+  const insight = insightForGoal(report, goal);
+  if (!insight) {
+    return "Latest window: no activity found for this goal's target project yet.";
+  }
+  const pieces = [`${insight.sessions} sessions`, `${insight.turns} turns`];
+  if (goal.baseline) {
+    pieces.push(
+      `alignment ${goal.baseline.alignment} -> ${insight.alignment}`,
+      `corrections ${goal.baseline.corrections} -> ${insight.corrections}`
+    );
+  }
+  if (goal.baseline?.contextScore != null && insight.contextHealth) {
+    pieces.push(
+      `context ${goal.baseline.contextScore} -> ${insight.contextHealth.score}`
+    );
+  }
+  return `Latest window: ${pieces.join(" · ")}`;
+}
+
+interface GoalSignal {
+  key: string;
+  label: string;
+  value: string;
+  detail: string;
+  delta?: string;
+  good: boolean;
+}
+
+function goalSignals(report: DreamReport, goals: Experiment[]): GoalSignal[] {
+  if (goals.length === 0) return [];
+  const targetInsights = uniqueTargetInsights(report, goals);
+  const activeTargets = targetInsights.filter((insight) => insight.sessions > 0);
+  const sessions = targetInsights.reduce((sum, insight) => sum + insight.sessions, 0);
+  const turns = targetInsights.reduce((sum, insight) => sum + insight.turns, 0);
+  const withBaseline = goals
+    .map((goal) => ({ goal, insight: insightForGoal(report, goal) }))
+    .filter(
+      (item): item is { goal: Experiment; insight: ProjectInsight } =>
+        Boolean(item.insight && item.goal.baseline)
+    );
+  const alignmentDelta = average(
+    withBaseline.map((item) => item.insight.alignment - item.goal.baseline!.alignment)
+  );
+  const baselineAlignment = average(
+    withBaseline.map((item) => item.goal.baseline!.alignment)
+  );
+  const currentAlignment = average(withBaseline.map((item) => item.insight.alignment));
+  const currentCorrections = withBaseline.reduce(
+    (sum, item) => sum + item.insight.corrections,
+    0
+  );
+  const baselineCorrections = withBaseline.reduce(
+    (sum, item) => sum + item.goal.baseline!.corrections,
+    0
+  );
+  const contextPairs = withBaseline.filter(
+    (item) => item.goal.baseline?.contextScore != null && item.insight.contextHealth
+  );
+  const currentContext = average(
+    contextPairs.map((item) => item.insight.contextHealth?.score ?? 0)
+  );
+  const baselineContext = average(
+    contextPairs.map((item) => item.goal.baseline!.contextScore ?? 0)
+  );
+  const contextDelta =
+    currentContext != null && baselineContext != null
+      ? currentContext - baselineContext
+      : null;
+
+  return [
+    {
+      key: "activity",
+      label: "Target activity",
+      value: `${activeTargets.length}/${targetInsights.length || goals.length}`,
+      detail:
+        sessions > 0
+          ? `${sessions} sessions · ${turns} turns in this Sleep Cycle window`
+          : "Waiting for new sessions in the goal's project",
+      good: activeTargets.length > 0,
+    },
+    {
+      key: "alignment",
+      label: "Alignment change",
+      value: alignmentDelta == null ? "Waiting" : fmtSigned(alignmentDelta),
+      delta: alignmentDelta == null ? undefined : `${fmtSigned(alignmentDelta)} pts`,
+      detail:
+        baselineAlignment != null && currentAlignment != null
+          ? `Current ${currentAlignment} vs accepted baseline ${baselineAlignment}`
+          : "Baseline appears after a goal is accepted",
+      good: alignmentDelta == null || alignmentDelta >= 0,
+    },
+    {
+      key: "corrections",
+      label: "Corrections change",
+      value:
+        withBaseline.length === 0
+          ? "Waiting"
+          : fmtSigned(currentCorrections - baselineCorrections),
+      delta:
+        withBaseline.length === 0
+          ? undefined
+          : `${fmtSigned(currentCorrections - baselineCorrections)}`,
+      detail:
+        withBaseline.length > 0
+          ? `Current ${currentCorrections} vs accepted baseline ${baselineCorrections}`
+          : "Baseline appears after a goal is accepted",
+      good: currentCorrections <= baselineCorrections,
+    },
+    {
+      key: "context",
+      label: "Context score",
+      value: currentContext == null ? "Not tracked" : `${currentContext}`,
+      delta: contextDelta == null ? undefined : `${fmtSigned(contextDelta)} pts`,
+      detail:
+        currentContext != null && baselineContext != null
+          ? `Current ${currentContext} vs accepted baseline ${baselineContext}`
+          : "No context baseline for these goals",
+      good: contextDelta == null || contextDelta >= 0,
+    },
+  ];
+}
+
+function GoalSignalCell({ signal }: { signal: GoalSignal }): ReactElement {
+  return (
+    <div className="metric-cell goal-signal-cell">
+      <div className="metric-top">
+        <span className="metric-label">{signal.label}</span>
+        {signal.delta ? (
+          <span className={`metric-delta${signal.good ? " good" : " warn"}`}>
+            {signal.delta}
+          </span>
+        ) : null}
+      </div>
+      <div className="metric-value tnum">{signal.value}</div>
+      <div className="metric-detail">{signal.detail}</div>
+    </div>
+  );
 }
 
 function GoalGroup({
@@ -178,9 +341,11 @@ function GoalActions({
 /** One measured goal: hypothesis, progress, dual benefit, next watch. */
 function GoalCard({
   goal,
+  report,
   onSetDisposition,
 }: {
   goal: Experiment;
+  report: DreamReport;
   onSetDisposition: (
     experimentId: string,
     disposition: GoalDisposition | null
@@ -210,7 +375,9 @@ function GoalCard({
       </div>
 
       <p className="finding-watch">
-        Measures {goal.metric} · Next Sleep Cycle watches {goal.reflection}
+        {goalMeasurementText(report, goal)}
+        <br />
+        Measures {goal.metric} · Watches {goal.reflection}
       </p>
 
       <div className="finding-controls goal-controls">
@@ -248,8 +415,10 @@ export default function Lab({
   const kept = currentGoals.filter((x) => x.disposition === "kept");
   const retired = currentGoals.filter((x) => x.disposition === "retired");
   const concluded = currentGoals.filter((x) => x.status === "concluded");
-  const metrics = trackedMetrics(report);
+  const signals = goalSignals(report, running);
   const measuringCount = running.length;
+  const targetInsights = uniqueTargetInsights(report, running);
+  const activeTargets = targetInsights.filter((insight) => insight.sessions > 0);
   const alignmentRing = report.rings.find((ring) => ring.key === "alignment");
   const setDisposition = (
     experimentId: string,
@@ -285,13 +454,17 @@ export default function Lab({
                   }
                 : undefined
             }
-            sublabel="Efficiency, effectiveness, and alignment combined."
+            sublabel="Latest Sleep Cycle score across efficiency, effectiveness, and alignment."
             tip={TERM.composite}
           />
           <SummaryCard
             eyebrow="Measuring now"
             value={measuringCount}
-            sublabel="Accepted goals currently in effect."
+            sublabel={
+              measuringCount > 0
+                ? `${activeTargets.length}/${Math.max(1, targetInsights.length || measuringCount)} target projects had activity.`
+                : "No accepted goals are currently collecting signal."
+            }
             tip={TERM.beingMeasured}
           />
           <SummaryCard
@@ -305,14 +478,22 @@ export default function Lab({
 
       <GoalGroup
         title="Now measuring"
-        hint="The numbers a Sleep Cycle keeps checking before it calls a goal real."
+        hint="Latest Sleep Cycle data compared with the snapshot taken when each goal was accepted."
       >
         <div className="card goal-metrics-card">
-          <div className="flat-strip flat-strip-divided flat-strip-4">
-            {metrics.map((m) => (
-              <MetricCell key={m.key} metric={m} />
-            ))}
-          </div>
+          {signals.length > 0 ? (
+            <div className="flat-strip flat-strip-divided flat-strip-4">
+              {signals.map((signal) => (
+                <GoalSignalCell key={signal.key} signal={signal} />
+              ))}
+            </div>
+          ) : (
+            <p className="empty">
+              No goals are actively measuring. Accept a suggested goal during
+              Sleep Cycle review to start comparing future project activity
+              against its baseline.
+            </p>
+          )}
         </div>
       </GoalGroup>
 
@@ -336,7 +517,12 @@ export default function Lab({
           hint="Accepted goals still collecting signal. Stop measuring if the goal is no longer useful."
         >
           {running.map((x) => (
-            <GoalCard key={x.id} goal={x} onSetDisposition={setDisposition} />
+            <GoalCard
+              key={x.id}
+              goal={x}
+              report={report}
+              onSetDisposition={setDisposition}
+            />
           ))}
         </GoalGroup>
       ) : null}
@@ -347,7 +533,12 @@ export default function Lab({
           hint="These goals have enough evidence. Keep the ones worth making permanent; retire the rest."
         >
           {ready.map((x) => (
-            <GoalCard key={x.id} goal={x} onSetDisposition={setDisposition} />
+            <GoalCard
+              key={x.id}
+              goal={x}
+              report={report}
+              onSetDisposition={setDisposition}
+            />
           ))}
         </GoalGroup>
       ) : null}
@@ -358,7 +549,12 @@ export default function Lab({
           hint="Decisions you kept as useful guidance. Undo moves a goal back to your decision queue."
         >
           {kept.map((x) => (
-            <GoalCard key={x.id} goal={x} onSetDisposition={setDisposition} />
+            <GoalCard
+              key={x.id}
+              goal={x}
+              report={report}
+              onSetDisposition={setDisposition}
+            />
           ))}
         </GoalGroup>
       ) : null}
@@ -377,6 +573,7 @@ export default function Lab({
                 <GoalCard
                   key={x.id}
                   goal={x}
+                  report={report}
                   onSetDisposition={setDisposition}
                 />
               ))}

@@ -28,6 +28,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   schedule: { mode: "nightly", time: "03:00" },
   notifications: true,
   analysisDepth: "standard",
+  guidanceApplyMode: "branch",
   remRunner: {
     provider: "codex",
     model: "gpt-5.5",

@@ -23,6 +23,11 @@ interface BranchGroup {
   entries: ActionQueueEntry[];
 }
 
+interface DirectGroup {
+  root: string;
+  entries: ActionQueueEntry[];
+}
+
 type ReviewBranch = NonNullable<ActionQueueEntry["reviewBranch"]>;
 
 function git(cwd: string, args: string[], timeout = 30_000): GitResult {
@@ -183,6 +188,132 @@ function applyGroupChanges(
   return [...changed];
 }
 
+function directRoot(entry: ActionQueueEntry): string | null {
+  if (entry.projectPath) return entry.projectPath;
+  return entry.patch ? path.dirname(entry.patch.file) : null;
+}
+
+function directFileFor(entry: ActionQueueEntry): string | null {
+  if (entry.patch?.file) return entry.patch.file;
+  if (!entry.projectPath) return null;
+  if (entry.category === "claudemd") {
+    return path.join(entry.projectPath, "CLAUDE.md");
+  }
+  if (entry.category === "contextdoc") {
+    return path.join(entry.projectPath, "rules.md");
+  }
+  if (entry.category === "skill") return null;
+  return path.join(entry.projectPath, "AGENTS.md");
+}
+
+function displayChangedFile(root: string, file: string): string {
+  return relativeInside(root, file) ?? file;
+}
+
+function applyDirectChanges(
+  entries: ActionQueueEntry[],
+  root: string
+): string[] {
+  const changed = new Set<string>();
+  const agentsByFile = new Map<string, string[]>();
+  const claudeByFile = new Map<string, string[]>();
+  const contextByFile = new Map<string, string[]>();
+
+  for (const entry of entries) {
+    if (entry.category === "skill") continue;
+    const file = directFileFor(entry);
+    if (!file) continue;
+    const lines = guidanceLines(entry);
+    if (entry.category === "claudemd") {
+      claudeByFile.set(file, [...(claudeByFile.get(file) ?? []), ...lines]);
+    } else if (entry.category === "contextdoc") {
+      contextByFile.set(file, [...(contextByFile.get(file) ?? []), ...lines]);
+    } else {
+      agentsByFile.set(file, [...(agentsByFile.get(file) ?? []), ...lines]);
+    }
+  }
+
+  for (const [file, lines] of agentsByFile) {
+    if (applyAgentsBlock(file, lines)) {
+      changed.add(displayChangedFile(root, file));
+    }
+  }
+  for (const [file, lines] of claudeByFile) {
+    if (applyClaudeBlock(file, lines)) {
+      changed.add(displayChangedFile(root, file));
+    }
+  }
+  for (const [file, lines] of contextByFile) {
+    if (applyContextDocBlock(file, lines)) {
+      changed.add(displayChangedFile(root, file));
+    }
+  }
+  for (const entry of entries) {
+    if (entry.category !== "skill" || !entry.patch) continue;
+    if (applySkillFile(entry.patch)) {
+      changed.add(displayChangedFile(root, entry.patch.file));
+    }
+  }
+
+  return [...changed];
+}
+
+function groupDirect(entries: ActionQueueEntry[]): {
+  groups: DirectGroup[];
+  failures: Map<string, ReviewBranch>;
+} {
+  const byRoot = new Map<string, ActionQueueEntry[]>();
+  const failures = new Map<string, ReviewBranch>();
+  for (const entry of entries) {
+    const root = directRoot(entry);
+    if (!root) {
+      failures.set(entry.findingId, {
+        mode: "direct",
+        branch: "",
+        pushed: false,
+        error: "recommendation has no project path or target file",
+      });
+      continue;
+    }
+    byRoot.set(root, [...(byRoot.get(root) ?? []), entry]);
+  }
+  return {
+    groups: [...byRoot.entries()].map(([root, groupEntries]) => ({
+      root,
+      entries: groupEntries,
+    })),
+    failures,
+  };
+}
+
+export function applyAcceptedRecommendationsDirectly(
+  accepted: ActionQueueEntry[]
+): Map<string, ReviewBranch> {
+  const result = new Map<string, ReviewBranch>();
+  const { groups, failures } = groupDirect(accepted);
+  for (const [findingId, failure] of failures) result.set(findingId, failure);
+
+  for (const group of groups) {
+    const changedFiles = applyDirectChanges(group.entries, group.root);
+    const reviewBranch: ReviewBranch = {
+      mode: "direct",
+      branch: "",
+      worktreePath: group.root,
+      changedFiles,
+      appliedDirectly: changedFiles.length > 0,
+      pushed: false,
+      error:
+        changedFiles.length === 0
+          ? "accepted recommendations were already present or had no file target"
+          : undefined,
+    };
+    for (const entry of group.entries) {
+      result.set(entry.findingId, reviewBranch);
+    }
+  }
+  return result;
+}
+
 function branchGroup(
   group: BranchGroup,
   worktreesRoot: string,
@@ -295,6 +426,7 @@ function branchGroup(
   }
 
   return {
+    mode: "branch",
     branch,
     baseBranch,
     worktreePath,
@@ -308,20 +440,14 @@ function branchGroup(
 
 function groupByRepo(entries: ActionQueueEntry[]): {
   groups: BranchGroup[];
-  failures: Map<string, ReviewBranch>;
+  directEntries: ActionQueueEntry[];
 } {
   const byRoot = new Map<string, ActionQueueEntry[]>();
-  const failures = new Map<string, ReviewBranch>();
+  const directEntries: ActionQueueEntry[] = [];
   for (const entry of entries) {
     const root = repoRoot(entry.projectPath);
     if (!root) {
-      failures.set(entry.findingId, {
-        branch: "",
-        pushed: false,
-        error: entry.projectPath
-          ? "project is not inside a git repository"
-          : "recommendation has no project path",
-      });
+      directEntries.push(entry);
       continue;
     }
     byRoot.set(root, [...(byRoot.get(root) ?? []), entry]);
@@ -331,7 +457,7 @@ function groupByRepo(entries: ActionQueueEntry[]): {
       repoRoot: root,
       entries: groupEntries,
     })),
-    failures,
+    directEntries,
   };
 }
 
@@ -340,8 +466,10 @@ export function applyAcceptedRecommendationsAsBranches(
   worktreesRoot: string
 ): Map<string, ReviewBranch> {
   const result = new Map<string, ReviewBranch>();
-  const { groups, failures } = groupByRepo(accepted);
-  for (const [findingId, failure] of failures) result.set(findingId, failure);
+  const { groups, directEntries } = groupByRepo(accepted);
+  const directResults = applyAcceptedRecommendationsDirectly(directEntries);
+  for (const [findingId, direct] of directResults)
+    result.set(findingId, direct);
 
   const stamp = new Date()
     .toISOString()

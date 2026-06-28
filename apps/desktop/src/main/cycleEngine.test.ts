@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import type { AnalysisProject } from "../shared/types";
+import type { AnalysisProject, Finding } from "../shared/types";
 import type { LocalSession } from "./localIngest";
 
 vi.mock("./localIngest", () => ({
@@ -112,10 +112,35 @@ describe("runSleepCycle provenance", () => {
     expect(mockIngest).toHaveBeenCalledOnce();
   });
 
-  test("records the real CLI execution when cloud REM is enabled", () => {
+  test("uses successful CLI output to build a real sleep report", () => {
     mockIngest.mockReturnValue([session()]);
+    const cliFinding: Finding = {
+      id: "rem-test-1",
+      type: "mistake",
+      title: "CLI finding",
+      body: "Codex found a durable rule gap in the real session output.",
+      improvement: "Run the real CLI before producing a Sleep Cycle report.",
+      agentBenefit: "The agent waits for the configured runner output.",
+      userBenefit: "The report is based on the actual analyzer result.",
+      reflection: "Whether the next report remains CLI-derived.",
+      confidence: "high",
+      project: project.name,
+      projectPath: project.path,
+      evidence: "Please make the CLI run real data.",
+      evidenceFile: "/tmp/codex-session.jsonl",
+      action:
+        "Add rule: Run the real CLI before producing a Sleep Cycle report.",
+      category: "agentsmd",
+      frictionType: "config-conflict",
+    };
     mockRem.mockReturnValue({
-      findings: [],
+      findings: [cliFinding],
+      digest: "Codex CLI built this report from real session output.",
+      scores: {
+        alignment: 81,
+        efficiency: 82,
+        effectiveness: 83,
+      },
       redactionPreview: {
         runner: "codex:/usr/local/bin/codex",
         model: "test-model",
@@ -127,7 +152,7 @@ describe("runSleepCycle provenance", () => {
 
     const report = runSleepCycle([project], {
       now,
-      privacyMode: "cloud",
+      privacyMode: "local",
       analysisDepth: "standard",
       remRunner: {
         provider: "codex",
@@ -140,6 +165,20 @@ describe("runSleepCycle provenance", () => {
 
     expect(mockRem).toHaveBeenCalledOnce();
     expect(report.sessions).toBe(1);
+    expect(report.digest).toBe(
+      "Codex CLI built this report from real session output."
+    );
+    expect(report.findings).toEqual([cliFinding]);
+    expect(report.rings.find((ring) => ring.key === "alignment")?.score).toBe(
+      81
+    );
+    expect(report.rings.find((ring) => ring.key === "efficiency")?.score).toBe(
+      82
+    );
+    expect(
+      report.rings.find((ring) => ring.key === "effectiveness")?.score
+    ).toBe(83);
+    expect(report.alignment?.friction).toHaveLength(1);
     expect(report.provenance).toMatchObject({
       mode: "real",
       generator: "local-ingest",

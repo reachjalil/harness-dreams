@@ -260,9 +260,9 @@ interface LoopExperiment {
 interface LoopImpact {
   accepted: number;
   queued: number;
-  branches: number;
+  applied: number;
   prLinks: number;
-  branchErrors: number;
+  applyErrors: number;
   concluded: number;
   helped: number;
   noChange: number;
@@ -320,9 +320,12 @@ function loopImpact(reports: DreamReport[], report: DreamReport): LoopImpact {
   return {
     accepted: accepted.length,
     queued: queued.length,
-    branches: accepted.filter((entry) => entry.reviewBranch?.branch).length,
+    applied: accepted.filter(
+      (entry) =>
+        entry.reviewBranch?.branch || entry.reviewBranch?.appliedDirectly
+    ).length,
     prLinks: accepted.filter((entry) => entry.reviewBranch?.prUrl).length,
-    branchErrors: accepted.filter((entry) => entry.reviewBranch?.error).length,
+    applyErrors: accepted.filter((entry) => entry.reviewBranch?.error).length,
     concluded: concluded.length,
     helped: concluded.filter(
       ({ experiment }) => experiment.verdict === "helped"
@@ -381,7 +384,7 @@ function LoopOutcome({
   return (
     <Section
       title="Self-improvement loop"
-      hint="Accepted changes, review branches, and measured outcomes from reviewed cycles."
+      hint="Accepted changes, applied guidance, and measured outcomes from reviewed cycles."
       right={
         <Button variant="ghost" onClick={onOpenCycle}>
           <Icon name="cycle" size={15} />
@@ -397,17 +400,17 @@ function LoopOutcome({
           tone={impact.accepted > 0 ? "good" : "neutral"}
         />
         <LoopStat
-          label="Branches"
-          value={impact.branches}
+          label="Applied"
+          value={impact.applied}
           detail={
-            impact.branchErrors > 0
-              ? `${impact.branchErrors} need a look`
+            impact.applyErrors > 0
+              ? `${impact.applyErrors} need a look`
               : `${impact.prLinks} PR links`
           }
           tone={
-            impact.branchErrors > 0
+            impact.applyErrors > 0
               ? "warn"
-              : impact.branches > 0
+              : impact.applied > 0
                 ? "good"
                 : "neutral"
           }

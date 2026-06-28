@@ -786,6 +786,13 @@ button {
   color: var(--text);
 }
 
+.metric-detail {
+  margin-top: var(--s-1);
+  color: var(--text-3);
+  font-size: var(--t-small);
+  line-height: 1.35;
+}
+
 /* ── 8. Rings ─────────────────────────────────────────────────────────────── */
 
 .rings {

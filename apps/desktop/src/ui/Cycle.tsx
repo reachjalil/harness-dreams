@@ -193,6 +193,20 @@ function reviewMetrics(report: DreamReport): Metric[] {
   return picked.length > 0 ? picked : report.metrics.slice(0, 3);
 }
 
+function sourceLabel(source: string): string {
+  if (source === "codex") return "Codex";
+  if (source === "claude-code") return "Claude Code";
+  if (source === "code") return "VS Code";
+  return source;
+}
+
+function runnerLabel(runner: string | undefined): string {
+  const provider = runner?.split(":")[0];
+  if (provider === "codex") return "Codex CLI";
+  if (provider === "claude-code") return "Claude Code CLI";
+  return "CLI";
+}
+
 function provenanceSummary(report: DreamReport): {
   value: string;
   sublabel: string;
@@ -205,18 +219,20 @@ function provenanceSummary(report: DreamReport): {
     return { value: "Demo", sublabel: "Fixture data" };
   }
   const cli = provenance.cli;
+  const sources = provenance.sources.map(sourceLabel);
+  const harnesses = sources.length > 0 ? sources.join(" + ") : "No harness";
+  const runner = runnerLabel(cli.runner);
   const cliLabel =
     cli.status === "executed"
-      ? "CLI executed"
+      ? `Analyzed with ${runner}${cli.model ? ` · ${cli.model}` : ""}`
       : cli.status === "failed"
-        ? "CLI failed"
+        ? `${runner} failed`
         : cli.status === "skipped"
-          ? "CLI skipped"
-          : "CLI not required";
-  const sampleLabel = provenance.usedSampleData ? "sample data" : "no samples";
+          ? `${runner} skipped`
+          : "Local scoring only";
   return {
-    value: "Real",
-    sublabel: `${sampleLabel} · ${cliLabel}`,
+    value: provenance.usedSampleData ? "Sample data" : harnesses,
+    sublabel: cliLabel,
   };
 }
 
@@ -661,7 +677,7 @@ function ReviewOutcomePanel({
   const rejected = state === "rejected";
   const tone = accepted ? "accepted" : rejected ? "rejected" : "open";
   const status = accepted
-    ? "Queued for feature branch"
+    ? "Queued to apply"
     : rejected
       ? "Retired from this cycle"
       : "Ready for decision";
@@ -679,10 +695,10 @@ function ReviewOutcomePanel({
           <div className="review-outcome-status">{status}</div>
           <p>
             {accepted
-              ? "Mark reviewed creates a feature branch, commits this change, and records a PR link when push succeeds."
+              ? "Mark reviewed applies this change using your Settings preference: GitHub PR branch or direct file edit."
               : rejected
-                ? "This suggestion stays in the report, but no branch or tracked goal is created."
-                : "Accepting prepares this recommendation for a review branch instead of editing your current checkout."}
+                ? "This suggestion stays in the report, but no file change or tracked goal is created."
+                : "Accepting prepares this recommendation to be applied after review."}
           </p>
         </div>
       </div>
@@ -736,19 +752,19 @@ function BranchPlan({
             {repos.size === 1 ? "" : "s"}
           </b>
           <span>
-            Branches are created after review; PR links appear when push
-            succeeds.
+            Git repos can create PR branches; direct mode and non-Git projects
+            write the target file after review.
           </span>
         </div>
       </div>
       <div className="branch-plan-steps">
-        <span>feature branch</span>
+        <span>apply mode</span>
         <Icon name="chevron" size={14} />
-        <span>commit</span>
+        <span>file change</span>
         <Icon name="chevron" size={14} />
-        <span>push if origin exists</span>
+        <span>push branch when GitHub exists</span>
         <Icon name="chevron" size={14} />
-        <span>PR link</span>
+        <span>PR link or direct edit</span>
       </div>
     </div>
   );
@@ -846,7 +862,7 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
   const alignmentRing = report.rings.find((ring) => ring.key === "alignment");
   const findingCount = report.findings.length;
   const provenance = provenanceSummary(report);
-  const acceptedBranches =
+  const acceptedAppliedChanges =
     report.reviewDecisions?.filter(
       (entry) => entry.state === "accepted" && entry.reviewBranch
     ) ?? [];
@@ -900,13 +916,13 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
 
       <ReportNarrative report={report} />
 
-      {acceptedBranches.length > 0 ? (
+      {acceptedAppliedChanges.length > 0 ? (
         <Section
-          title="Accepted review branches"
-          hint="Accepted AGENTS.md, CLAUDE.md, and skill changes are prepared on feature branches with PR links when the branch is pushed."
+          title="Accepted changes"
+          hint="Git repos use pushed review branches with PR links. Direct-mode and non-Git changes are written to the target file."
         >
           <div className="action-queue">
-            {acceptedBranches.map((entry) => (
+            {acceptedAppliedChanges.map((entry) => (
               <ActionQueueItem key={entry.findingId} item={entry} />
             ))}
           </div>
@@ -1103,14 +1119,13 @@ function ReviewQueue({
 
   const CATEGORY_NEXT: Record<ActionCategory, string> = {
     agentsmd:
-      "A feature branch updates AGENTS.md and links you to a PR when pushed.",
+      "Updates AGENTS.md directly or through a pushed GitHub PR branch.",
     claudemd:
-      "A feature branch updates CLAUDE.md and links you to a PR when pushed.",
-    contextdoc:
-      "A feature branch writes durable context future agents can cite.",
-    prompthabit: "A feature branch captures the prompt checkpoint for review.",
+      "Updates CLAUDE.md directly or through a pushed GitHub PR branch.",
+    contextdoc: "Writes durable context future agents can cite.",
+    prompthabit: "Captures the prompt checkpoint for future sessions.",
     skill:
-      "A feature branch scaffolds or updates the skill and links you to a PR when pushed.",
+      "Scaffolds or updates the skill directly or through a pushed GitHub PR branch.",
   };
 
   return (

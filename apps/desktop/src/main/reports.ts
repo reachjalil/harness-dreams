@@ -22,12 +22,15 @@ import type {
   SyncedReviewDecision,
 } from "../shared/types";
 import { runSleepCycle } from "./cycleEngine";
-import { applyAcceptedRecommendationsAsBranches } from "./recommendationBranches";
+import {
+  applyAcceptedRecommendationsAsBranches,
+  applyAcceptedRecommendationsDirectly,
+} from "./recommendationBranches";
 import { getConfig } from "./store";
 
 /**
- * Persistent Dream Report history (newest first). Seeded from the real sample
- * dream log when no local history exists.
+ * Persistent Dream Report history (newest first). Real mode starts empty when
+ * no local history exists; demo mode uses its own fixture-backed history file.
  */
 
 type Listener = (reports: DreamReport[]) => void;
@@ -305,9 +308,9 @@ function queueFromDecisions(
 }
 
 /**
- * Apply the user's accepted recommendations as reviewable repo branches. Each
- * affected git repo gets a persistent worktree, a feature branch, a commit, and
- * a PR creation URL when the branch can be pushed to a GitHub origin.
+ * Apply the user's accepted recommendations. Branch mode gives git repos a
+ * reviewable branch and PR URL; direct mode writes the managed guidance block
+ * into the target file. Non-git projects always use direct file edits.
  */
 function applyApprovedGuidance(
   entries: ActionQueueEntry[]
@@ -339,10 +342,13 @@ function applyApprovedGuidance(
       };
     });
   }
-  const branchResults = applyAcceptedRecommendationsAsBranches(
-    accepted,
-    path.join(app.getPath("userData"), "recommendation-worktrees")
-  );
+  const branchResults =
+    getConfig().guidanceApplyMode === "direct"
+      ? applyAcceptedRecommendationsDirectly(accepted)
+      : applyAcceptedRecommendationsAsBranches(
+          accepted,
+          path.join(app.getPath("userData"), "recommendation-worktrees")
+        );
   return entries.map((entry) =>
     entry.state === "accepted" && branchResults.has(entry.findingId)
       ? { ...entry, reviewBranch: branchResults.get(entry.findingId) }
@@ -415,7 +421,7 @@ function orderedDecisionEntries(
 /**
  * Merge choices written by mobile/watch clients. Conflict policy is simple:
  * newest per finding wins. Accepted remote choices run through the same desktop
- * branch application path as local accepted choices.
+ * guidance-apply path as local accepted choices.
  */
 export function mergeRemoteReviewDecisions(incoming: SyncedReviewDecision[]): {
   applied: number;

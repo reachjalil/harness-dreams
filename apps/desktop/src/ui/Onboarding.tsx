@@ -52,10 +52,9 @@ export default function Onboarding({
   const [name, setName] = useState(hd.config?.userName ?? "");
   const [setupMode, setSetupMode] = useState<SetupMode>("real");
   const [privacy, setPrivacy] = useState<PrivacyMode>("local");
-  const [remProvider, setRemProvider] =
-    useState<RemRunnerProvider>("claude-code");
+  const [remProvider, setRemProvider] = useState<RemRunnerProvider>("codex");
   const [remModel, setRemModel] = useState(
-    hd.config?.remRunner.model ?? "opus"
+    hd.config?.remRunner.model ?? "gpt-5.5"
   );
   const [remClaudePath, setRemClaudePath] = useState(
     hd.config?.remRunner.claudePath ?? "claude"
@@ -147,7 +146,8 @@ export default function Onboarding({
       privacyMode: privacy,
       remRunner: {
         provider: remProvider,
-        model: remModel.trim() || "opus",
+        model:
+          remModel.trim() || (remProvider === "codex" ? "gpt-5.5" : "opus"),
         claudePath: remClaudePath.trim() || "claude",
         codexPath: remCodexPath.trim() || "codex",
         timeoutMs: Math.max(1, Math.round(remTimeoutSeconds)) * 1000,

@@ -7,6 +7,7 @@ import { z } from "zod";
 
 export const PrivacyModeSchema = z.enum(["local", "cloud"]);
 export const AnalysisDepthSchema = z.enum(["light", "standard", "deep"]);
+export const GuidanceApplyModeSchema = z.enum(["branch", "direct"]);
 export const ScheduleModeSchema = z.enum(["nightly", "manual"]);
 export const AnalysisSourceSchema = z.enum(["claude-code", "codex", "code"]);
 export const RemRunnerProviderSchema = z.enum(["claude-code", "codex"]);
@@ -55,6 +56,7 @@ export const AppConfigSchema = z.object({
   }),
   notifications: z.boolean(),
   analysisDepth: AnalysisDepthSchema,
+  guidanceApplyMode: GuidanceApplyModeSchema,
   remRunner: z.object({
     provider: RemRunnerProviderSchema,
     model: z.string(),
@@ -98,6 +100,7 @@ export const ConfigPatchSchema = z
       .partial(),
     notifications: z.boolean(),
     analysisDepth: AnalysisDepthSchema,
+    guidanceApplyMode: GuidanceApplyModeSchema,
     remRunner: z
       .object({
         provider: RemRunnerProviderSchema,

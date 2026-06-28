@@ -1286,6 +1286,8 @@ export function ActionQueueItem({
   onApply?: () => void;
   onUndo?: () => void;
 }): ReactElement {
+  const applyResult = item.reviewBranch;
+  const direct = applyResult?.mode === "direct" || applyResult?.appliedDirectly;
   return (
     <div className={`queue-item ${item.state}`}>
       <span className="queue-item-rail" />
@@ -1296,16 +1298,22 @@ export function ActionQueueItem({
           <span>·</span>
           <span>{item.project}</span>
         </div>
-        {item.reviewBranch ? (
+        {applyResult ? (
           <div className="queue-branch">
-            {item.reviewBranch.branch ? (
-              <span className="tnum">{item.reviewBranch.branch}</span>
+            {direct ? (
+              <span>
+                {applyResult.appliedDirectly
+                  ? `Edited ${applyResult.changedFiles?.join(", ") || "target file"}`
+                  : applyResult.error}
+              </span>
+            ) : applyResult.branch ? (
+              <span className="tnum">{applyResult.branch}</span>
             ) : null}
-            {item.reviewBranch.pushed && item.reviewBranch.prUrl ? (
-              <a href={item.reviewBranch.prUrl}>Create PR</a>
+            {!direct && applyResult.pushed && applyResult.prUrl ? (
+              <a href={applyResult.prUrl}>Create PR</a>
             ) : null}
-            {!item.reviewBranch.pushed && item.reviewBranch.error ? (
-              <span>{item.reviewBranch.error}</span>
+            {!direct && !applyResult.pushed && applyResult.error ? (
+              <span>{applyResult.error}</span>
             ) : null}
           </div>
         ) : null}
