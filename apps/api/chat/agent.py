@@ -10,10 +10,11 @@ Designed to be called via POST /chat (SSE streaming).
 """
 from __future__ import annotations
 
+import asyncio
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 from dotenv import load_dotenv
 from pydantic_ai import Agent, RunContext
@@ -69,6 +70,7 @@ When answering from the loaded synthesis_context:
 class ChatDeps:
     db: AsyncIOMotorDatabase
     synthesis_context: str
+    events: asyncio.Queue = field(default_factory=asyncio.Queue)
 
 
 def _make_agent() -> Agent:
@@ -133,18 +135,17 @@ async def get_dream_log(ctx: RunContext[ChatDeps], date: str) -> dict:
     Returns mood, alignment score, friction points, recommendations, and synthesis_context.
     """
     resolved = _resolve_date(date)
+    await ctx.deps.events.put({"type": "tool_call", "name": "get_dream_log", "label": f"Looking up dream log for {resolved}"})
     doc = await ctx.deps.db.dream_logs.find_one({"date": resolved})
     if not doc:
-        # Fuzzy fallback: find the nearest available date
         available = await ctx.deps.db.dream_logs.find(
             {}, {"date": 1}
         ).sort("date", -1).limit(14).to_list(14)
         dates = [d["date"] for d in available]
-        return {
-            "error": f"No dream log for {resolved}",
-            "available_dates": dates,
-        }
+        await ctx.deps.events.put({"type": "tool_result", "name": "get_dream_log"})
+        return {"error": f"No dream log for {resolved}", "available_dates": dates}
     doc.pop("_id", None)
+    await ctx.deps.events.put({"type": "tool_result", "name": "get_dream_log"})
     return doc
 
 
@@ -154,6 +155,7 @@ async def list_dream_logs(ctx: RunContext[ChatDeps]) -> list[dict]:
     List the last 7 dream logs — date, alignment_score, alignment_label, your_mood, agent_mood.
     Use this to answer trend questions or "how was my week".
     """
+    await ctx.deps.events.put({"type": "tool_call", "name": "list_dream_logs", "label": "Loading last 7 days"})
     docs = await ctx.deps.db.dream_logs.find(
         {},
         {
@@ -167,6 +169,7 @@ async def list_dream_logs(ctx: RunContext[ChatDeps]) -> list[dict]:
     ).sort("date", -1).limit(7).to_list(7)
     for d in docs:
         d.pop("_id", None)
+    await ctx.deps.events.put({"type": "tool_result", "name": "list_dream_logs"})
     return docs
 
 
@@ -184,7 +187,10 @@ async def search_chat_history(
     date_from / date_to: YYYY-MM-DD bounds (both optional)
     Returns up to 20 matches with excerpt + surrounding context turns.
     """
-    return await _search(query, sources=sources, date_from=date_from, date_to=date_to)
+    await ctx.deps.events.put({"type": "tool_call", "name": "search_chat_history", "label": f"Searching for \"{query}\""})
+    result = await _search(query, sources=sources, date_from=date_from, date_to=date_to)
+    await ctx.deps.events.put({"type": "tool_result", "name": "search_chat_history"})
+    return result
 
 
 # ── Message conversion ────────────────────────────────────────────────────────
@@ -209,23 +215,24 @@ def _to_history(messages: list[dict]) -> list[ModelMessage]:
 async def stream_chat(
     messages: list[dict],
     context_date: str | None = None,
-) -> AsyncIterator[str]:
+) -> AsyncIterator[dict[str, Any]]:
     """
-    Stream a chat response token by token.
+    Stream a chat response as typed event dicts.
 
     messages: full conversation [{role: "user"|"assistant", content: str}]
               The last message must be role="user" — that's the current turn.
     context_date: YYYY-MM-DD of the dream log to anchor context on.
                   Defaults to the most recent available log.
 
-    Yields text delta strings. Caller wraps in SSE.
+    Yields dicts: {"type": "token", "data": str}
+                  {"type": "tool_call", "name": str, "label": str}
+                  {"type": "tool_result", "name": str}
     """
     if not messages or messages[-1]["role"] != "user":
         raise ValueError("Last message must be role=user")
 
     db = get_db()
 
-    # Load synthesis_context from the target date's dream log
     query_filter = {"date": context_date} if context_date else {}
     log_doc = await db.dream_logs.find_one(
         query_filter,
@@ -237,9 +244,9 @@ async def stream_chat(
         else "No dream log available yet."
     )
 
-    deps = ChatDeps(db=db, synthesis_context=synthesis_context)
+    queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
+    deps = ChatDeps(db=db, synthesis_context=synthesis_context, events=queue)
 
-    # Prepend synthesis_context to the system as a user-visible preamble
     preamble = f"## Your Dream Context\n\n{synthesis_context}\n\n---\n\n"
     current_message = preamble + messages[-1]["content"] if not any(
         m["role"] == "assistant" for m in messages
@@ -247,10 +254,26 @@ async def stream_chat(
 
     history = _to_history(messages[:-1])
 
-    async with _agent.run_stream(
-        current_message,
-        deps=deps,
-        message_history=history,
-    ) as result:
-        async for delta in result.stream_text(delta=True):
-            yield delta
+    async def run_agent() -> None:
+        try:
+            async with _agent.run_stream(
+                current_message,
+                deps=deps,
+                message_history=history,
+            ) as result:
+                async for delta in result.stream_text(delta=True):
+                    await queue.put({"type": "token", "data": delta})
+        except Exception as e:
+            await queue.put({"type": "error", "message": str(e)})
+        finally:
+            await queue.put(None)
+
+    task = asyncio.create_task(run_agent())
+    try:
+        while True:
+            item = await queue.get()
+            if item is None:
+                break
+            yield item
+    finally:
+        await task

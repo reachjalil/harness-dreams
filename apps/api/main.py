@@ -113,8 +113,11 @@ async def chat(req: ChatRequest):
 
     async def event_stream():
         try:
-            async for token in stream_chat(messages, req.context_date):
-                yield f"data: {json.dumps({'token': token})}\n\n"
+            async for event in stream_chat(messages, req.context_date):
+                if event.get("type") == "error":
+                    yield f"data: {json.dumps({'error': event.get('message', 'Unknown error')})}\n\n"
+                else:
+                    yield f"data: {json.dumps(event)}\n\n"
             yield f"data: {json.dumps({'done': True})}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"

@@ -5720,6 +5720,51 @@ body {
 }
 
 /* Thinking indicator (three bouncing dots) */
+.chat-ai-icon-spacer {
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.chat-tool-call {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-label);
+  color: var(--text-2);
+  padding-top: 3px;
+  transition: opacity 0.3s;
+}
+.chat-tool-call svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.chat-tool-call-done {
+  opacity: 0.45;
+}
+.chat-tool-check {
+  width: 11px !important;
+  height: 11px !important;
+  color: var(--green, #4ade80);
+}
+.chat-tool-dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.chat-tool-dots span {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+  animation: chat-dot-bounce 1.2s ease-in-out infinite;
+}
+.chat-tool-dots span:nth-child(2) { animation-delay: 0.2s; }
+.chat-tool-dots span:nth-child(3) { animation-delay: 0.4s; }
+
 .chat-thinking {
   display: flex;
   align-items: center;

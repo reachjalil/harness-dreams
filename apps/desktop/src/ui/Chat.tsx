@@ -12,12 +12,23 @@ import remarkGfm from "remark-gfm";
 const API_URL = "http://localhost:8000";
 type Mode = "text" | "voice";
 
-interface Message {
+interface TextMessage {
+  kind: "text";
   id: string;
   role: "user" | "assistant";
   content: string;
   streaming?: boolean;
 }
+
+interface ToolEvent {
+  kind: "tool";
+  id: string;
+  name: string;
+  label: string;
+  done: boolean;
+}
+
+type ChatItem = TextMessage | ToolEvent;
 
 const SUGGESTIONS = [
   { label: "Why was my alignment low?", sub: "Explain yesterday's score" },
@@ -85,11 +96,36 @@ function ThinkingRow(): ReactElement {
   );
 }
 
-function MessageRow({ msg }: { msg: Message }): ReactElement {
-  if (msg.role === "user") {
+function ToolEventRow({ item }: { item: ToolEvent }): ReactElement {
+  return (
+    <div className="chat-row chat-row-assistant">
+      <div className="chat-ai-icon-spacer" aria-hidden="true" />
+      <div className={`chat-tool-call${item.done ? " chat-tool-call-done" : ""}`}>
+        <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M2 8a6 6 0 1 0 12 0A6 6 0 0 0 2 8z" strokeLinecap="round" />
+          <path d="M8 5v3l2 1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span>{item.label}</span>
+        {item.done ? (
+          <svg className="chat-tool-check" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : (
+          <span className="chat-tool-dots">
+            <span /><span /><span />
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MessageRow({ item }: { item: ChatItem }): ReactElement {
+  if (item.kind === "tool") return <ToolEventRow item={item} />;
+  if (item.role === "user") {
     return (
       <div className="chat-row chat-row-user">
-        <div className="chat-bubble-user">{msg.content}</div>
+        <div className="chat-bubble-user">{item.content}</div>
       </div>
     );
   }
@@ -97,8 +133,8 @@ function MessageRow({ msg }: { msg: Message }): ReactElement {
     <div className="chat-row chat-row-assistant">
       <AssistantIcon />
       <div className="chat-prose">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-        {msg.streaming ? (
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.content}</ReactMarkdown>
+        {item.streaming ? (
           <span className="chat-cursor" aria-hidden="true" />
         ) : null}
       </div>
@@ -107,7 +143,7 @@ function MessageRow({ msg }: { msg: Message }): ReactElement {
 }
 
 function TextChat(): ReactElement {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [items, setItems] = useState<ChatItem[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [thinking, setThinking] = useState(false);
@@ -116,11 +152,11 @@ function TextChat(): ReactElement {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const messageCount = messages.length;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom on new messages
+  const itemCount = items.length;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom on new items
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messageCount]);
+  }, [itemCount]);
 
   function autoResize(): void {
     const el = textareaRef.current;
@@ -141,29 +177,31 @@ function TextChat(): ReactElement {
     setError(null);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
-    const userMsg: Message = {
+    const userItem: TextMessage = {
+      kind: "text",
       id: `u-${Date.now()}`,
       role: "user",
       content: value,
     };
-    const assistantMsg: Message = {
+    const assistantItem: TextMessage = {
+      kind: "text",
       id: `a-${Date.now()}`,
       role: "assistant",
       content: "",
       streaming: true,
     };
 
-    setMessages((prev) => [...prev, userMsg, assistantMsg]);
+    setItems((prev) => [...prev, userItem, assistantItem]);
     setBusy(true);
     setThinking(true);
 
     const abort = new AbortController();
     abortRef.current = abort;
 
-    const history = [...messages, userMsg].map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    // Build history from text messages only (no tool events)
+    const history = [...items, userItem]
+      .filter((item): item is TextMessage => item.kind === "text")
+      .map((m) => ({ role: m.role, content: m.content }));
 
     try {
       const res = await fetch(`${API_URL}/chat`, {
@@ -191,15 +229,38 @@ function TextChat(): ReactElement {
             const payload = JSON.parse(line.slice(6));
             if (payload.done) break;
             if (payload.error) throw new Error(payload.error);
-            if (payload.token) {
+            if (payload.type === "tool_call") {
               setThinking(false);
-              setMessages((prev) => {
+              const toolItem: ToolEvent = {
+                kind: "tool",
+                id: `tool-${Date.now()}-${payload.name}`,
+                name: payload.name,
+                label: payload.label,
+                done: false,
+              };
+              setItems((prev) => {
+                // Insert before the streaming assistant message (last item)
+                const rest = prev.slice(0, -1);
+                const last = prev[prev.length - 1];
+                return [...rest, toolItem, last];
+              });
+            } else if (payload.type === "tool_result") {
+              setItems((prev) =>
+                prev.map((item) =>
+                  item.kind === "tool" && item.name === payload.name && !item.done
+                    ? { ...item, done: true }
+                    : item
+                )
+              );
+            } else if (payload.type === "token") {
+              setThinking(false);
+              setItems((prev) => {
                 const next = [...prev];
                 const last = next[next.length - 1];
-                if (last?.role === "assistant") {
+                if (last?.kind === "text" && last.role === "assistant") {
                   next[next.length - 1] = {
                     ...last,
-                    content: last.content + payload.token,
+                    content: last.content + payload.data,
                   };
                 }
                 return next;
@@ -215,14 +276,14 @@ function TextChat(): ReactElement {
       // AbortError = user stopped — keep the partial response, no error banner
       if (!(err instanceof Error && err.name === "AbortError")) {
         setError(err instanceof Error ? err.message : "Something went wrong");
-        setMessages((prev) => prev.slice(0, -1));
+        setItems((prev) => prev.filter((item) => item.kind !== "tool" || item.done).slice(0, -1));
       }
     } finally {
       setThinking(false);
-      setMessages((prev) => {
+      setItems((prev) => {
         const next = [...prev];
         const last = next[next.length - 1];
-        if (last?.role === "assistant")
+        if (last?.kind === "text" && last.role === "assistant")
           next[next.length - 1] = { ...last, streaming: false };
         return next;
       });
@@ -241,10 +302,10 @@ function TextChat(): ReactElement {
   return (
     <div className="chat-text-inner">
       <div className="chat-messages">
-        {messages.length === 0 ? (
+        {items.length === 0 ? (
           <EmptyState onSuggest={(t) => void send(t)} />
         ) : (
-          messages.map((msg) => <MessageRow key={msg.id} msg={msg} />)
+          items.map((item) => <MessageRow key={item.id} item={item} />)
         )}
         {thinking && <ThinkingRow />}
         {error && <p className="chat-error">{error}</p>}
