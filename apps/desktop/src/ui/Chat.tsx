@@ -9,6 +9,7 @@ import {
 const API_URL = "http://localhost:8000";
 
 interface Message {
+  id: string;
   role: "user" | "assistant";
   content: string;
   streaming?: boolean;
@@ -54,9 +55,11 @@ export default function Chat(): ReactElement {
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const messageCount = messages.length;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messageCount]);
 
   async function send(): Promise<void> {
     const text = input.trim();
@@ -65,8 +68,8 @@ export default function Chat(): ReactElement {
     setInput("");
     setError(null);
 
-    const userMsg: Message = { role: "user", content: text };
-    const assistantMsg: Message = { role: "assistant", content: "", streaming: true };
+    const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: text };
+    const assistantMsg: Message = { id: `a-${Date.now()}`, role: "assistant", content: "", streaming: true };
 
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setBusy(true);
@@ -174,7 +177,7 @@ export default function Chat(): ReactElement {
         {messages.length === 0 ? (
           <EmptyState />
         ) : (
-          messages.map((msg, i) => <MessageBubble key={i} msg={msg} />)
+          messages.map((msg) => <MessageBubble key={msg.id} msg={msg} />)
         )}
         {error && <p className="chat-error">{error}</p>}
         <div ref={bottomRef} />
@@ -199,11 +202,11 @@ export default function Chat(): ReactElement {
           aria-label="Send"
         >
           {busy ? (
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
               <circle cx="10" cy="10" r="7" strokeDasharray="4 2" />
             </svg>
           ) : (
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M4 10h12M11 5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
