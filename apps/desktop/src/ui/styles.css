@@ -4533,3 +4533,176 @@ body {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
+
+/* ── Chat ──────────────────────────────────────────────────────────────────── */
+
+.chat-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-4) 0 var(--s-3);
+  border-bottom: 1px solid var(--hairline);
+  flex-shrink: 0;
+}
+.chat-header-title {
+  font-size: var(--t-section);
+  font-weight: var(--w-semi);
+  color: var(--text);
+}
+.chat-clear-btn {
+  font-size: var(--t-label);
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--radius-xs);
+  transition: color var(--dur-1);
+}
+.chat-clear-btn:hover:not(:disabled) { color: var(--text-2); }
+.chat-clear-btn:disabled { opacity: 0.4; cursor: default; }
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s-5) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.chat-empty {
+  margin: auto;
+  text-align: center;
+  padding: var(--s-9) var(--s-4);
+}
+.chat-empty-title {
+  font-size: var(--t-body);
+  color: var(--muted);
+  margin-bottom: var(--s-5);
+}
+.chat-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  align-items: center;
+}
+.chat-suggestion {
+  font-size: var(--t-label);
+  color: var(--faint);
+  font-style: italic;
+}
+
+.chat-msg {
+  display: flex;
+}
+.chat-msg-user { justify-content: flex-end; }
+.chat-msg-assistant { justify-content: flex-start; }
+
+.chat-msg-bubble {
+  max-width: 78%;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.chat-msg-user .chat-msg-bubble {
+  background: var(--blue-weak);
+  color: var(--text);
+  border-bottom-right-radius: var(--radius-xs);
+}
+.chat-msg-assistant .chat-msg-bubble {
+  background: var(--ink-800);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-bottom-left-radius: var(--radius-xs);
+}
+
+.chat-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--violet);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: chat-blink 1s step-end infinite;
+}
+@keyframes chat-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.reduce-motion .chat-cursor { animation: none; }
+
+.chat-error {
+  font-size: var(--t-label);
+  color: var(--negative);
+  text-align: center;
+  padding: var(--s-2);
+}
+
+.chat-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-2);
+  padding: var(--s-3) 0 var(--s-5);
+  flex-shrink: 0;
+  border-top: 1px solid var(--hairline);
+}
+.chat-input {
+  flex: 1;
+  background: var(--ink-850);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--t-body);
+  line-height: 1.5;
+  padding: var(--s-3) var(--s-4);
+  resize: none;
+  min-height: 42px;
+  max-height: 160px;
+  overflow-y: auto;
+  transition: border-color var(--dur-1);
+}
+.chat-input:focus {
+  outline: none;
+  border-color: var(--violet-line);
+  box-shadow: var(--focus);
+}
+.chat-input:disabled { opacity: 0.5; }
+.chat-input::placeholder { color: var(--faint); }
+
+.chat-send-btn {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--violet);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity var(--dur-1), background var(--dur-1);
+}
+.chat-send-btn:hover:not(:disabled) { background: var(--violet-700); }
+.chat-send-btn:disabled { opacity: 0.35; cursor: default; }
+.chat-send-btn svg { width: 18px; height: 18px; }
+.chat-send-btn.busy { background: var(--ink-700); }
+.chat-send-btn.busy svg {
+  animation: chat-spin 1.2s linear infinite;
+}
+@keyframes chat-spin { to { transform: rotate(360deg); } }
+.reduce-motion .chat-send-btn.busy svg { animation: none; }

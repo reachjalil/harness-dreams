@@ -1,13 +1,16 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+import json
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from db import get_db, ensure_indexes
 from ingestion.pipeline import ingest_all
 from synthesis.agent import synthesize
 from synthesis.schema import DreamLog
+from chat.agent import stream_chat
 
 
 @asynccontextmanager
@@ -84,6 +87,34 @@ async def get_dream(date: str):
     doc.pop("_id", None)
     doc.pop("synthesized_at", None)
     return DreamLog(**doc)
+
+
+class ChatMessage(BaseModel):
+    role: str   # "user" | "assistant"
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    context_date: str | None = None  # YYYY-MM-DD; defaults to most recent log
+
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    messages = [{"role": m.role, "content": m.content} for m in req.messages]
+
+    async def event_stream():
+        try:
+            async for token in stream_chat(messages, req.context_date):
+                yield f"data: {json.dumps({'token': token})}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/health")

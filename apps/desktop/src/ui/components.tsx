@@ -27,8 +27,8 @@ import {
 import { Icon } from "./icons";
 import { InfoTip, Tooltip } from "./Tooltip";
 
-/** The four workspace tabs; mirrors App.tsx. */
-export type Tab = "today" | "cycle" | "lab" | "settings";
+/** The five workspace tabs; mirrors App.tsx. */
+export type Tab = "today" | "cycle" | "lab" | "chat" | "settings";
 
 /** The "Quiet Orbit" logo, in a light squircle chip so it reads on the dark UI. */
 export function BrandMark({ size = 30 }: { size?: number }): ReactElement {
@@ -540,6 +540,11 @@ function NavGlyph({ tab }: { tab: Tab }): ReactElement {
         <path d="M10 1.8v2.4M10 15.8v2.4M1.8 10h2.4M15.8 10h2.4" />
       </>
     ),
+    chat: (
+      <>
+        <path d="M3 4.5h14a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H6l-4 3V5.5a1 1 0 0 1 1-1Z" />
+      </>
+    ),
     settings: (
       <>
         <path d="M4 6h12M4 14h12" strokeLinecap="round" />
@@ -644,6 +649,7 @@ export function Sidebar({
     { tab: "today", label: "Home" },
     { tab: "cycle", label: "Sleep Cycles" },
     { tab: "lab", label: "Goals" },
+    { tab: "chat", label: "Chat" },
     { tab: "settings", label: "Settings" },
   ];
   const lastLabel = lastDreamAt
