@@ -1,0 +1,248 @@
+{
+  "id": "cycle_1782451972394",
+  "timestamp": 1782451972394,
+  "reviewStatus": "unreviewed",
+  "rangeLabel": "Since 10:32 PM · 4h 22m of activity · 3 sessions · continue, pass2, agent-fleet",
+  "sessions": 3,
+  "projects": 2,
+  "harness": "claude-code",
+  "digest": "A smooth day with the agent — alignment 95. 3 improvements to review from 3 sessions around continue, pass2, agent-fleet.",
+  "rings": [
+    {
+      "key": "efficiency",
+      "label": "Efficiency",
+      "score": 92,
+      "delta": 24,
+      "hint": "Tool retries, re-asks, and avoidable rework"
+    },
+    {
+      "key": "effectiveness",
+      "label": "Effectiveness",
+      "score": 92,
+      "delta": 17,
+      "hint": "Sessions completed with fewer uncertainty signals"
+    },
+    {
+      "key": "alignment",
+      "label": "Alignment",
+      "score": 95,
+      "delta": 39,
+      "hint": "How closely agent behavior tracked your intent"
+    }
+  ],
+  "metrics": [
+    {
+      "key": "reask",
+      "label": "Re-ask rate",
+      "value": "0%",
+      "delta": 0,
+      "trend": "down",
+      "good": true
+    },
+    {
+      "key": "tool_success",
+      "label": "Tool success",
+      "value": "97%",
+      "delta": -18,
+      "trend": "down",
+      "good": true
+    },
+    {
+      "key": "tokens_per_change",
+      "label": "Rework load",
+      "value": "0",
+      "delta": 0,
+      "trend": "flat",
+      "good": true
+    },
+    {
+      "key": "cache",
+      "label": "AGENTS.md coverage",
+      "value": "100%",
+      "delta": 100,
+      "trend": "up",
+      "good": true
+    },
+    {
+      "key": "recommendations",
+      "label": "Recommendations",
+      "value": "3",
+      "delta": 3,
+      "trend": "up",
+      "good": true
+    },
+    {
+      "key": "sessions",
+      "label": "Sessions reviewed",
+      "value": "3",
+      "delta": 0,
+      "trend": "flat",
+      "good": true
+    }
+  ],
+  "findings": [
+    {
+      "id": "toolfail-/Users/jalillaaraichi/agent-fleet",
+      "type": "risk",
+      "title": "Tool errors slowed agent-fleet",
+      "body": "16 tool calls surfaced errors this window. Capturing the working command keeps the agent from rediscovering it.",
+      "improvement": "Recording the command that actually works converts trial-and-error into a single reliable step.",
+      "agentBenefit": "The agent has the context it needs and stops guessing or repeating failures.",
+      "userBenefit": "You spend fewer turns correcting assumptions, repeated questions, or missed state.",
+      "reflection": "Whether agent-fleet's friction drops in the next cycle.",
+      "confidence": "high",
+      "project": "agent-fleet",
+      "projectPath": "/Users/jalillaaraichi/agent-fleet",
+      "evidence": "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>",
+      "action": "Document the working setup/commands for agent-fleet so the agent avoids the failing path.",
+      "category": "contextdoc",
+      "frictionType": "wrong-domain",
+      "patch": {
+        "target": "contextdoc",
+        "file": "/Users/jalillaaraichi/agent-fleet/AGENTS.md",
+        "label": "AGENTS.md · agent-fleet",
+        "snippet": "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\nApply these user-approved recommendations from the latest Sleep Cycle:\n\n- Known-good setup for continue: document the exact working command so tool calls stop failing.\n<!-- harness-dreams:end -->\n",
+        "creates": false
+      }
+    },
+    {
+      "id": "skill-/Users/jalillaaraichi/agent-fleet-continue",
+      "type": "opportunity",
+      "title": "“continue” recurs in agent-fleet",
+      "body": "“continue” came up in 2 separate sessions. A skill encodes the steps so the agent stops re-deriving them.",
+      "improvement": "A skill captures a repeated task once, so future sessions execute it consistently instead of improvising.",
+      "agentBenefit": "The agent follows a known routine instead of re-deriving the same steps.",
+      "userBenefit": "You spend fewer turns correcting assumptions, repeated questions, or missed state.",
+      "reflection": "Whether agent-fleet's repeated task drops in the next cycle.",
+      "confidence": "high",
+      "project": "agent-fleet",
+      "projectPath": "/Users/jalillaaraichi/agent-fleet",
+      "evidence": "Recurred in 2 of 2 sessions",
+      "action": "Add a \"continue\" skill for agent-fleet so the agent follows a known path.",
+      "category": "skill",
+      "frictionType": "missing-skill",
+      "patch": {
+        "target": "skill",
+        "file": "/Users/jalillaaraichi/agent-fleet/.claude/skills/continue/SKILL.md",
+        "label": "New skill · continue",
+        "snippet": "---\nname: continue\ndescription: Steps for the recurring \"continue\" task in agent-fleet.\n---\n\n# continue\n\nCaptured by Harness Dreams from a recurring task in agent-fleet.\nFill in the steps the agent should follow so it stops re-deriving them:\n\n1. …\n2. …\n",
+        "creates": true
+      }
+    },
+    {
+      "id": "toolfail-/Users/jalillaaraichi/human-sense",
+      "type": "risk",
+      "title": "Tool errors slowed human-sense",
+      "body": "2 tool calls surfaced errors this window. Capturing the working command keeps the agent from rediscovering it.",
+      "improvement": "Recording the command that actually works converts trial-and-error into a single reliable step.",
+      "agentBenefit": "The agent has the context it needs and stops guessing or repeating failures.",
+      "userBenefit": "You spend fewer turns correcting assumptions, repeated questions, or missed state.",
+      "reflection": "Whether human-sense's friction drops in the next cycle.",
+      "confidence": "high",
+      "project": "human-sense",
+      "projectPath": "/Users/jalillaaraichi/human-sense",
+      "evidence": "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>",
+      "action": "Document the working setup/commands for human-sense so the agent avoids the failing path.",
+      "category": "contextdoc",
+      "frictionType": "wrong-domain",
+      "patch": {
+        "target": "contextdoc",
+        "file": "/Users/jalillaaraichi/human-sense/AGENTS.md",
+        "label": "AGENTS.md · human-sense",
+        "snippet": "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\nApply these user-approved recommendations from the latest Sleep Cycle:\n\n- Known-good setup for agent-fleet: document the exact working command so tool calls stop failing.\n<!-- harness-dreams:end -->\n",
+        "creates": false
+      }
+    }
+  ],
+  "experiments": [],
+  "window": {
+    "start": 1782365572395,
+    "end": 1782451972394,
+    "basis": "since-last-cycle",
+    "label": "Since 10:32 PM · 4h 22m of activity",
+    "sessionsInWindow": 3,
+    "turnsInWindow": 736
+  },
+  "projectInsights": [
+    {
+      "name": "agent-fleet",
+      "path": "/Users/jalillaaraichi/agent-fleet",
+      "sources": [
+        "claude-code"
+      ],
+      "sessions": 2,
+      "turns": 448,
+      "corrections": 0,
+      "toolFailures": 16,
+      "hedges": 0,
+      "alignment": 95,
+      "topics": [
+        "continue",
+        "pass2"
+      ],
+      "hasAgentsMd": true,
+      "hasClaudeMd": true,
+      "skillCount": 5
+    },
+    {
+      "name": "human-sense",
+      "path": "/Users/jalillaaraichi/human-sense",
+      "sources": [
+        "claude-code"
+      ],
+      "sessions": 1,
+      "turns": 288,
+      "corrections": 0,
+      "toolFailures": 2,
+      "hedges": 0,
+      "alignment": 96,
+      "topics": [
+        "agent-fleet",
+        "apps",
+        "base",
+        "butter"
+      ],
+      "hasAgentsMd": true,
+      "hasClaudeMd": true,
+      "skillCount": 6
+    }
+  ],
+  "alignment": {
+    "score": 95,
+    "band": "collaborating",
+    "human": {
+      "mood": "deep-focus",
+      "question": "How do I get the agent to handle continue without repeated corrections?",
+      "signals": [
+        "0 corrections",
+        "0% re-ask"
+      ]
+    },
+    "agent": {
+      "mood": "overloaded",
+      "question": "What's the intended approach for continue here?",
+      "signals": [
+        "0 uncertainty signals",
+        "18 tool errors",
+        "535 tool-bearing turns"
+      ]
+    },
+    "friction": [
+      {
+        "type": "wrong-domain",
+        "example": "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>",
+        "findingId": "toolfail-/Users/jalillaaraichi/agent-fleet"
+      },
+      {
+        "type": "missing-skill",
+        "example": "Recurred in 2 of 2 sessions",
+        "findingId": "skill-/Users/jalillaaraichi/agent-fleet-continue"
+      },
+      {
+        "type": "wrong-domain",
+        "example": "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>",
+        "findingId": "toolfail-/Users/jalillaaraichi/human-sense"
+      }
+    ]
+  }
+}

@@ -13,6 +13,7 @@ import {
   Section,
   SummaryCard,
 } from "./components";
+import { TERM } from "./explainers";
 
 const STATUS_TONE: Record<ExperimentStatus, "neutral" | "accent" | "good"> = {
   proposed: "neutral",
@@ -142,16 +143,19 @@ export default function Lab({
               : undefined
           }
           sublabel="Efficiency, effectiveness, and alignment combined."
+          tip={TERM.composite}
         />
         <SummaryCard
           eyebrow="Being measured"
           value={measuringCount}
           sublabel="Accepted goals currently in effect."
+          tip={TERM.beingMeasured}
         />
         <SummaryCard
           eyebrow="Concluded"
           value={concluded.length}
           sublabel="Goals with enough evidence to retire or keep."
+          tip={TERM.concluded}
         />
       </div>
 

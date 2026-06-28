@@ -28,7 +28,16 @@ import {
   StepRail,
   SummaryCard,
 } from "./components";
+import {
+  CycleWindowBanner,
+  MeasuredGoals,
+  PatchPreview,
+  ProjectBreakdown,
+  RecommendationMap,
+} from "./cycleDetail";
+import { RING_TIP, TERM } from "./explainers";
 import { Icon, type IconName } from "./icons";
+import { InfoTip } from "./Tooltip";
 import type { HarnessDreams } from "./useHarnessDreams";
 
 // Local review state: one decision per finding. "open" means undecided.
@@ -38,6 +47,7 @@ const QUEUE_ID = "__queue";
 
 const CATEGORY_ICON: Record<ActionCategory, IconName> = {
   agentsmd: "agentsmd",
+  claudemd: "claudemd",
   contextdoc: "contextdoc",
   prompthabit: "prompthabit",
   skill: "skill",
@@ -45,6 +55,7 @@ const CATEGORY_ICON: Record<ActionCategory, IconName> = {
 
 const CATEGORY_LABEL: Record<ActionCategory, string> = {
   agentsmd: "Harness memory",
+  claudemd: "Claude memory",
   contextdoc: "Project context",
   prompthabit: "Prompt habit",
   skill: "Skill routing",
@@ -257,6 +268,7 @@ function CycleIndex({
           <div className="cycle-list-toolbar">
             <span>
               {reports.length} Sleep Cycle{reports.length === 1 ? "" : "s"}
+              <InfoTip title="Sleep Cycle" text={TERM.sleepCycle} />
             </span>
             <span>Newest first</span>
           </div>
@@ -585,6 +597,8 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
     <div className="review-overview">
       <ReviewFlow findingCount={findingCount} />
 
+      {report.window ? <CycleWindowBanner info={report.window} /> : null}
+
       <div className="flat-strip">
         <SummaryCard
           eyebrow="Alignment"
@@ -595,20 +609,53 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
             tone: trendTone(alignmentRing?.delta ?? 0),
           }}
           sublabel={`${bandLabel(split.band)} · ${report.sessions} sessions · ${report.projects} projects`}
+          tip={`${RING_TIP.alignment.text} ${TERM.alignmentBand}`}
         />
         <SummaryCard
           eyebrow="Suggested goals"
           value={findingCount}
           sublabel="Each suggested goal becomes an accept / reject decision"
+          tip={TERM.suggestedGoals}
         />
         <SummaryCard
           eyebrow="Friction points"
           value={report.alignment?.friction.length ?? 0}
           sublabel="Where your intent and the agent diverged"
+          tip={TERM.frictionPoints}
         />
       </div>
 
+      {report.experiments.some(
+        (experiment) =>
+          experiment.status === "running" || experiment.status === "concluded"
+      ) ? (
+        <Section
+          title="Did your last changes help?"
+          hint="Goals you accepted in earlier cycles, measured against this one."
+        >
+          <MeasuredGoals experiments={report.experiments} />
+        </Section>
+      ) : null}
+
       <ReportNarrative report={report} />
+
+      {findingCount > 0 ? (
+        <Section
+          title="Where recommendations land"
+          hint="Every suggested goal maps to a concrete place: your AGENTS.md, a skill, project context, or a prompt habit."
+        >
+          <RecommendationMap findings={report.findings} />
+        </Section>
+      ) : null}
+
+      {report.projectInsights && report.projectInsights.length > 0 ? (
+        <Section
+          title="Project breakdown"
+          hint="Where the window's activity and friction actually came from."
+        >
+          <ProjectBreakdown insights={report.projectInsights} />
+        </Section>
+      ) : null}
 
       {report.alignment ? (
         <AlignmentSides
@@ -707,6 +754,7 @@ function ReviewFindings({
                 onAccept={() => onDecide(finding.id, "accepted")}
                 onReject={() => onDecide(finding.id, "rejected")}
               />
+              {finding.patch ? <PatchPreview patch={finding.patch} /> : null}
               <FrictionForFinding report={report} findingId={finding.id} />
               <div className="review-controls">
                 <Button
@@ -774,6 +822,7 @@ function ReviewQueue({
 
   const CATEGORY_NEXT: Record<ActionCategory, string> = {
     agentsmd: "Patches land in AGENTS.md / memory before the next session.",
+    claudemd: "Patches land in CLAUDE.md before the next Claude Code session.",
     contextdoc: "Written as durable project context future agents can cite.",
     prompthabit: "Surfaced as a prompt checkpoint when similar work starts.",
     skill: "Routed to add or select a more specific skill.",
@@ -795,13 +844,20 @@ function ReviewQueue({
           eyebrow="Accepted"
           value={accepted}
           sublabel="Move into Goals"
+          tip={TERM.accepted}
         />
         <SummaryCard
           eyebrow="Rejected"
           value={rejected}
           sublabel="Retired with this Sleep Cycle"
+          tip={TERM.rejected}
         />
-        <SummaryCard eyebrow="Open" value={open} sublabel="Not decided yet" />
+        <SummaryCard
+          eyebrow="Open"
+          value={open}
+          sublabel="Not decided yet"
+          tip={TERM.open}
+        />
       </div>
 
       {entries.length === 0 ? (
@@ -968,7 +1024,9 @@ export default function Cycle({
               {canMarkReviewed ? (
                 <Button
                   variant="ghost"
-                  onClick={() => void actions.markReviewed(report.id)}
+                  onClick={() =>
+                    void actions.markReviewed(report.id, decisions)
+                  }
                 >
                   <Icon name="accept" size={16} />
                   Mark reviewed
@@ -986,7 +1044,7 @@ export default function Cycle({
           ) : canMarkReviewed ? (
             <Button
               variant="accent"
-              onClick={() => void actions.markReviewed(report.id)}
+              onClick={() => void actions.markReviewed(report.id, decisions)}
             >
               <Icon name="accept" size={16} />
               Mark reviewed

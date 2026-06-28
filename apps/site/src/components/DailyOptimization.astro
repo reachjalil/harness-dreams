@@ -51,10 +51,9 @@ const loops = [
         <article class="optimization-card reveal" data-delay={String(i + 1)}>
           <div class={`optimization-visual visual-${loop.type}`} aria-hidden="true">
             {loop.type === "rings" ? (
-              <div class="desktop-score">
+              <div class="desktop-score score-only">
                 <Rings efficiency={84} effectiveness={69} alignment={76} />
                 <strong>{loop.score}</strong>
-                <span>{loop.caption}</span>
               </div>
             ) : loop.type === "bars" ? (
               <div class="graph-tile">

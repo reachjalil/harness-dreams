@@ -1,0 +1,151 @@
+---
+const benefits = [
+  {
+    title: "On your wrist, like a sleep app",
+    body: "Read last night's sleep cycle, check your scores and goals, and accept tomorrow's improvements from iPhone or Apple Watch — wherever you are.",
+  },
+  {
+    title: "Your code never leaves your Mac",
+    body: "Cloud Sync carries only the cycle signal — your scores, findings, and goals. Transcripts, code, and secrets stay local; the analysis still runs on-device.",
+  },
+  {
+    title: "Open source, always",
+    body: "Harness Dreams is open source and will stay that way. Cloud Sync is an optional convenience — never a lock-in, never a paywall around your own data.",
+  },
+];
+---
+
+<section class="section" id="cloud-sync">
+  <div class="container">
+    <div class="cloudsync card reveal">
+      <div class="cs-copy">
+        <span class="eyebrow cs-eyebrow">Coming soon · $5/month</span>
+        <h2 class="h2">Take your harness health to iPhone &amp; Apple Watch.</h2>
+        <p class="lead">
+          Cloud Sync mirrors your sleep cycle to your phone and watch — so you
+          can review the day, track your scores, and approve changes from
+          anywhere. Like a sleep app, but for your coding agents.
+        </p>
+        <div class="cs-price">
+          <span class="cs-amount">$5<span>/mo</span></span>
+          <span class="cs-price-note">
+            Local-only stays free, forever. Upgrade only if you want sync.
+          </span>
+        </div>
+        <div class="cs-actions">
+          <a class="btn btn-primary" href="/start/">Get Harness Dreams</a>
+          <span class="cs-soon">Paid sync isn't live yet — local app ships first.</span>
+        </div>
+      </div>
+
+      <ul class="cs-list">
+        {
+          benefits.map((b, i) => (
+            <li class="reveal" data-delay={((i % 3) + 1).toString()}>
+              <span class="cs-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 7 17.5" />
+                  <path d="M12 12v6m0 0 2.5-2.5M12 18l-2.5-2.5" />
+                </svg>
+              </span>
+              <div>
+                <h3>{b.title}</h3>
+                <p>{b.body}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cloudsync {
+    padding: clamp(1.75rem, 4vw, 2.75rem);
+    display: grid;
+    gap: clamp(2rem, 4vw, 3rem);
+    background:
+      radial-gradient(70% 90% at 100% 0%, rgba(122, 90, 240, 0.1), transparent 55%),
+      linear-gradient(180deg, var(--surface), rgba(255, 255, 255, 0));
+  }
+  .cs-copy {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: start;
+    align-content: start;
+  }
+  .cs-eyebrow {
+    color: var(--iris);
+  }
+  .cs-price {
+    display: grid;
+    gap: 0.3rem;
+  }
+  .cs-amount {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    line-height: 1;
+    color: var(--ink);
+  }
+  .cs-amount span {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .cs-price-note {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .cs-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .cs-soon {
+    color: var(--faint);
+    font-size: 0.88rem;
+  }
+  .cs-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1.1rem;
+    align-content: start;
+  }
+  .cs-list li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.85rem;
+    align-items: start;
+  }
+  .cs-mark {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: rgba(122, 90, 240, 0.12);
+    border: 1px solid var(--line);
+    color: var(--iris);
+    flex: none;
+  }
+  .cs-list h3 {
+    font-size: 1rem;
+    font-weight: 640;
+    margin-bottom: 0.2rem;
+  }
+  .cs-list p {
+    color: var(--muted);
+    font-size: 0.93rem;
+  }
+  @media (min-width: 880px) {
+    .cloudsync {
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+    }
+  }
+</style>

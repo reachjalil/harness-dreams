@@ -17,6 +17,10 @@ export function registerIpc(controller: Controller): void {
   ipcMain.handle(Invoke.StateGet, () => getState());
   ipcMain.handle(Invoke.ReportGet, () => getLatest());
   ipcMain.handle(Invoke.ReportList, () => getReports());
+  ipcMain.handle(Invoke.DiscoverProjects, () => controller.discoverProjects());
+  ipcMain.handle(Invoke.AddProject, (_event, projectPath: unknown) =>
+    controller.addProject(z.string().parse(projectPath))
+  );
 
   ipcMain.handle(Invoke.DreamNow, () => {
     controller.dreamNow();
@@ -34,10 +38,20 @@ export function registerIpc(controller: Controller): void {
     controller.completeOnboarding();
     return getConfig();
   });
-  ipcMain.handle(Invoke.MarkReviewed, (_event, id: unknown) => {
-    controller.markReviewed(z.string().optional().parse(id));
-    return getState();
-  });
+  ipcMain.handle(
+    Invoke.MarkReviewed,
+    (_event, id: unknown, decisions: unknown) => {
+      const ReviewDecisionsSchema = z.record(
+        z.string(),
+        z.enum(["open", "accepted", "rejected", "snoozed", "queued"])
+      );
+      controller.markReviewed(
+        z.string().optional().parse(id),
+        ReviewDecisionsSchema.optional().parse(decisions)
+      );
+      return getState();
+    }
+  );
   ipcMain.handle(Invoke.SetLaunchAtLogin, (_event, value: unknown) => {
     controller.setLaunchAtLogin(z.boolean().parse(value));
     return getConfig();

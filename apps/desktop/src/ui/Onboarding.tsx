@@ -1,7 +1,19 @@
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useEffect, useMemo, useState } from "react";
 
-import type { PrivacyMode, ScheduleMode } from "../shared/types";
+import type {
+  AnalysisProject,
+  DiscoveredProject,
+  PrivacyMode,
+  RemRunnerProvider,
+  ScheduleMode,
+} from "../shared/types";
+import {
+  CLOUD_SYNC_CADENCE,
+  CLOUD_SYNC_PRICE,
+  CLOUD_SYNC_TAGLINE,
+} from "./cloudSync";
 import { BrandMark, Button } from "./components";
+import { Icon } from "./icons";
 import type { HarnessDreams } from "./useHarnessDreams";
 
 const PRIVACY_OPTIONS: { value: PrivacyMode; title: string; sub: string }[] = [
@@ -36,14 +48,58 @@ export default function Onboarding({
 }: {
   hd: HarnessDreams;
 }): ReactElement {
-  const { actions, patch } = hd;
+  const { actions, patch, projects } = hd;
   const [step, setStep] = useState(0);
   const [privacy, setPrivacy] = useState<PrivacyMode>("local");
+  const [remProvider, setRemProvider] = useState<RemRunnerProvider>("claude-code");
   const [schedule, setSchedule] = useState<ScheduleMode>("nightly");
-  const lastStep = 3;
+  const [cloudSync, setCloudSync] = useState(false);
+  const [discovered, setDiscovered] = useState<DiscoveredProject[]>([]);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [scanning, setScanning] = useState(false);
+  const lastStep = 5;
+
+  useEffect(() => {
+    if (step !== 2 || discovered.length > 0 || scanning) return;
+    setScanning(true);
+    void projects
+      .discover()
+      .then((items) => {
+        const top = items.slice(0, 8);
+        setDiscovered(top);
+        setSelected(
+          Object.fromEntries(top.slice(0, 3).map((item) => [item.path, true]))
+        );
+      })
+      .finally(() => setScanning(false));
+  }, [discovered.length, projects, scanning, step]);
+
+  const selectedProjects = useMemo(
+    () => discovered.filter((project) => selected[project.path]),
+    [discovered, selected]
+  );
 
   function finish(): void {
-    patch({ privacyMode: privacy, schedule: { mode: schedule } });
+    const added: AnalysisProject[] = selectedProjects.map((project) => ({
+      path: project.path,
+      name: project.name,
+      sources: project.sources,
+      enabled: true,
+      addedAt: Date.now(),
+    }));
+    patch({
+      privacyMode: privacy,
+      remRunner: { provider: remProvider },
+      schedule: { mode: schedule },
+      cloudSyncInterest: cloudSync,
+      projects: added,
+      connectors: {
+        claudeCode: added.some((project) =>
+          project.sources.includes("claude-code")
+        ),
+        codex: added.some((project) => project.sources.includes("codex")),
+      },
+    });
     void actions.completeOnboarding();
   }
 
@@ -101,6 +157,46 @@ export default function Onboarding({
 
         {step === 2 ? (
           <>
+            <h2>Add projects</h2>
+            <p>Choose the local projects Harness Dreams should analyze.</p>
+            <div className="choices project-choices">
+              {scanning ? (
+                <div className="choice">Scanning local data...</div>
+              ) : null}
+              {!scanning && discovered.length === 0 ? (
+                <div className="choice">
+                  No Claude or Codex projects found yet.
+                </div>
+              ) : null}
+              {discovered.slice(0, 8).map((project) => (
+                <button
+                  key={project.path}
+                  type="button"
+                  className={`choice${selected[project.path] ? " selected" : ""}`}
+                  onClick={() =>
+                    setSelected((current) => ({
+                      ...current,
+                      [project.path]: !current[project.path],
+                    }))
+                  }
+                >
+                  <div className="choice-title">
+                    <Icon name="data" size={15} />
+                    {project.name}
+                  </div>
+                  <div className="choice-sub">
+                    {project.sources.join(" + ")} · {project.sessionCount}{" "}
+                    sessions
+                  </div>
+                  <div className="choice-sub">{project.path}</div>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : null}
+
+        {step === 3 ? (
+          <>
             <h2>Private by design</h2>
             <p>
               Your transcripts hold code and secrets. You choose what leaves.
@@ -118,10 +214,80 @@ export default function Onboarding({
                 </button>
               ))}
             </div>
+            {privacy === "cloud" ? (
+              <div className="choices">
+                <button
+                  type="button"
+                  className={`choice${remProvider === "claude-code" ? " selected" : ""}`}
+                  onClick={() => setRemProvider("claude-code")}
+                >
+                  <div className="choice-title">Claude Code CLI</div>
+                  <div className="choice-sub">
+                    Runs `claude -p` locally with the redacted REM payload.
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className={`choice${remProvider === "codex" ? " selected" : ""}`}
+                  onClick={() => setRemProvider("codex")}
+                >
+                  <div className="choice-title">Codex CLI</div>
+                  <div className="choice-sub">
+                    Runs `codex exec` locally with the redacted REM payload.
+                  </div>
+                </button>
+              </div>
+            ) : null}
           </>
         ) : null}
 
-        {step === 3 ? (
+        {step === 4 ? (
+          <>
+            <h2>Sync to iPhone &amp; Apple Watch</h2>
+            <p>{CLOUD_SYNC_TAGLINE}</p>
+            <div className="choices">
+              <button
+                type="button"
+                className={`choice${cloudSync ? " selected" : ""}`}
+                onClick={() => setCloudSync(true)}
+              >
+                <div className="choice-title">
+                  <Icon name="cloudsync" size={15} />
+                  Cloud Sync
+                  <span className="choice-tag">
+                    {CLOUD_SYNC_PRICE}
+                    {CLOUD_SYNC_CADENCE}
+                  </span>
+                </div>
+                <div className="choice-sub">
+                  Read your sleep cycle, scores, and goals on iPhone &amp; Apple
+                  Watch. Your code stays on this Mac — only the cycle signal
+                  syncs.
+                </div>
+              </button>
+              <button
+                type="button"
+                className={`choice${cloudSync ? "" : " selected"}`}
+                onClick={() => setCloudSync(false)}
+              >
+                <div className="choice-title">Local only</div>
+                <div className="choice-sub">
+                  Everything stays on this Mac. Free forever — you can upgrade
+                  anytime from the app.
+                </div>
+              </button>
+            </div>
+            {cloudSync ? (
+              <div className="onb-soon">
+                <b>Cloud Sync is coming soon.</b> Paid sync isn't live yet, so
+                you'll start local-only. We'll save your spot and let you know
+                the moment it ships.
+              </div>
+            ) : null}
+          </>
+        ) : null}
+
+        {step === 5 ? (
           <>
             <h2>When should it dream?</h2>
             <p>You can change this anytime in Settings.</p>
@@ -144,7 +310,7 @@ export default function Onboarding({
 
       <div className="onb-foot">
         <div className="dots">
-          {[0, 1, 2, 3].map((index) => (
+          {[0, 1, 2, 3, 4, 5].map((index) => (
             <span key={index} className={index === step ? "active" : ""} />
           ))}
         </div>

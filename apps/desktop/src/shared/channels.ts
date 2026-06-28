@@ -11,6 +11,8 @@ export const Invoke = {
   StateGet: "state:get",
   ReportGet: "report:get",
   ReportList: "report:list",
+  DiscoverProjects: "projects:discover",
+  AddProject: "projects:add",
   DreamNow: "action:dreamNow",
   PauseDream: "action:pauseDream",
   ResumeDream: "action:resumeDream",

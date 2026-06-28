@@ -1,0 +1,42 @@
+[
+  {
+    "report": ".harness-dreams-evidence/cycle_1782624772394.json",
+    "reportSessions": 26,
+    "touchedSessionFiles": 26,
+    "matches": true,
+    "files": [
+      "/Users/jalillaaraichi/.codex/sessions/2026/06/27/rollout-2026-06-27T22-23-40-019f0cae-f4b0-7542-a041-270967536503.jsonl",
+      "/Users/jalillaaraichi/.codex/sessions/2026/06/27/rollout-2026-06-27T19-36-51-019f0c16-3b5f-7571-938d-e5d30a83dc06.jsonl",
+      "/Users/jalillaaraichi/.claude/projects/-Users-jalillaaraichi-harness-dreams/9569f25a-eaf5-4bfc-a2f5-c51a15854ef6.jsonl",
+      "/Users/jalillaaraichi/.claude/projects/-Users-jalillaaraichi-harness-dreams/2cbbc18b-3190-4ee3-b940-0202be923bc0.jsonl",
+      "/Users/jalillaaraichi/.claude/projects/-Users-jalillaaraichi-harness-dreams/32abe07b-2497-47c3-8de7-4c7f283a36b9.jsonl",
+      "/Users/jalillaaraichi/.codex/sessions/2026/06/27/rollout-2026-06-27T20-36-11-019f0c4c-8dcb-7b61-81a8-49c89ea31246.jsonl",
+      "/Users/jalillaaraichi/.codex/sessions/2026/06/27/rollout-2026-06-27T20-19-34-019f0c3d-592d-7bc2-b329-8565d9eb9194.jsonl",
+      "/Users/jalillaaraichi/.codex/sessions/2026/06/27/rollout-2026-06-27T19-14-54-019f0c02-224a-7040-bea8-9956140f8024.jsonl"
+    ]
+  },
+  {
+    "report": ".harness-dreams-evidence/cycle_1782538372394.json",
+    "reportSessions": 5,
+    "touchedSessionFiles": 5,
+    "matches": true,
+    "files": [
+      "/Users/jalillaaraichi/.codex/sessions/2026/06/26/rollout-2026-06-26T13-02-59-019f0587-46e3-7de1-988d-3c27278984d4.jsonl",
+      "/Users/jalillaaraichi/.claude/projects/-Users-jalillaaraichi-agent-fleet/7b745d7b-d14b-429f-aeb4-3be794360dee.jsonl",
+      "/Users/jalillaaraichi/.claude/projects/-Users-jalillaaraichi-agent-fleet/ede9fff3-1d6e-4405-a717-5541558216c8.jsonl",
+      "/Users/jalillaaraichi/.claude/projects/-Users-jalillaaraichi-agent-fleet/01f6af2e-2ba9-4e46-9ebd-2a5ca03ea2a5.jsonl",
+      "/Users/jalillaaraichi/.claude/projects/-Users-jalillaaraichi-human-sense/e64ba016-cec7-4444-a934-a3386c24bc8e.jsonl"
+    ]
+  },
+  {
+    "report": ".harness-dreams-evidence/cycle_1782451972394.json",
+    "reportSessions": 3,
+    "touchedSessionFiles": 3,
+    "matches": true,
+    "files": [
+      "/Users/jalillaaraichi/.claude/projects/-Users-jalillaaraichi-agent-fleet/7b745d7b-d14b-429f-aeb4-3be794360dee.jsonl",
+      "/Users/jalillaaraichi/.claude/projects/-Users-jalillaaraichi-agent-fleet/ede9fff3-1d6e-4405-a717-5541558216c8.jsonl",
+      "/Users/jalillaaraichi/.claude/projects/-Users-jalillaaraichi-human-sense/e64ba016-cec7-4444-a934-a3386c24bc8e.jsonl"
+    ]
+  }
+]

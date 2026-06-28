@@ -36,13 +36,13 @@
     <h1>What should your harness do when it goes to sleep?</h1>
     <p
       class="splash-answer"
-      aria-label="It should dream, review, connect, adapt, and improve."
+      aria-label="It should dream, reflect, connect, adapt, and improve."
     >
       <span aria-hidden="true">It should&nbsp;</span>
       <span class="answer-morph" aria-hidden="true">
         <span class="answer-sizer">improve.</span>
         <span class="answer-word aw-1">dream.</span>
-        <span class="answer-word aw-2">review.</span>
+        <span class="answer-word aw-2">reflect.</span>
         <span class="answer-word aw-3">connect.</span>
         <span class="answer-word aw-4">adapt.</span>
         <span class="answer-word aw-5">improve.</span>
@@ -55,8 +55,8 @@
     </p>
 
     <div class="hero-cta">
-      <a class="btn btn-primary hero-primary" href="/start/">Start locally</a>
-      <a class="btn hero-secondary" href="#insights">Keep reading</a>
+      <a class="btn btn-primary hero-primary" href="/start/">Download for macOS</a>
+      <a class="btn hero-secondary" href="#insights">Learn more</a>
     </div>
   </div>
 
@@ -92,12 +92,12 @@
 
   .hero::before {
     background: linear-gradient(150deg, #075f57 0%, #169f91 100%);
-    animation: gradient-teal 20s ease-in-out infinite;
+    animation: gradient-teal 20s linear infinite;
   }
 
   .hero::after {
     background: linear-gradient(150deg, #302e87 0%, #655fd0 100%);
-    animation: gradient-violet 20s ease-in-out infinite;
+    animation: gradient-violet 20s linear infinite;
   }
 
   .splash-motion {
@@ -127,7 +127,7 @@
       radial-gradient(ellipse at 18% 50%, rgba(255, 255, 255, 0.24), transparent 38%),
       radial-gradient(ellipse at 62% 45%, rgba(169, 224, 255, 0.2), transparent 42%),
       linear-gradient(92deg, transparent 0%, rgba(255, 255, 255, 0.15) 22%, rgba(255, 255, 255, 0.06) 68%, transparent 100%);
-    animation: wave-layer-a 15s ease-in-out infinite;
+    animation: wave-layer-a 20s linear infinite;
   }
 
   .shape-b {
@@ -138,7 +138,7 @@
       radial-gradient(ellipse at 76% 52%, rgba(255, 255, 255, 0.17), transparent 38%),
       linear-gradient(96deg, transparent 0%, rgba(255, 255, 255, 0.11) 20%, rgba(169, 224, 255, 0.12) 58%, transparent 100%);
     opacity: 0.46;
-    animation: wave-layer-b 19s ease-in-out infinite;
+    animation: wave-layer-b 20s linear infinite;
   }
 
   .shape-c {
@@ -149,7 +149,7 @@
       radial-gradient(ellipse at 70% 46%, rgba(157, 180, 255, 0.18), transparent 40%),
       linear-gradient(88deg, transparent 0%, rgba(255, 255, 255, 0.1) 28%, rgba(255, 255, 255, 0.15) 58%, transparent 100%);
     opacity: 0.44;
-    animation: wave-layer-c 24s ease-in-out infinite;
+    animation: wave-layer-c 20s linear infinite;
   }
 
   .splash-content {
@@ -326,10 +326,24 @@
     box-shadow: 0 18px 50px -28px rgba(0, 0, 0, 0.5);
   }
 
+  .hero-primary:hover {
+    border-color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.92);
+    color: #0f3c91;
+    box-shadow: 0 20px 50px -26px rgba(0, 0, 0, 0.58);
+  }
+
   .hero-secondary {
     border-color: rgba(255, 255, 255, 0.25);
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
+  }
+
+  .hero-secondary:hover {
+    border-color: rgba(255, 255, 255, 0.42);
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    box-shadow: 0 18px 46px -30px rgba(0, 0, 0, 0.45);
   }
 
   .scroll-cue {
@@ -398,14 +412,25 @@
 
   @keyframes gradient-teal {
     0%,
-    18% {
+    16% {
       opacity: 0;
     }
-    28%,
-    46% {
-      opacity: 1;
+    20% {
+      opacity: 0.92;
     }
-    58%,
+    36% {
+      opacity: 0.72;
+    }
+    40% {
+      opacity: 0;
+    }
+    76% {
+      opacity: 0;
+    }
+    80% {
+      opacity: 0.48;
+    }
+    96%,
     100% {
       opacity: 0;
     }
@@ -413,14 +438,22 @@
 
   @keyframes gradient-violet {
     0%,
-    50% {
+    36% {
       opacity: 0;
     }
-    62%,
-    80% {
-      opacity: 1;
+    40% {
+      opacity: 0.62;
     }
-    92%,
+    56% {
+      opacity: 0;
+    }
+    60% {
+      opacity: 0.92;
+    }
+    76% {
+      opacity: 0.56;
+    }
+    80%,
     100% {
       opacity: 0;
     }
@@ -428,23 +461,59 @@
 
   @keyframes wave-layer-a {
     0% {
-      opacity: 0.44;
-      transform: translate3d(-5vw, 1vh, 0) rotate(-8deg) scaleX(0.96);
+      opacity: 0.48;
+      transform: translate3d(-8vw, 1vh, 0) rotate(-8deg) scaleX(0.94);
       border-radius: 43% 57% 61% 39% / 58% 42% 58% 42%;
     }
-    35% {
-      opacity: 0.62;
-      transform: translate3d(3vw, -2vh, 0) rotate(-5deg) scaleX(1.04);
+    4% {
+      opacity: 0.72;
+      transform: translate3d(-1vw, -2vh, 0) rotate(-5deg) scaleX(1.1);
       border-radius: 55% 45% 48% 52% / 45% 55% 45% 55%;
     }
-    68% {
-      opacity: 0.5;
-      transform: translate3d(8vw, 2vh, 0) rotate(-10deg) scaleX(1.02);
+    16% {
+      opacity: 0.56;
+      transform: translate3d(2vw, -1vh, 0) rotate(-6deg) scaleX(1.02);
       border-radius: 48% 52% 57% 43% / 62% 38% 62% 38%;
     }
+    20% {
+      opacity: 0.78;
+      transform: translate3d(9vw, 2vh, 0) rotate(-12deg) scaleX(1.16);
+      border-radius: 58% 42% 46% 54% / 44% 56% 44% 56%;
+    }
+    36% {
+      opacity: 0.54;
+      transform: translate3d(4vw, 1vh, 0) rotate(-8deg) scaleX(1.03);
+      border-radius: 46% 54% 60% 40% / 60% 40% 60% 40%;
+    }
+    40% {
+      opacity: 0.76;
+      transform: translate3d(-7vw, -2vh, 0) rotate(-3deg) scaleX(1.18);
+      border-radius: 54% 46% 50% 50% / 40% 60% 40% 60%;
+    }
+    56% {
+      opacity: 0.5;
+      transform: translate3d(-2vw, 1vh, 0) rotate(-5deg) scaleX(1.04);
+      border-radius: 44% 56% 58% 42% / 62% 38% 62% 38%;
+    }
+    60% {
+      opacity: 0.78;
+      transform: translate3d(7vw, -3vh, 0) rotate(-11deg) scaleX(1.2);
+      border-radius: 60% 40% 44% 56% / 46% 54% 46% 54%;
+    }
+    76% {
+      opacity: 0.52;
+      transform: translate3d(3vw, -1vh, 0) rotate(-7deg) scaleX(1.04);
+      border-radius: 48% 52% 56% 44% / 58% 42% 58% 42%;
+    }
+    80% {
+      opacity: 0.74;
+      transform: translate3d(-9vw, 2vh, 0) rotate(-2deg) scaleX(1.15);
+      border-radius: 42% 58% 60% 40% / 44% 56% 44% 56%;
+    }
+    96%,
     100% {
       opacity: 0.44;
-      transform: translate3d(-5vw, 1vh, 0) rotate(-8deg) scaleX(0.96);
+      transform: translate3d(-8vw, 1vh, 0) rotate(-8deg) scaleX(0.94);
       border-radius: 43% 57% 61% 39% / 58% 42% 58% 42%;
     }
   }
@@ -455,16 +524,52 @@
       transform: translate3d(6vw, -1vh, 0) rotate(7deg) scaleX(1.02);
       border-radius: 55% 45% 48% 52% / 43% 57% 43% 57%;
     }
-    38% {
-      opacity: 0.54;
-      transform: translate3d(-4vw, 2vh, 0) rotate(4deg) scaleX(0.96);
+    4% {
+      opacity: 0.58;
+      transform: translate3d(-6vw, 2vh, 0) rotate(3deg) scaleX(1.12);
       border-radius: 46% 54% 60% 40% / 58% 42% 58% 42%;
     }
-    72% {
+    16% {
       opacity: 0.44;
-      transform: translate3d(-8vw, -2vh, 0) rotate(9deg) scaleX(1.08);
+      transform: translate3d(-2vw, 1vh, 0) rotate(5deg) scaleX(1);
       border-radius: 60% 40% 45% 55% / 40% 60% 40% 60%;
     }
+    20% {
+      opacity: 0.64;
+      transform: translate3d(8vw, -3vh, 0) rotate(10deg) scaleX(1.14);
+      border-radius: 48% 52% 60% 40% / 55% 45% 55% 45%;
+    }
+    36% {
+      opacity: 0.42;
+      transform: translate3d(3vw, -1vh, 0) rotate(6deg) scaleX(1.02);
+      border-radius: 56% 44% 46% 54% / 42% 58% 42% 58%;
+    }
+    40% {
+      opacity: 0.62;
+      transform: translate3d(-9vw, 2vh, 0) rotate(2deg) scaleX(1.18);
+      border-radius: 44% 56% 62% 38% / 60% 40% 60% 40%;
+    }
+    56% {
+      opacity: 0.44;
+      transform: translate3d(-4vw, 0, 0) rotate(4deg) scaleX(1.03);
+      border-radius: 60% 40% 46% 54% / 42% 58% 42% 58%;
+    }
+    60% {
+      opacity: 0.64;
+      transform: translate3d(7vw, 3vh, 0) rotate(9deg) scaleX(1.16);
+      border-radius: 50% 50% 58% 42% / 56% 44% 56% 44%;
+    }
+    76% {
+      opacity: 0.42;
+      transform: translate3d(1vw, 1vh, 0) rotate(6deg) scaleX(1.02);
+      border-radius: 55% 45% 47% 53% / 44% 56% 44% 56%;
+    }
+    80% {
+      opacity: 0.6;
+      transform: translate3d(-8vw, -2vh, 0) rotate(1deg) scaleX(1.14);
+      border-radius: 46% 54% 61% 39% / 58% 42% 58% 42%;
+    }
+    96%,
     100% {
       opacity: 0.4;
       transform: translate3d(6vw, -1vh, 0) rotate(7deg) scaleX(1.02);
@@ -478,16 +583,52 @@
       transform: translate3d(-7vw, 1vh, 0) rotate(-4deg) scaleX(1.04);
       border-radius: 49% 51% 54% 46% / 65% 35% 65% 35%;
     }
-    32% {
-      opacity: 0.5;
-      transform: translate3d(2vw, -2vh, 0) rotate(-7deg) scaleX(0.98);
+    4% {
+      opacity: 0.58;
+      transform: translate3d(6vw, -3vh, 0) rotate(-9deg) scaleX(1.15);
       border-radius: 56% 44% 47% 53% / 58% 42% 58% 42%;
     }
-    66% {
+    16% {
       opacity: 0.42;
-      transform: translate3d(9vw, 2vh, 0) rotate(-2deg) scaleX(1.08);
+      transform: translate3d(3vw, -1vh, 0) rotate(-6deg) scaleX(1.04);
       border-radius: 44% 56% 59% 41% / 62% 38% 62% 38%;
     }
+    20% {
+      opacity: 0.62;
+      transform: translate3d(-7vw, 3vh, 0) rotate(-1deg) scaleX(1.18);
+      border-radius: 52% 48% 46% 54% / 44% 56% 44% 56%;
+    }
+    36% {
+      opacity: 0.42;
+      transform: translate3d(-2vw, 1vh, 0) rotate(-5deg) scaleX(1.04);
+      border-radius: 48% 52% 58% 42% / 64% 36% 64% 36%;
+    }
+    40% {
+      opacity: 0.6;
+      transform: translate3d(8vw, -2vh, 0) rotate(-10deg) scaleX(1.14);
+      border-radius: 58% 42% 48% 52% / 56% 44% 56% 44%;
+    }
+    56% {
+      opacity: 0.4;
+      transform: translate3d(3vw, 0, 0) rotate(-7deg) scaleX(1.02);
+      border-radius: 44% 56% 60% 40% / 62% 38% 62% 38%;
+    }
+    60% {
+      opacity: 0.62;
+      transform: translate3d(-8vw, 2vh, 0) rotate(-2deg) scaleX(1.17);
+      border-radius: 54% 46% 47% 53% / 44% 56% 44% 56%;
+    }
+    76% {
+      opacity: 0.42;
+      transform: translate3d(-3vw, 1vh, 0) rotate(-5deg) scaleX(1.03);
+      border-radius: 49% 51% 56% 44% / 63% 37% 63% 37%;
+    }
+    80% {
+      opacity: 0.58;
+      transform: translate3d(8vw, -2vh, 0) rotate(-9deg) scaleX(1.15);
+      border-radius: 56% 44% 50% 50% / 56% 44% 56% 44%;
+    }
+    96%,
     100% {
       opacity: 0.38;
       transform: translate3d(-7vw, 1vh, 0) rotate(-4deg) scaleX(1.04);

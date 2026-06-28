@@ -1,0 +1,245 @@
+{
+  "id": "cycle_1782624772394",
+  "timestamp": 1782624772394,
+  "reviewStatus": "unreviewed",
+  "rangeLabel": "Since 10:32 PM · 11h 51m of activity · 26 sessions · review, user, harness",
+  "sessions": 26,
+  "projects": 2,
+  "harness": "codex + claude-code",
+  "digest": "Some friction with the agent today — alignment 60. 3 improvements to review from 26 sessions around review, user, harness.",
+  "rings": [
+    {
+      "key": "efficiency",
+      "label": "Efficiency",
+      "score": 71,
+      "delta": 0,
+      "hint": "Tool retries, re-asks, and avoidable rework"
+    },
+    {
+      "key": "effectiveness",
+      "label": "Effectiveness",
+      "score": 77,
+      "delta": 0,
+      "hint": "Sessions completed with fewer uncertainty signals"
+    },
+    {
+      "key": "alignment",
+      "label": "Alignment",
+      "score": 60,
+      "delta": 0,
+      "hint": "How closely agent behavior tracked your intent"
+    }
+  ],
+  "metrics": [
+    {
+      "key": "reask",
+      "label": "Re-ask rate",
+      "value": "50%",
+      "delta": 50,
+      "trend": "up",
+      "good": false
+    },
+    {
+      "key": "tool_success",
+      "label": "Tool success",
+      "value": "98%",
+      "delta": -36,
+      "trend": "down",
+      "good": true
+    },
+    {
+      "key": "tokens_per_change",
+      "label": "Rework load",
+      "value": "126",
+      "delta": 126,
+      "trend": "up",
+      "good": false
+    },
+    {
+      "key": "cache",
+      "label": "AGENTS.md coverage",
+      "value": "50%",
+      "delta": 50,
+      "trend": "down",
+      "good": false
+    },
+    {
+      "key": "recommendations",
+      "label": "Recommendations",
+      "value": "3",
+      "delta": 3,
+      "trend": "up",
+      "good": true
+    },
+    {
+      "key": "sessions",
+      "label": "Sessions reviewed",
+      "value": "26",
+      "delta": 0,
+      "trend": "flat",
+      "good": true
+    }
+  ],
+  "findings": [
+    {
+      "id": "rule-/Users/jalillaaraichi/harness-dreams",
+      "type": "mistake",
+      "title": "Repeated corrections in harness-dreams",
+      "body": "You corrected the agent 122 times this window around review. Encoding the rule once stops the loop.",
+      "improvement": "Turning a repeated correction into a written rule means you stop re-typing it every session.",
+      "agentBenefit": "The agent loads durable, project-local guidance before it picks tools or a plan.",
+      "userBenefit": "You spend fewer turns correcting assumptions, repeated questions, or missed state.",
+      "reflection": "Whether harness-dreams's corrections drops in the next cycle.",
+      "confidence": "high",
+      "project": "harness-dreams",
+      "projectPath": "/Users/jalillaaraichi/harness-dreams",
+      "evidence": "“I dont likthe new one maybe be a littl eb more clean with the line on them and make them not lo…”",
+      "action": "Add a rule to harness-dreams AGENTS.md: When working on review, confirm the intended approach before large edits — this direction was corrected repeatedly.",
+      "category": "agentsmd",
+      "frictionType": "config-conflict",
+      "patch": {
+        "target": "agentsmd",
+        "file": "/Users/jalillaaraichi/harness-dreams/AGENTS.md",
+        "label": "AGENTS.md · harness-dreams",
+        "snippet": "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\nApply these user-approved recommendations from the latest Sleep Cycle:\n\n- When working on review, confirm the intended approach before large edits — this direction was corrected repeatedly.\n<!-- harness-dreams:end -->\n",
+        "creates": true
+      }
+    },
+    {
+      "id": "toolfail-/Users/jalillaaraichi/harness-dreams",
+      "type": "risk",
+      "title": "Tool errors slowed harness-dreams",
+      "body": "36 tool calls surfaced errors this window. Capturing the working command keeps the agent from rediscovering it.",
+      "improvement": "Recording the command that actually works converts trial-and-error into a single reliable step.",
+      "agentBenefit": "The agent has the context it needs and stops guessing or repeating failures.",
+      "userBenefit": "You spend fewer turns correcting assumptions, repeated questions, or missed state.",
+      "reflection": "Whether harness-dreams's friction drops in the next cycle.",
+      "confidence": "high",
+      "project": "harness-dreams",
+      "projectPath": "/Users/jalillaaraichi/harness-dreams",
+      "evidence": "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it a…",
+      "action": "Document the working setup/commands for harness-dreams so the agent avoids the failing path.",
+      "category": "contextdoc",
+      "frictionType": "wrong-domain",
+      "patch": {
+        "target": "contextdoc",
+        "file": "/Users/jalillaaraichi/harness-dreams/AGENTS.md",
+        "label": "AGENTS.md · harness-dreams",
+        "snippet": "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\nApply these user-approved recommendations from the latest Sleep Cycle:\n\n- Known-good setup for review: document the exact working command so tool calls stop failing.\n<!-- harness-dreams:end -->\n",
+        "creates": true
+      }
+    },
+    {
+      "id": "prompt-/Users/jalillaaraichi/human-sense",
+      "type": "opportunity",
+      "title": "Re-ask rate is high in human-sense",
+      "body": "67% of your turns were rapid corrections. Front-loading the goal and constraints cuts the back-and-forth.",
+      "improvement": "Stating the goal and constraints in the first prompt removes the rounds spent narrowing intent.",
+      "agentBenefit": "The agent has the context it needs and stops guessing or repeating failures.",
+      "userBenefit": "You spend fewer turns correcting assumptions, repeated questions, or missed state.",
+      "reflection": "Whether human-sense's friction drops in the next cycle.",
+      "confidence": "high",
+      "project": "human-sense",
+      "projectPath": "/Users/jalillaaraichi/human-sense",
+      "evidence": "4 rapid corrections · 67% re-ask",
+      "action": "Start human-sense prompts with the goal + constraints up front to cut the 67% re-ask rate.",
+      "category": "prompthabit",
+      "frictionType": "unclear-prompt"
+    }
+  ],
+  "experiments": [],
+  "window": {
+    "start": 1782538372395,
+    "end": 1782624772394,
+    "basis": "since-last-cycle",
+    "label": "Since 10:32 PM · 11h 51m of activity",
+    "sessionsInWindow": 26,
+    "turnsInWindow": 3859
+  },
+  "projectInsights": [
+    {
+      "name": "harness-dreams",
+      "path": "/Users/jalillaaraichi/harness-dreams",
+      "sources": [
+        "codex",
+        "claude-code"
+      ],
+      "sessions": 25,
+      "turns": 3842,
+      "corrections": 122,
+      "toolFailures": 36,
+      "hedges": 7,
+      "alignment": 61,
+      "topics": [
+        "review",
+        "user",
+        "harness",
+        "page"
+      ],
+      "hasAgentsMd": false,
+      "hasClaudeMd": false,
+      "skillCount": 0
+    },
+    {
+      "name": "human-sense",
+      "path": "/Users/jalillaaraichi/human-sense",
+      "sources": [
+        "codex"
+      ],
+      "sessions": 1,
+      "turns": 17,
+      "corrections": 4,
+      "toolFailures": 0,
+      "hedges": 0,
+      "alignment": 49,
+      "topics": [
+        "aborted",
+        "actions",
+        "activate",
+        "active"
+      ],
+      "hasAgentsMd": true,
+      "hasClaudeMd": true,
+      "skillCount": 6
+    }
+  ],
+  "alignment": {
+    "score": 60,
+    "band": "friction",
+    "human": {
+      "mood": "frustrated",
+      "question": "How do I get the agent to handle review without repeated corrections?",
+      "signals": [
+        "I dont likthe new one maybe be a littl eb more clean with the line on them and make them not lo…",
+        "I dont likthe new one maybe be a littl eb more clean with the line on them and make them not lo…",
+        "i still dont liek the review one for the code i dont want ot show code maybe instead we say ref…"
+      ]
+    },
+    "agent": {
+      "mood": "uncertain",
+      "question": "What's the intended approach for review here?",
+      "signals": [
+        "7 uncertainty signals",
+        "36 tool errors",
+        "1633 tool-bearing turns"
+      ]
+    },
+    "friction": [
+      {
+        "type": "config-conflict",
+        "example": "“I dont likthe new one maybe be a littl eb more clean with the line on them and make them not lo…”",
+        "findingId": "rule-/Users/jalillaaraichi/harness-dreams"
+      },
+      {
+        "type": "wrong-domain",
+        "example": "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it a…",
+        "findingId": "toolfail-/Users/jalillaaraichi/harness-dreams"
+      },
+      {
+        "type": "unclear-prompt",
+        "example": "4 rapid corrections · 67% re-ask",
+        "findingId": "prompt-/Users/jalillaaraichi/human-sense"
+      }
+    ]
+  }
+}

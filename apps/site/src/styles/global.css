@@ -311,7 +311,7 @@ h1,
 .page-hero {
   position: relative;
   overflow: hidden;
-  padding-block: clamp(4.5rem, 9vw, 7rem);
+  padding-block: clamp(7rem, 12vw, 9.5rem) clamp(4.5rem, 9vw, 7rem);
   background:
     radial-gradient(
       circle at 82% 18%,
@@ -859,6 +859,18 @@ h1,
   height: 15rem;
 }
 
+.desktop-score::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  width: 6.7rem;
+  height: 6.7rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(167, 218, 211, 0.14), transparent 62%),
+    rgba(255, 255, 255, 0.82);
+}
+
 .desktop-rings {
   width: 100%;
   height: 100%;
@@ -901,24 +913,30 @@ html:not([data-js]) .desktop-rings .ring-arc {
 
 .desktop-score strong {
   position: absolute;
-  top: calc(50% - 0.55rem);
+  z-index: 2;
+  top: calc(50% - 0.88rem);
   transform: translateY(-50%);
   color: #1d1d1f;
-  font-size: clamp(3rem, 6vw, 4.4rem);
+  font-size: clamp(3rem, 6vw, 4.1rem);
   font-weight: 300;
   letter-spacing: 0;
   line-height: 1;
 }
 
+.desktop-score.score-only strong {
+  top: 50%;
+}
+
 .desktop-score span {
   position: absolute;
-  top: calc(50% + 2.45rem);
-  width: min(11rem, 72%);
+  z-index: 2;
+  top: calc(50% + 1.95rem);
+  width: min(8.8rem, 58%);
   text-align: center;
   color: var(--muted);
-  font-size: clamp(0.64rem, 1.8vw, 0.74rem);
+  font-size: clamp(0.58rem, 1.45vw, 0.66rem);
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   line-height: 1.15;
   text-transform: uppercase;
 }
@@ -1319,7 +1337,7 @@ html:not([data-js]) .desktop-rings .ring-arc {
 }
 
 .abstract-rings .desktop-score span {
-  top: calc(50% + 2.25rem);
+  top: calc(50% + 1.9rem);
 }
 
 .abstract-pulse {
@@ -1682,7 +1700,7 @@ html:not([data-js]) .desktop-rings .ring-arc {
 }
 
 .article-hero {
-  padding-block: clamp(4.5rem, 9vw, 7rem);
+  padding-block: clamp(7rem, 12vw, 9.5rem) clamp(4.5rem, 9vw, 7rem);
   background:
     radial-gradient(
       circle at 76% 20%,

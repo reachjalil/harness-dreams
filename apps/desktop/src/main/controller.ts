@@ -2,11 +2,18 @@ import { app, Notification, shell } from "electron";
 
 import { Send } from "../shared/channels";
 import { stageForProgress } from "../shared/stages";
+import type {
+  AnalysisProject,
+  DiscoveredProject,
+  ReviewDecisions,
+} from "../shared/types";
+import { discoverAnalysisProjects } from "./localIngest";
 import {
   addDream,
   getReports,
   markReportReviewed,
   onReportsChange,
+  resetReports,
 } from "./reports";
 import { refreshTray } from "./tray";
 import { getState, onStateChange, patchState } from "./state";
@@ -31,7 +38,9 @@ export interface Controller {
   resumeDream(): void;
   openSession(id: string): void;
   completeOnboarding(): void;
-  markReviewed(id?: string): void;
+  markReviewed(id?: string, decisions?: ReviewDecisions): void;
+  discoverProjects(): DiscoveredProject[];
+  addProject(projectPath: string): AnalysisProject | null;
   setLaunchAtLogin(value: boolean): void;
   testNotification(): void;
   resetOnboarding(): void;
@@ -113,14 +122,47 @@ export function createController(): Controller {
     completeOnboarding: () => {
       setConfig({ onboarded: true });
     },
-    markReviewed: (id?: string) => {
-      markReportReviewed(id);
+    markReviewed: (id?: string, decisions?: ReviewDecisions) => {
+      markReportReviewed(id, decisions);
       const hasUnreviewed = getReports().some(
         (report) => report.reviewStatus === "unreviewed"
       );
       if (getState().hasUnreviewed !== hasUnreviewed) {
         patchState({ hasUnreviewed });
       }
+    },
+    discoverProjects: () => discoverAnalysisProjects(),
+    addProject: (projectPath: string) => {
+      const discovered = discoverAnalysisProjects().find(
+        (project) => project.path === projectPath
+      );
+      if (!discovered) return null;
+      const current = getConfig().projects ?? [];
+      const existing = current.find((project) => project.path === projectPath);
+      const nextProject: AnalysisProject = existing
+        ? { ...existing, enabled: true, sources: discovered.sources }
+        : {
+            path: discovered.path,
+            name: discovered.name,
+            sources: discovered.sources,
+            enabled: true,
+            addedAt: Date.now(),
+          };
+      setConfig({
+        projects: [
+          nextProject,
+          ...current.filter((project) => project.path !== projectPath),
+        ],
+        connectors: {
+          claudeCode:
+            getConfig().connectors.claudeCode ||
+            discovered.sources.includes("claude-code"),
+          codex:
+            getConfig().connectors.codex ||
+            discovered.sources.includes("codex"),
+        },
+      });
+      return nextProject;
     },
     setLaunchAtLogin: (value: boolean) => {
       app.setLoginItemSettings({ openAtLogin: value });
@@ -137,6 +179,7 @@ export function createController(): Controller {
     },
     resetAll: () => {
       resetConfig();
+      resetReports();
       patchState({
         phase: "ready",
         progress: 0,

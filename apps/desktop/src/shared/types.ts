@@ -18,6 +18,32 @@ export type AnalysisDepth = "light" | "standard" | "deep";
 
 /** When dreams run. */
 export type ScheduleMode = "nightly" | "manual";
+export type AnalysisSource = "claude-code" | "codex" | "code";
+export type RemRunnerProvider = "claude-code" | "codex";
+
+export interface RemRunnerConfig {
+  provider: RemRunnerProvider;
+  model: string;
+  claudePath: string;
+  codexPath: string;
+  timeoutMs: number;
+}
+
+export interface AnalysisProject {
+  path: string;
+  name: string;
+  sources: AnalysisSource[];
+  enabled: boolean;
+  addedAt: number;
+}
+
+export interface DiscoveredProject {
+  path: string;
+  name: string;
+  sources: AnalysisSource[];
+  sessionCount: number;
+  lastActivityAt: number | null;
+}
 
 /** Persisted, user-facing configuration. */
 export interface AppConfig {
@@ -32,15 +58,24 @@ export interface AppConfig {
   };
   notifications: boolean;
   analysisDepth: AnalysisDepth;
+  /** CLI runner used for opt-in cloud REM analysis. */
+  remRunner: RemRunnerConfig;
   launchAtLogin: boolean;
   /** Honor the OS reduced-motion preference, or force it on. */
   reduceMotion: boolean;
+  /**
+   * The user has asked to be notified when paid Cloud Sync ships. Cloud Sync
+   * (coming soon, $5/mo) syncs only the cycle *signal* — scores and findings —
+   * to an iPhone / Apple Watch app; transcripts and code never leave the Mac.
+   */
+  cloudSyncInterest: boolean;
   /** Which harnesses we (will) ingest. Claude Code ships first. */
   connectors: {
     claudeCode: boolean;
     codex: boolean;
     cursor: boolean;
   };
+  projects: AnalysisProject[];
 }
 
 /** Live, non-persisted runtime state broadcast to the UI. */
@@ -106,12 +141,38 @@ export interface Finding {
   project: string;
   /** One-line pointer to the evidence (mock). */
   evidence: string;
+  /** Absolute transcript path containing the evidence, when available. */
+  evidenceFile?: string;
+  /** The precise config-vs-behavior gap the finding addresses. */
+  configGap?: string;
   /** The single recommended next step. */
   action: string;
   /** Optional action category hint; the UI derives one when absent. */
   category?: ActionCategory;
   /** Optional friction classification; only meaningful for mistake/risk. */
   frictionType?: FrictionType;
+  /** Absolute path of the project this finding came from (for applying patches). */
+  projectPath?: string;
+  /** A concrete file change this recommendation would apply if accepted. */
+  patch?: ConfigPatchPreview;
+}
+
+/**
+ * A concrete, ready-to-apply change a recommendation would make — the actual
+ * file and the managed snippet written into it. This is what turns a finding
+ * into a "true AGENTS.md / skill improvement" rather than generic advice.
+ */
+export interface ConfigPatchPreview {
+  /** Where the patch lands. */
+  target: ActionCategory;
+  /** Absolute path of the file the patch touches (AGENTS.md / CLAUDE.md / skill). */
+  file: string;
+  /** Short human label, e.g. "AGENTS.md · my-project" or "New skill · deploy". */
+  label: string;
+  /** The exact block/snippet that would be inserted or created. */
+  snippet: string;
+  /** True when the file would be created from scratch. */
+  creates: boolean;
 }
 
 // ── Human ↔ Agent alignment (additive; UI derives fallbacks when absent) ──────
@@ -122,6 +183,7 @@ export type AlignmentBand = "collaborating" | "friction" | "fighting";
 /** Where a recommended action should land. */
 export type ActionCategory =
   | "agentsmd" // "AGENTS.md update"
+  | "claudemd" // "CLAUDE.md update"
   | "contextdoc" // "Context doc"
   | "prompthabit" // "Prompt habit"
   | "skill"; // "Skill / routing"
@@ -180,13 +242,64 @@ export interface ActionQueueEntry {
   project: string;
   /** accepted | rejected | queued | snoozed (open entries are not summarized). */
   state: ActionState;
+  /** Absolute path of the originating project, when known. */
+  projectPath?: string;
+  /** The concrete file change this entry applies if accepted. */
+  patch?: ConfigPatchPreview;
 }
+
+/** Basis for the activity window a Sleep Cycle reviewed. */
+export type WindowBasis = "since-last-cycle" | "last-24h";
+
+/**
+ * The slice of time a Sleep Cycle actually reviewed: everything since the last
+ * cycle, capped at 24 hours. This is what makes a cycle a true incremental
+ * review rather than a re-scan of all history.
+ */
+export interface CycleWindow {
+  /** Epoch ms — window start. */
+  start: number;
+  /** Epoch ms — window end (when the cycle ran). */
+  end: number;
+  basis: WindowBasis;
+  /** Human label, e.g. "Since 9:40 PM · 3h 12m of activity". */
+  label: string;
+  /** Sessions with activity inside the window. */
+  sessionsInWindow: number;
+  /** User+agent turns inside the window. */
+  turnsInWindow: number;
+}
+
+/** A per-project rollup of what happened inside the cycle window. */
+export interface ProjectInsight {
+  name: string;
+  path: string;
+  sources: AnalysisSource[];
+  sessions: number;
+  turns: number;
+  /** Rapid user follow-ups / corrections. */
+  corrections: number;
+  /** Tool calls that surfaced an error. */
+  toolFailures: number;
+  /** Agent uncertainty signals. */
+  hedges: number;
+  /** 0..100 local alignment for this project alone. */
+  alignment: number;
+  /** Top recurring topics, most frequent first. */
+  topics: string[];
+  hasAgentsMd: boolean;
+  hasClaudeMd: boolean;
+  skillCount: number;
+}
+
+/** Decisions captured during review, keyed by finding id. */
+export type ReviewDecisions = Record<string, ActionState>;
 
 /** User-facing lifecycle for a cycle report. */
 export type CycleReviewStatus = "unreviewed" | "reviewed" | "expired";
 
 export type ExperimentStatus = "proposed" | "running" | "concluded";
-export type ExperimentVerdict = "improved" | "inconclusive" | "regressed";
+export type ExperimentVerdict = "helped" | "no-change" | "worse";
 
 export interface Experiment {
   id: string;
@@ -202,6 +315,15 @@ export interface Experiment {
   progressLabel?: string;
   verdict?: ExperimentVerdict;
   verdictNote?: string;
+  /** Which project this goal targets, so the next cycle can measure it. */
+  projectPath?: string;
+  /** Where the accepted change landed. */
+  category?: ActionCategory;
+  /**
+   * Snapshot of the target project at the moment the goal was accepted. The
+   * next cycle compares against this to decide whether the change helped.
+   */
+  baseline?: { alignment: number; corrections: number };
 }
 
 /** The artifact a Dream Session produces — styled like the Apple Health app. */
@@ -224,6 +346,21 @@ export interface DreamReport {
   findings: Finding[];
   /** Tracked suggested improvements; stored as experiments for measurement. */
   experiments: Experiment[];
+  /** Persisted Sleep Cycle review decisions, if the user has reviewed it. */
+  reviewDecisions?: ActionQueueEntry[];
   /** Human ↔ Agent alignment detail; optional — UI derives a fallback if absent. */
   alignment?: AlignmentDetail;
+  /** The activity window this cycle reviewed (since last cycle, capped 24h). */
+  window?: CycleWindow;
+  /** Per-project rollups inside the window, most active first. */
+  projectInsights?: ProjectInsight[];
+  /** Redacted CLI payload summary for opt-in cloud REM analysis. */
+  cloudRedactionPreview?: {
+    runner: string;
+    model: string;
+    redactions: number;
+    payloadChars: number;
+    projects: number;
+    error?: string;
+  };
 }

@@ -1,0 +1,9 @@
+{
+  "target": "/Users/jalillaaraichi/agent-fleet/.claude/skills/continue/SKILL.md",
+  "existedBefore": false,
+  "beforeBytes": 0,
+  "afterBytes": 253,
+  "afterReacceptBytes": 253,
+  "idempotent": true,
+  "scaffolded": true
+}

@@ -16,6 +16,16 @@ import type {
   Ring,
 } from "../shared/types";
 import { sparklinePath, useCountUp, useMounted } from "./anim";
+import { CLOUD_SYNC_PRICE_LABEL } from "./cloudSync";
+import {
+  CATEGORY_TIP,
+  CONFIDENCE_TIP,
+  FRICTION_TIP,
+  METRIC_TIP,
+  RING_TIP,
+} from "./explainers";
+import { Icon } from "./icons";
+import { InfoTip, Tooltip } from "./Tooltip";
 
 /** The four workspace tabs; mirrors App.tsx. */
 export type Tab = "today" | "cycle" | "lab" | "settings";
@@ -233,7 +243,13 @@ export function RingLegend({ rings }: { rings: Ring[] }): ReactElement {
           <span className={`legend-dot ${ring.key}`} />
           <div className="legend-main">
             <div className="legend-top">
-              <span className="legend-label">{ring.label}</span>
+              <span className="legend-label">
+                {ring.label}
+                <InfoTip
+                  title={RING_TIP[ring.key].title}
+                  text={RING_TIP[ring.key].text}
+                />
+              </span>
               <span className="legend-score">{ring.score}</span>
             </div>
             <div className="legend-hint">{ring.hint}</div>
@@ -332,7 +348,13 @@ export function Contributors({ rings }: { rings: Ring[] }): ReactElement {
       {rings.map((ring) => (
         <div key={ring.key} className="contrib">
           <div className="contrib-top">
-            <span className="contrib-label">{ring.label}</span>
+            <span className="contrib-label">
+              {ring.label}
+              <InfoTip
+                title={RING_TIP[ring.key].title}
+                text={RING_TIP[ring.key].text}
+              />
+            </span>
             <span className="contrib-score">{ring.score}</span>
           </div>
           <div className="contrib-track">
@@ -397,7 +419,12 @@ export function VitalCard({
   return (
     <div className="vital">
       <div className="vital-top">
-        <span className="vital-label">{metric.label}</span>
+        <span className="vital-label">
+          {metric.label}
+          {METRIC_TIP[metric.key] ? (
+            <InfoTip title={metric.label} text={METRIC_TIP[metric.key]} />
+          ) : null}
+        </span>
         <span className={`vital-delta${metric.good ? " good" : " warn"}`}>
           {TREND_GLYPH[metric.trend]} {deltaLabel(metric.delta, "%")}
         </span>
@@ -418,6 +445,7 @@ const BAND_LABEL: Record<AlignmentBand, string> = {
 
 const CATEGORY_LABEL: Record<ActionCategory, string> = {
   agentsmd: "AGENTS.md update",
+  claudemd: "CLAUDE.md update",
   contextdoc: "Context doc",
   prompthabit: "Prompt habit",
   skill: "Skill / routing",
@@ -452,6 +480,7 @@ export function bandLabel(b: AlignmentBand): string {
 export function categorize(finding: Finding): ActionCategory {
   if (finding.category) return finding.category;
   const text = `${finding.action} ${finding.improvement}`.toLowerCase();
+  if (text.includes("claude.md")) return "claudemd";
   if (text.includes("agents.md") || text.includes("memory")) return "agentsmd";
   if (
     text.includes("skill") ||
@@ -566,6 +595,32 @@ const PHASE_LABEL: Record<DreamPhase, string> = {
   ready: "Ready",
 };
 
+/**
+ * The always-present "Upgrade to Cloud Sync" call-to-action, pinned to the
+ * bottom-left of the app shell. Opens the benefits dialog; never changes any
+ * setting on its own.
+ */
+export function CloudSyncCTA({
+  onClick,
+}: {
+  onClick: () => void;
+}): ReactElement {
+  return (
+    <button type="button" className="cloud-cta" onClick={onClick}>
+      <span className="cloud-cta-icon">
+        <Icon name="cloudsync" size={15} />
+      </span>
+      <span className="cloud-cta-title">
+        Upgrade to Cloud Sync{" "}
+        <span className="cloud-cta-price">{CLOUD_SYNC_PRICE_LABEL}</span>
+      </span>
+      <span className="cloud-cta-arrow" aria-hidden="true">
+        ›
+      </span>
+    </button>
+  );
+}
+
 export function Sidebar({
   active,
   onNavigate,
@@ -574,7 +629,7 @@ export function Sidebar({
   phase,
   lastDreamAt,
   unreviewed,
-  onDreamNow,
+  onUpgrade,
 }: {
   active: Tab;
   onNavigate: (tab: Tab) => void;
@@ -583,7 +638,7 @@ export function Sidebar({
   phase: DreamPhase;
   lastDreamAt: number | null;
   unreviewed: number;
-  onDreamNow: () => void;
+  onUpgrade: () => void;
 }): ReactElement {
   const tabs: { tab: Tab; label: string }[] = [
     { tab: "today", label: "Home" },
@@ -621,7 +676,13 @@ export function Sidebar({
       <div className="side-foot">
         <div className="side-align">
           <div className="side-align-top">
-            <span className="side-align-eyebrow">Alignment</span>
+            <span className="side-align-eyebrow">
+              Alignment
+              <InfoTip
+                title={RING_TIP.alignment.title}
+                text={RING_TIP.alignment.text}
+              />
+            </span>
             <span className="side-align-num tnum">{alignment}</span>
           </div>
           <div className={`side-align-band ${bandValue}`}>
@@ -633,19 +694,7 @@ export function Sidebar({
           <span>{PHASE_LABEL[phase]}</span>
           <span className="side-status-sub">{lastLabel}</span>
         </div>
-        <div className="side-dream-btn">
-          <Button
-            variant="accent"
-            onClick={onDreamNow}
-            disabled={phase === "dreaming"}
-          >
-            {phase === "dreaming"
-              ? "Running…"
-              : unreviewed > 0
-                ? "Review Sleep Cycle"
-                : "Run Sleep Cycle"}
-          </Button>
-        </div>
+        <CloudSyncCTA onClick={onUpgrade} />
       </div>
     </aside>
   );
@@ -737,6 +786,7 @@ export function SummaryCard({
   trend,
   sublabel,
   action,
+  tip,
   size = "default",
 }: {
   eyebrow: string;
@@ -744,6 +794,8 @@ export function SummaryCard({
   trend?: { delta: number; tone: "positive" | "negative" | "neutral" };
   sublabel?: string;
   action?: ReactNode;
+  /** Optional one-line explainer, revealed from an info glyph by the eyebrow. */
+  tip?: ReactNode;
   size?: "hero" | "default";
 }): ReactElement {
   const numeric = typeof value === "number" ? value : 0;
@@ -751,7 +803,10 @@ export function SummaryCard({
   const display = typeof value === "number" ? counted : value;
   return (
     <div className={`summary-card${size === "hero" ? " hero" : ""}`}>
-      <div className="summary-eyebrow">{eyebrow}</div>
+      <div className="summary-eyebrow">
+        {eyebrow}
+        {tip ? <InfoTip title={eyebrow} text={tip} /> : null}
+      </div>
       <div className="summary-value tnum">{display}</div>
       {trend ? (
         <div className={`summary-trend ${trend.tone}`}>
@@ -780,7 +835,12 @@ export function MetricCell({
   return (
     <div className="metric-cell">
       <div className="metric-top">
-        <span className="metric-label">{metric.label}</span>
+        <span className="metric-label">
+          {metric.label}
+          {METRIC_TIP[metric.key] ? (
+            <InfoTip title={metric.label} text={METRIC_TIP[metric.key]} />
+          ) : null}
+        </span>
         <span className={`metric-delta${metric.good ? " good" : " warn"}`}>
           {arrow} {metric.delta > 0 ? "+" : ""}
           {metric.delta}%
@@ -835,7 +895,13 @@ export function RingChip({ ring }: { ring: Ring }): ReactElement {
         </g>
       </svg>
       <div className="ring-chip-main">
-        <span className="ring-chip-label">{ring.label}</span>
+        <span className="ring-chip-label">
+          {ring.label}
+          <InfoTip
+            title={RING_TIP[ring.key].title}
+            text={RING_TIP[ring.key].text}
+          />
+        </span>
         <span className="ring-chip-score tnum">{ring.score}</span>
       </div>
       <span className={`ring-chip-delta${ring.delta >= 0 ? " up" : " down"}`}>
@@ -929,17 +995,24 @@ export function FrictionChip({
   onOpen?: (findingId: string) => void;
 }): ReactElement {
   return (
-    <button
-      type="button"
-      className="friction-chip"
-      onClick={() => onOpen?.(point.findingId)}
+    <Tooltip
+      interactive
+      block
+      title={FRICTION_LABEL[point.type] ?? point.type}
+      text={FRICTION_TIP[point.type]}
     >
-      <span className="friction-type">
-        {FRICTION_LABEL[point.type] ?? point.type}
-      </span>
-      <span className="friction-example">{point.example}</span>
-      <span className="friction-chip-arrow">›</span>
-    </button>
+      <button
+        type="button"
+        className="friction-chip"
+        onClick={() => onOpen?.(point.findingId)}
+      >
+        <span className="friction-type">
+          {FRICTION_LABEL[point.type] ?? point.type}
+        </span>
+        <span className="friction-example">{point.example}</span>
+        <span className="friction-chip-arrow">›</span>
+      </button>
+    </Tooltip>
   );
 }
 
@@ -951,9 +1024,15 @@ export function CategoryChip({
   category: ActionCategory;
 }): ReactElement {
   return (
-    <span className={`category-chip ${category}`}>
-      {CATEGORY_LABEL[category]}
-    </span>
+    <Tooltip
+      title={CATEGORY_LABEL[category]}
+      text={CATEGORY_TIP[category]}
+      className="tip-inline"
+    >
+      <span className={`category-chip ${category}`}>
+        {CATEGORY_LABEL[category]}
+      </span>
+    </Tooltip>
   );
 }
 
@@ -984,7 +1063,13 @@ export function FindingCard({
           {FINDING_LABEL[finding.type] ?? finding.type}
         </span>
         <span className="finding-project">{finding.project}</span>
-        <span className="finding-conf">{finding.confidence} confidence</span>
+        <Tooltip
+          title={`${finding.confidence} confidence`}
+          text={CONFIDENCE_TIP[finding.confidence]}
+          className="tip-inline tip-push"
+        >
+          <span className="finding-conf">{finding.confidence} confidence</span>
+        </Tooltip>
       </div>
       <h3 className="finding-name">{finding.title}</h3>
       {!compact ? <p className="finding-body">{finding.body}</p> : null}
@@ -1527,11 +1612,14 @@ export function SettingsGroup({
   title,
   icon,
   danger,
+  tip,
   children,
 }: {
   title: string;
   icon?: ReactNode;
   danger?: boolean;
+  /** Optional one-line explainer of what this section governs. */
+  tip?: ReactNode;
   children: ReactNode;
 }): ReactElement {
   return (
@@ -1539,6 +1627,7 @@ export function SettingsGroup({
       <h2 className="settings-group-title">
         {icon ? <span className="settings-group-icon">{icon}</span> : null}
         {title}
+        {tip ? <InfoTip title={title} text={tip} /> : null}
       </h2>
       {children}
     </section>

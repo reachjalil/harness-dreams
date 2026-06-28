@@ -2,7 +2,14 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
 
 import { Invoke, Send } from "./shared/channels";
 import type { ConfigPatch } from "./shared/schemas";
-import type { AppConfig, DreamReport, RuntimeState } from "./shared/types";
+import type {
+  AppConfig,
+  AnalysisProject,
+  DiscoveredProject,
+  DreamReport,
+  ReviewDecisions,
+  RuntimeState,
+} from "./shared/types";
 
 /**
  * The one and only bridge. We expose a narrow, app-shaped `window.hd` API —
@@ -35,6 +42,12 @@ const api = {
       ipcRenderer.invoke(Invoke.ReportGet),
     list: (): Promise<DreamReport[]> => ipcRenderer.invoke(Invoke.ReportList),
   },
+  projects: {
+    discover: (): Promise<DiscoveredProject[]> =>
+      ipcRenderer.invoke(Invoke.DiscoverProjects),
+    add: (projectPath: string): Promise<AnalysisProject | null> =>
+      ipcRenderer.invoke(Invoke.AddProject, projectPath),
+  },
   actions: {
     dreamNow: (): Promise<RuntimeState> => ipcRenderer.invoke(Invoke.DreamNow),
     pauseDream: (): Promise<RuntimeState> =>
@@ -43,8 +56,11 @@ const api = {
       ipcRenderer.invoke(Invoke.ResumeDream),
     completeOnboarding: (): Promise<AppConfig> =>
       ipcRenderer.invoke(Invoke.CompleteOnboarding),
-    markReviewed: (id?: string): Promise<RuntimeState> =>
-      ipcRenderer.invoke(Invoke.MarkReviewed, id),
+    markReviewed: (
+      id?: string,
+      decisions?: ReviewDecisions
+    ): Promise<RuntimeState> =>
+      ipcRenderer.invoke(Invoke.MarkReviewed, id, decisions),
     setLaunchAtLogin: (value: boolean): Promise<AppConfig> =>
       ipcRenderer.invoke(Invoke.SetLaunchAtLogin, value),
     testNotification: (): Promise<void> =>

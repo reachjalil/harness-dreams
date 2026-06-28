@@ -1,5 +1,6 @@
 import { type ReactElement, useEffect, useState } from "react";
 
+import { CloudSyncDialog } from "./CloudSyncDialog";
 import Cycle from "./Cycle";
 import { alignmentSplit, band, Sidebar, type Tab } from "./components";
 import Lab from "./Lab";
@@ -22,6 +23,7 @@ function Loading(): ReactElement {
 function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
   const [tab, setTab] = useState<Tab>("today");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [cloudSyncOpen, setCloudSyncOpen] = useState(false);
   const unreviewedCycle =
     hd.reports[0]?.reviewStatus === "unreviewed" ? hd.reports[0] : undefined;
   const unreviewed = unreviewedCycle ? 1 : 0;
@@ -81,10 +83,7 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
         phase={phase}
         lastDreamAt={hd.state?.lastDreamAt ?? null}
         unreviewed={unreviewed || (hd.state?.hasUnreviewed ? 1 : 0)}
-        onDreamNow={() => {
-          if (unreviewedCycle) selectCycle(unreviewedCycle.id);
-          else runSleepCycle();
-        }}
+        onUpgrade={() => setCloudSyncOpen(true)}
       />
 
       <main className="workspace">
@@ -124,6 +123,13 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
           </div>
         </div>
       </main>
+
+      <CloudSyncDialog
+        open={cloudSyncOpen}
+        onClose={() => setCloudSyncOpen(false)}
+        interested={hd.config?.cloudSyncInterest ?? false}
+        onNotify={() => hd.patch({ cloudSyncInterest: true })}
+      />
     </div>
   );
 }

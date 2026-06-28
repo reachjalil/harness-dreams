@@ -8,10 +8,12 @@ import {
   CircleAlert,
   CircleCheck,
   Clock,
+  CloudCog,
   Cpu,
   Database,
   ExternalLink,
   FileCode2,
+  GitFork,
   History,
   Info,
   Lightbulb,
@@ -27,15 +29,18 @@ import {
   Play,
   Plug,
   Power,
+  RefreshCw,
   RotateCcw,
   Settings,
   ShieldAlert,
+  Smartphone,
   Sparkles,
   Target,
   TrendingDown,
   TrendingUp,
   TriangleAlert,
   UserRound,
+  Watch,
   Workflow,
 } from "lucide-react";
 import type { ReactElement } from "react";
@@ -59,6 +64,7 @@ const ICONS = {
   "finding-risk": ShieldAlert,
   // Action categories
   agentsmd: FileCode2,
+  claudemd: FileCode2,
   contextdoc: BookOpen,
   prompthabit: MessageSquareText,
   skill: Workflow,
@@ -90,6 +96,12 @@ const ICONS = {
   external: ExternalLink,
   quit: Power,
   sparkle: Sparkles,
+  // Cloud Sync (coming soon)
+  cloudsync: CloudCog,
+  sync: RefreshCw,
+  iphone: Smartphone,
+  watch: Watch,
+  opensource: GitFork,
 } as const satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

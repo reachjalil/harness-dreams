@@ -17,6 +17,7 @@ import {
   Section,
   SummaryCard,
 } from "./components";
+import { RING_TIP, TERM } from "./explainers";
 import { Icon } from "./icons";
 import type { HarnessDreams } from "./useHarnessDreams";
 
@@ -191,6 +192,25 @@ export default function Today({
         }
       />
 
+      {pendingCycle ? (
+        <button
+          type="button"
+          className="dash-pending"
+          onClick={onOpenCycle}
+        >
+          <span className="dash-pending-dot" />
+          <span className="dash-pending-main">
+            <b>A fresh Sleep Cycle is ready to review</b>
+            <small>
+              {pendingCycle.window?.label ?? pendingCycle.rangeLabel} ·{" "}
+              {pendingCycle.findings.length} recommendation
+              {pendingCycle.findings.length === 1 ? "" : "s"} waiting
+            </small>
+          </span>
+          <Icon name="chevron" size={16} />
+        </button>
+      ) : null}
+
       <div className="dash">
         <div className="dash-main">
           <div className="grid grid-3">
@@ -204,6 +224,7 @@ export default function Today({
                   : { delta: scoreDelta, tone: trendTone(scoreDelta) }
               }
               sublabel="Latest reviewed Sleep Cycle"
+              tip={TERM.composite}
             />
             <SummaryCard
               eyebrow="Alignment"
@@ -214,11 +235,13 @@ export default function Today({
                   : { delta: alignmentDelta, tone: trendTone(alignmentDelta) }
               }
               sublabel={bandLabel(split.band)}
+              tip={`${RING_TIP.alignment.text} ${TERM.alignmentBand}`}
             />
             <SummaryCard
               eyebrow="Goals"
               value={runningImprovements.length}
               sublabel="Currently being measured"
+              tip={TERM.goals}
               action={
                 <Button variant="ghost" onClick={onOpenGoals}>
                   <Icon name="improvements" size={15} />
@@ -300,6 +323,9 @@ export default function Today({
                 <div className="dash-score-meta">
                   {report.sessions} sessions · {report.projects} projects
                 </div>
+                {report.window ? (
+                  <div className="dash-score-window">{report.window.label}</div>
+                ) : null}
               </div>
               <Button variant="ghost" onClick={onOpenCycle}>
                 <Icon name="cycle" size={15} />

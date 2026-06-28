@@ -1,5 +1,6 @@
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useEffect, useState } from "react";
 
+import type { DiscoveredProject, RemRunnerProvider } from "../shared/types";
 import {
   Button,
   Field,
@@ -9,6 +10,7 @@ import {
   StatusChip,
   Toggle,
 } from "./components";
+import { SETTINGS_TIP } from "./explainers";
 import { Icon } from "./icons";
 import type { HarnessDreams } from "./useHarnessDreams";
 
@@ -22,8 +24,19 @@ export default function Settings({
   const { config, patch, actions } = hd;
   const [tested, setTested] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [discovered, setDiscovered] = useState<DiscoveredProject[]>([]);
+  const [scanning, setScanning] = useState(false);
+
+  useEffect(() => {
+    setScanning(true);
+    void hd.projects
+      .discover()
+      .then(setDiscovered)
+      .finally(() => setScanning(false));
+  }, [hd.projects]);
 
   if (!config) return <p className="card-hint">Loading…</p>;
+  const cfg = config;
 
   function sendTest(): void {
     void actions.testNotification();
@@ -31,10 +44,39 @@ export default function Settings({
     window.setTimeout(() => setTested(false), 3000);
   }
 
-  const connectorCount = Object.values(config.connectors).filter(
-    Boolean
-  ).length;
-  const nightly = config.schedule.mode === "nightly";
+  const connectorCount = Object.values(cfg.connectors).filter(Boolean).length;
+  const projectCount = cfg.projects.filter((project) => project.enabled).length;
+  const nightly = cfg.schedule.mode === "nightly";
+
+  function toggleProject(projectPath: string, enabled: boolean): void {
+    patch({
+      projects: cfg.projects.map((project) =>
+        project.path === projectPath ? { ...project, enabled } : project
+      ),
+    });
+  }
+
+  function addDiscovered(project: DiscoveredProject): void {
+    const next = {
+      path: project.path,
+      name: project.name,
+      sources: project.sources,
+      enabled: true,
+      addedAt: Date.now(),
+    };
+    patch({
+      projects: [
+        next,
+        ...cfg.projects.filter((item) => item.path !== project.path),
+      ],
+      connectors: {
+        claudeCode:
+          cfg.connectors.claudeCode || project.sources.includes("claude-code"),
+        codex: cfg.connectors.codex || project.sources.includes("codex"),
+      },
+    });
+    void hd.projects.add(project.path);
+  }
 
   return (
     <>
@@ -59,6 +101,10 @@ export default function Settings({
           on={connectorCount > 0}
         />
         <StatusChip
+          label={`${projectCount} project${projectCount === 1 ? "" : "s"}`}
+          on={projectCount > 0}
+        />
+        <StatusChip
           label={
             config.notifications ? "Notifications on" : "Notifications off"
           }
@@ -74,6 +120,7 @@ export default function Settings({
         <SettingsGroup
           title="Schedule"
           icon={<Icon name="settings" size={16} />}
+          tip={SETTINGS_TIP.schedule}
         >
           <div className="settings-row">
             <div className="settings-row-main">
@@ -128,7 +175,11 @@ export default function Settings({
           )}
         </SettingsGroup>
 
-        <SettingsGroup title="Privacy" icon={<Icon name="privacy" size={16} />}>
+        <SettingsGroup
+          title="Privacy"
+          icon={<Icon name="privacy" size={16} />}
+          tip={SETTINGS_TIP.privacy}
+        >
           <div className="settings-row">
             <div className="settings-row-main">
               <div className="settings-row-label">Analysis boundary</div>
@@ -147,15 +198,77 @@ export default function Settings({
             />
           </div>
           {config.privacyMode === "cloud" ? (
-            <div className="settings-row">
-              <div className="settings-row-main">
-                <div className="settings-row-label">Redacted excerpts</div>
-                <div className="settings-row-hint">
-                  Secrets are scrubbed; you preview exactly what's sent before
-                  anything leaves your Mac.
+            <>
+              <div className="settings-row">
+                <div className="settings-row-main">
+                  <div className="settings-row-label">REM runner</div>
+                  <div className="settings-row-hint">
+                    Runs the selected CLI locally; no agent SDK is used.
+                  </div>
+                </div>
+                <Segmented<RemRunnerProvider>
+                  ariaLabel="REM runner"
+                  value={config.remRunner.provider}
+                  onChange={(provider) =>
+                    patch({ remRunner: { provider } })
+                  }
+                  options={[
+                    { value: "claude-code", label: "Claude Code" },
+                    { value: "codex", label: "Codex" },
+                  ]}
+                />
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-main">
+                  <div className="settings-row-label">Runner command</div>
+                  <div className="settings-row-hint">
+                    Binary path used for the selected CLI runner.
+                  </div>
+                </div>
+                <Field label="">
+                  <input
+                    value={
+                      config.remRunner.provider === "codex"
+                        ? config.remRunner.codexPath
+                        : config.remRunner.claudePath
+                    }
+                    onChange={(e) =>
+                      patch({
+                        remRunner:
+                          config.remRunner.provider === "codex"
+                            ? { codexPath: e.target.value }
+                            : { claudePath: e.target.value },
+                      })
+                    }
+                  />
+                </Field>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-main">
+                  <div className="settings-row-label">REM model</div>
+                  <div className="settings-row-hint">
+                    Passed to the CLI with its model flag.
+                  </div>
+                </div>
+                <Field label="">
+                  <input
+                    value={config.remRunner.model}
+                    onChange={(e) =>
+                      patch({ remRunner: { model: e.target.value } })
+                    }
+                  />
+                </Field>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-main">
+                  <div className="settings-row-label">Redacted excerpts</div>
+                  <div className="settings-row-hint">
+                    Secrets are scrubbed before the configured CLI receives the
+                    REM payload.
+                  </div>
                 </div>
               </div>
-            </div>
+            </>
           ) : null}
           <div className="settings-row">
             <div className="settings-row-main">
@@ -180,6 +293,7 @@ export default function Settings({
         <SettingsGroup
           title="Connectors"
           icon={<Icon name="connectors" size={16} />}
+          tip={SETTINGS_TIP.connectors}
         >
           <div className="connector-row">
             <div className="connector-row-main">
@@ -194,12 +308,18 @@ export default function Settings({
               onChange={(claudeCode) => patch({ connectors: { claudeCode } })}
             />
           </div>
-          <div className="connector-row soon">
+          <div className="connector-row">
             <div className="connector-row-main">
               <div className="connector-row-label">Codex</div>
-              <div className="connector-row-hint">Coming soon.</div>
+              <div className="connector-row-hint">
+                Reads ~/.codex sessions and archived sessions.
+              </div>
             </div>
-            <span className="connector-row-tag">Soon</span>
+            <Toggle
+              label="Codex"
+              checked={config.connectors.codex}
+              onChange={(codex) => patch({ connectors: { codex } })}
+            />
           </div>
           <div className="connector-row soon">
             <div className="connector-row-main">
@@ -211,8 +331,86 @@ export default function Settings({
         </SettingsGroup>
 
         <SettingsGroup
+          title="Projects"
+          icon={<Icon name="data" size={16} />}
+          tip={SETTINGS_TIP.projects}
+        >
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Analysis scope</div>
+              <div className="settings-row-hint">
+                Sleep Cycles read local Claude and Codex data for enabled
+                projects.
+              </div>
+            </div>
+            <Button
+              onClick={() => {
+                setScanning(true);
+                void hd.projects
+                  .discover()
+                  .then(setDiscovered)
+                  .finally(() => setScanning(false));
+              }}
+            >
+              <Icon name="reset" size={16} />
+              {scanning ? "Scanning..." : "Refresh"}
+            </Button>
+          </div>
+          {config.projects.length === 0 ? (
+            <p className="settings-empty">
+              No projects selected yet. Add one from discovered local activity.
+            </p>
+          ) : (
+            <div className="project-list">
+              {config.projects.map((project) => (
+                <div key={project.path} className="project-row">
+                  <div className="project-row-main">
+                    <div className="project-row-label">{project.name}</div>
+                    <div className="project-row-hint">
+                      {project.sources.join(" + ")} · {project.path}
+                    </div>
+                  </div>
+                  <Toggle
+                    label={project.name}
+                    checked={project.enabled}
+                    onChange={(enabled) => toggleProject(project.path, enabled)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="project-list">
+            {discovered
+              .filter(
+                (project) =>
+                  !config.projects.some(
+                    (current) => current.path === project.path
+                  )
+              )
+              .slice(0, 8)
+              .map((project) => (
+                <div key={project.path} className="project-row">
+                  <div className="project-row-main">
+                    <div className="project-row-label">{project.name}</div>
+                    <div className="project-row-hint">
+                      {project.sources.join(" + ")} · {project.sessionCount}{" "}
+                      sessions
+                    </div>
+                    <div className="project-row-hint">{project.path}</div>
+                  </div>
+                  <Button onClick={() => addDiscovered(project)}>
+                    <Icon name="queue" size={15} />
+                    Add
+                  </Button>
+                </div>
+              ))}
+          </div>
+        </SettingsGroup>
+
+        <SettingsGroup
           title="Notifications"
           icon={<Icon name="notifications" size={16} />}
+          tip={SETTINGS_TIP.notifications}
         >
           <div className="settings-row">
             <div className="settings-row-main">
@@ -298,6 +496,7 @@ export default function Settings({
           title="Data"
           icon={<Icon name="data" size={16} />}
           danger
+          tip={SETTINGS_TIP.data}
         >
           <div className="settings-row">
             <div className="settings-row-main">

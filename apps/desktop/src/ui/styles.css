@@ -464,8 +464,56 @@ button {
   font-size: var(--t-eyebrow);
 }
 
-.side-dream-btn {
+/* Always-present "Upgrade to Cloud Sync" call-to-action (bottom-left).
+   Compact: small icon, single title line with the price baked in, no subtitle. */
+.cloud-cta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
   width: 100%;
+  padding: 6px 7px;
+  border: 1px solid var(--violet-line);
+  border-radius: var(--radius-sm);
+  background: var(--violet-weak);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+.cloud-cta:hover {
+  background: rgba(139, 123, 255, 0.22);
+  border-color: var(--violet);
+}
+.cloud-cta-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: var(--radius-xs);
+  background: var(--violet-700);
+  color: #fff;
+}
+.cloud-cta-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-label);
+  font-weight: var(--w-semi);
+  line-height: 1.25;
+  color: var(--text);
+}
+.cloud-cta-price {
+  color: var(--violet);
+  font-weight: var(--w-bold);
+  white-space: nowrap;
+}
+.cloud-cta-arrow {
+  flex: 0 0 auto;
+  color: var(--violet);
+  font-size: 15px;
+  line-height: 1;
 }
 
 /* ── 5. Page header ───────────────────────────────────────────────────────── */
@@ -1923,6 +1971,49 @@ button {
   color: var(--muted);
 }
 
+.settings-empty {
+  margin: var(--s-3) 0 0;
+  color: var(--muted);
+  font-size: var(--t-label);
+}
+
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+
+.project-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--ink-850);
+  min-width: 0;
+}
+
+.project-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.project-row-label {
+  font-size: var(--t-label);
+  font-weight: var(--w-med);
+}
+
+.project-row-hint {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--t-eyebrow);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── 16. Atoms — pill / seg / toggle / button / field ─────────────────────── */
 
 .pill {
@@ -2241,6 +2332,9 @@ button {
   background: var(--violet-weak);
 }
 .choice-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
   color: var(--text);
   font-size: var(--t-body);
   font-weight: var(--w-semi);
@@ -2250,6 +2344,34 @@ button {
   color: var(--text-2);
   font-size: var(--t-label);
   line-height: 1.45;
+}
+/* Price tag on the Cloud Sync choice ($5/mo). */
+.choice-tag {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--violet-700);
+  color: #fff;
+  font-size: var(--t-eyebrow);
+  font-weight: var(--w-semi);
+  font-variant-numeric: tabular-nums;
+}
+/* "Coming soon" reassurance shown when Cloud Sync is picked during setup. */
+.onb-soon {
+  width: 100%;
+  margin-top: var(--s-1);
+  padding: var(--s-3);
+  border: 1px solid var(--violet-line);
+  border-radius: var(--radius-sm);
+  background: var(--violet-weak);
+  color: var(--text-2);
+  font-size: var(--t-label);
+  line-height: 1.5;
+  text-align: left;
+}
+.onb-soon b {
+  color: var(--text);
+  font-weight: var(--w-semi);
 }
 
 /* Footer: progress dots + nav buttons */
@@ -2276,6 +2398,219 @@ button {
 }
 .dots span.active {
   background: var(--violet);
+}
+
+/* ── 17b. Modal + Cloud Sync upgrade dialog ───────────────────────────────── */
+
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  display: grid;
+  place-items: center;
+  padding: var(--s-6);
+  background: rgba(5, 8, 14, 0.62);
+  -webkit-app-region: no-drag;
+  animation: modal-scrim-in var(--dur-2) var(--ease);
+}
+/* Transparent, full-bleed dismiss target behind the panel (keyboard-focusable). */
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: default;
+}
+.modal {
+  position: relative;
+  z-index: 1;
+  width: min(440px, 100%);
+  max-height: calc(100vh - var(--s-8));
+  overflow-y: auto;
+  background: var(--ink-800);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-2);
+  animation: modal-in var(--dur-2) var(--ease);
+}
+.modal:focus {
+  outline: none;
+}
+.modal-close {
+  position: absolute;
+  top: var(--s-3);
+  right: var(--s-3);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease);
+}
+.modal-close:hover {
+  background: var(--ink-700);
+  color: var(--text);
+}
+@keyframes modal-scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.reduce-motion .modal-scrim,
+.reduce-motion .modal {
+  animation: none;
+}
+
+.cloudsync {
+  padding: var(--s-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.cloudsync-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.cloudsync-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: var(--radius-sm);
+  background: var(--violet-700);
+  color: #fff;
+}
+.cloudsync-head-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.cloudsync-eyebrow {
+  font-size: var(--t-eyebrow);
+  font-weight: var(--w-semi);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--violet);
+}
+.cloudsync-title {
+  font-size: var(--t-title);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.01em;
+}
+.cloudsync-price {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  color: var(--text);
+}
+.cloudsync-price b {
+  font-size: var(--t-title);
+  font-weight: var(--w-bold);
+}
+.cloudsync-price span {
+  font-size: var(--t-label);
+  color: var(--muted);
+}
+.cloudsync-lede {
+  color: var(--text-2);
+  font-size: var(--t-body);
+  line-height: 1.5;
+}
+.cloudsync-soon {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--ink-850);
+  font-size: var(--t-label);
+  color: var(--text-2);
+}
+/* Keep the "Coming soon" pill from being squeezed/ellipsized by the text. */
+.cloudsync-soon .pill {
+  flex: 0 0 auto;
+}
+.cloudsync-benefits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.cloudsync-benefits li {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+}
+.cloudsync-benefit-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: var(--radius-xs);
+  background: var(--violet-weak);
+  color: var(--violet);
+}
+.cloudsync-benefit-title {
+  font-size: var(--t-body);
+  font-weight: var(--w-semi);
+  color: var(--text);
+}
+.cloudsync-benefit-body {
+  margin-top: 2px;
+  font-size: var(--t-label);
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.cloudsync-footnote {
+  font-size: var(--t-label);
+  color: var(--muted);
+  line-height: 1.45;
+}
+.cloudsync-confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border-radius: var(--radius-sm);
+  background: var(--positive-weak);
+  color: var(--positive);
+  font-size: var(--t-label);
+  font-weight: var(--w-med);
+}
+.cloudsync-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-2);
 }
 
 /* ── 18. Utilities ────────────────────────────────────────────────────────── */
@@ -3755,4 +4090,446 @@ body {
   .history-ringchips {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ── 22. Explainer tooltips ───────────────────────────────────────────────────
+   Small, classy info tooltips that define the app's vocabulary in a sentence.
+   The bubble is portalled to <body> and positioned fixed (see Tooltip.tsx), so
+   it floats above the scroll wells and frosted cards. Surface is solid (ink-800
+   → white in light mode) for crisp legibility, never glass. */
+
+.tip-trigger {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  outline: none;
+  cursor: help;
+}
+.tip-trigger:focus-visible {
+  border-radius: var(--radius-xs);
+  box-shadow: var(--focus);
+}
+
+/* Inline triggers wrap a word/chip — don't disturb the line box. */
+.tip-inline {
+  cursor: help;
+}
+/* Restores margin-left:auto when a Tooltip wraps a right-pushed flex child. */
+.tip-push {
+  margin-left: auto;
+}
+/* Full-width wrapper for block-level triggers (e.g. a friction chip button). */
+.tip-trigger.tip-block {
+  display: block;
+  width: 100%;
+}
+
+/* The little "i" affordance next to a label. */
+.infotip {
+  margin-left: 5px;
+}
+.infotip-icon {
+  color: var(--faint);
+  transition: color var(--dur-1) var(--ease);
+}
+.tip-trigger.infotip:hover .infotip-icon,
+.tip-trigger.infotip:focus-visible .infotip-icon {
+  color: var(--text-2);
+}
+
+/* The floating bubble. */
+.tip {
+  position: fixed;
+  z-index: 9000;
+  max-width: 264px;
+  padding: 9px 12px 10px;
+  background: var(--ink-800);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--elev-2);
+  color: var(--text-2);
+  font-size: var(--t-label);
+  line-height: 1.46;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: var(--w-reg);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition:
+    opacity var(--dur-2) var(--ease),
+    transform var(--dur-2) var(--ease);
+}
+.tip.below {
+  transform: translateY(-3px);
+}
+.tip.ready {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tip-title {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text);
+  font-size: var(--t-label);
+  font-weight: var(--w-semi);
+  letter-spacing: -0.01em;
+}
+.tip-text {
+  display: block;
+  color: var(--text-2);
+}
+
+/* Arrow: a small square sharing the bubble's fill + border, rotated to a point. */
+.tip::after {
+  content: "";
+  position: absolute;
+  left: var(--tip-arrow, 50%);
+  width: 9px;
+  height: 9px;
+  background: var(--ink-800);
+  transform: translateX(-50%) rotate(45deg);
+}
+.tip:not(.below)::after {
+  bottom: -5px;
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+}
+.tip.below::after {
+  top: -5px;
+  border-left: 1px solid var(--border-strong);
+  border-top: 1px solid var(--border-strong);
+}
+
+.reduce-motion .tip {
+  transition: opacity var(--dur-1) linear;
+  transform: none;
+}
+
+/* ── 30. Sleep Cycle detail (window · recommendation map · projects · patch) ── */
+
+.cycle-window {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--glass);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+}
+.cycle-window-icon {
+  display: inline-flex;
+  color: var(--accent);
+}
+.cycle-window-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.cycle-window-label {
+  font-weight: var(--w-semi);
+  color: var(--text);
+}
+.cycle-window-sub {
+  font-size: var(--t-label);
+  color: var(--muted);
+}
+.cycle-window-range {
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.rec-map {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+.rec-map-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-sunken);
+  color: var(--muted);
+  opacity: 0.6;
+}
+.rec-map-cell.has {
+  opacity: 1;
+}
+.rec-map-cell.has.agentsmd {
+  color: var(--blue);
+  border-color: color-mix(in srgb, var(--blue) 35%, transparent);
+}
+.rec-map-cell.has.skill {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.rec-map-cell.has.contextdoc {
+  color: var(--teal);
+  border-color: color-mix(in srgb, var(--teal) 35%, transparent);
+}
+.rec-map-cell.has.prompthabit {
+  color: var(--violet);
+  border-color: color-mix(in srgb, var(--violet) 35%, transparent);
+}
+.rec-map-count {
+  font-size: var(--t-section);
+  font-weight: var(--w-bold);
+  line-height: 1;
+}
+.rec-map-label {
+  font-size: var(--t-eyebrow);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.proj-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.proj-ins {
+  padding: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--glass);
+}
+.proj-ins-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: 6px;
+}
+.proj-ins-name {
+  font-weight: var(--w-semi);
+  color: var(--text);
+}
+.proj-ins-align {
+  font-family: var(--font-num);
+  font-weight: var(--w-bold);
+  font-size: var(--t-label);
+  padding: 2px 9px;
+  border-radius: var(--r-pill);
+}
+.proj-ins-align.collaborating {
+  color: var(--teal);
+  background: var(--teal-weak);
+}
+.proj-ins-align.friction {
+  color: var(--violet);
+  background: var(--violet-weak);
+}
+.proj-ins-align.fighting {
+  color: var(--negative);
+  background: var(--negative-weak);
+}
+.proj-ins-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: var(--t-label);
+  color: var(--muted);
+  margin-bottom: var(--s-2);
+}
+.proj-ins-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.proj-tag {
+  font-size: var(--t-eyebrow);
+  font-weight: var(--w-med);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.proj-tag.on {
+  color: var(--good);
+  border-color: color-mix(in srgb, var(--good) 35%, transparent);
+}
+.proj-tag.off {
+  color: var(--muted);
+}
+.proj-topic {
+  font-size: var(--t-eyebrow);
+  font-weight: var(--w-med);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  color: var(--violet);
+  background: var(--violet-weak);
+}
+
+.patch-preview {
+  margin-top: var(--s-2);
+  padding: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-sunken);
+}
+.patch-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--text-2);
+}
+.patch-label {
+  font-weight: var(--w-semi);
+  font-size: var(--t-label);
+  color: var(--text);
+}
+.patch-op {
+  font-size: var(--t-eyebrow);
+  font-weight: var(--w-semi);
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  margin-left: auto;
+}
+.patch-op.create {
+  color: var(--good);
+  background: color-mix(in srgb, var(--good) 16%, transparent);
+}
+.patch-op.update {
+  color: var(--blue);
+  background: var(--blue-weak);
+}
+.patch-file {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.patch-snippet {
+  margin: 0;
+  padding: var(--s-2) var(--s-3);
+  max-height: 168px;
+  overflow: auto;
+  border-radius: var(--radius-xs);
+  background: var(--glass-strong);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  line-height: 1.5;
+  color: var(--text-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dash-pending {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  text-align: left;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 10%, var(--glass));
+  cursor: pointer;
+  transition: background var(--dur-1) ease;
+}
+.dash-pending:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--glass));
+}
+.dash-pending-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+  flex-shrink: 0;
+}
+.dash-pending-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.dash-pending-main b {
+  font-weight: var(--w-semi);
+  color: var(--text);
+}
+.dash-pending-main small {
+  font-size: var(--t-label);
+  color: var(--muted);
+}
+.dash-pending > .icon {
+  color: var(--accent);
+}
+.dash-score-window {
+  margin-top: 3px;
+  font-size: var(--t-eyebrow);
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+
+.measured-goals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.measured-goal {
+  padding: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--glass);
+}
+.measured-goal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+.measured-goal-title {
+  font-weight: var(--w-med);
+  color: var(--text);
+  min-width: 0;
+}
+.measured-goal-note {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  color: var(--muted);
+}
+.measured-verdict {
+  flex-shrink: 0;
+  font-size: var(--t-eyebrow);
+  font-weight: var(--w-semi);
+  letter-spacing: 0.03em;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.measured-verdict.helped {
+  color: var(--good);
+  background: color-mix(in srgb, var(--good) 16%, transparent);
+}
+.measured-verdict.worse {
+  color: var(--negative);
+  background: var(--negative-weak);
+}
+.measured-verdict.no-change {
+  color: var(--muted);
+  background: var(--neutral-weak);
+}
+.measured-verdict.running {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }

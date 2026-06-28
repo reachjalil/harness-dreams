@@ -1,7 +1,7 @@
 ---
 const repoUrl = "https://github.com/reachjalil/harness-dreams";
 const links = [
-  { href: "/start/", label: "Start" },
+  { href: "/start/", label: "Download" },
   { href: "/cycle/", label: "Cycle" },
   { href: "/case-studies/", label: "Case studies" },
   { href: "/docs/", label: "Docs" },
@@ -27,25 +27,36 @@ const links = [
       <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer noopener"
         >GitHub</a
       >
-      <a class="btn btn-primary nav-btn" href="/start/">Start locally</a>
+      <a class="btn btn-primary nav-btn" href="/start/">Download for macOS</a>
     </div>
   </div>
 </header>
 
 <style>
   .nav {
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 50;
-    border-bottom: 1px solid rgba(13, 27, 42, 0.08);
-    backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.82);
+    inset-inline: 0;
+    z-index: 80;
+    padding-block: clamp(0.65rem, 1.4vw, 0.95rem);
+    pointer-events: none;
   }
   .nav-inner {
-    height: 64px;
+    width: min(calc(100% - 1.5rem), 88rem);
+    height: 3.45rem;
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: clamp(0.85rem, 2vw, 1.35rem);
+    padding: 0.35rem 0.45rem 0.35rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    border-radius: 999px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68)),
+      rgba(255, 255, 255, 0.72);
+    box-shadow: 0 20px 60px -36px rgba(11, 18, 28, 0.45);
+    backdrop-filter: blur(24px) saturate(145%);
+    -webkit-backdrop-filter: blur(24px) saturate(145%);
+    pointer-events: auto;
   }
   .brand {
     display: inline-flex;
@@ -60,8 +71,8 @@ const links = [
   .logo {
     display: grid;
     place-items: center;
-    width: 34px;
-    height: 34px;
+    width: 2.25rem;
+    height: 2.25rem;
     border-radius: 999px;
     overflow: hidden;
     background: var(--surface);
@@ -75,7 +86,7 @@ const links = [
   }
   .nav-links {
     display: none;
-    gap: 1.4rem;
+    gap: clamp(0.9rem, 1.7vw, 1.35rem);
     margin-inline: auto;
   }
   .nav-links a {
@@ -102,11 +113,18 @@ const links = [
     color: var(--ink);
   }
   .nav-btn {
-    padding: 0.52rem 1rem;
+    padding: 0.62rem 1.05rem;
     font-size: 0.9rem;
     background: var(--night);
     color: #fff;
     box-shadow: none;
+  }
+
+  .nav-btn:hover {
+    border-color: transparent;
+    background: #172335;
+    color: #fff;
+    box-shadow: 0 14px 30px -20px rgba(11, 18, 28, 0.6);
   }
 
   @media (min-width: 880px) {
@@ -118,6 +136,10 @@ const links = [
     }
   }
   @media (max-width: 520px) {
+    .brand-name {
+      display: none;
+    }
+
     .ghost {
       display: none;
     }

@@ -3,7 +3,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { makeReport, seedReports } from "../shared/mock";
 import type { ConfigPatch } from "../shared/schemas";
 import { stageForProgress } from "../shared/stages";
-import type { AppConfig, DreamReport, RuntimeState } from "../shared/types";
+import type {
+  AnalysisProject,
+  AppConfig,
+  DiscoveredProject,
+  DreamReport,
+  RuntimeState,
+} from "../shared/types";
 
 export interface HarnessDreams {
   config: AppConfig | null;
@@ -13,6 +19,7 @@ export interface HarnessDreams {
   /** Full session history, newest first. */
   reports: DreamReport[];
   patch: (patch: ConfigPatch) => void;
+  projects: Window["hd"]["projects"];
   actions: Window["hd"]["actions"];
 }
 
@@ -23,9 +30,18 @@ const PREVIEW_CONFIG: AppConfig = {
   schedule: { mode: "nightly", time: "03:00" },
   notifications: true,
   analysisDepth: "standard",
+  remRunner: {
+    provider: "claude-code",
+    model: "opus",
+    claudePath: "claude",
+    codexPath: "codex",
+    timeoutMs: 180_000,
+  },
   launchAtLogin: false,
   reduceMotion: false,
+  cloudSyncInterest: false,
   connectors: { claudeCode: true, codex: false, cursor: false },
+  projects: [],
 };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -191,12 +207,50 @@ export function useHarnessDreams(): HarnessDreams {
         return next;
       },
       completeOnboarding: async () => PREVIEW_CONFIG,
-      markReviewed: async (id?: string) => {
+      markReviewed: async (id?: string, decisions = {}) => {
         let hasUnreviewed = false;
         setReports((current) => {
           const normalized = normalizeReports(current);
           const latest = normalized[0];
           const targetId = id ?? latest?.id;
+          const reviewDecisions =
+            latest?.findings
+              .map((finding) => {
+                const state = decisions[finding.id];
+                if (
+                  state !== "accepted" &&
+                  state !== "rejected" &&
+                  state !== "queued" &&
+                  state !== "snoozed"
+                ) {
+                  return null;
+                }
+                return {
+                  findingId: finding.id,
+                  category: finding.category ?? "contextdoc",
+                  action: finding.action,
+                  project: finding.project,
+                  state,
+                };
+              })
+              .filter((entry): entry is NonNullable<typeof entry> =>
+                Boolean(entry)
+              ) ?? [];
+          const acceptedExperiments =
+            latest?.findings
+              .filter((finding) => decisions[finding.id] === "accepted")
+              .map((finding) => ({
+                id: `accepted_${finding.id}`,
+                title: finding.action,
+                hypothesis: finding.improvement,
+                agentBenefit: finding.agentBenefit,
+                userBenefit: finding.userBenefit,
+                reflection: finding.reflection,
+                metric: "alignment · re-ask rate · tool success",
+                status: "running" as const,
+                progress: 0,
+                progressLabel: "0 / 5 cycles",
+              })) ?? [];
           const next =
             latest?.id === targetId && latest.reviewStatus === "unreviewed"
               ? [
@@ -204,6 +258,11 @@ export function useHarnessDreams(): HarnessDreams {
                     ...latest,
                     reviewStatus: "reviewed" as const,
                     reviewedAt: Date.now(),
+                    reviewDecisions,
+                    experiments: [
+                      ...latest.experiments,
+                      ...acceptedExperiments,
+                    ],
                   },
                   ...normalized.slice(1),
                 ]
@@ -242,12 +301,47 @@ export function useHarnessDreams(): HarnessDreams {
     [config, state]
   );
 
+  const previewProjects = useMemo<Window["hd"]["projects"]>(
+    () => ({
+      discover: async (): Promise<DiscoveredProject[]> => [
+        {
+          path: "/Users/example/project",
+          name: "project",
+          sources: ["claude-code"],
+          sessionCount: 12,
+          lastActivityAt: Date.now(),
+        },
+      ],
+      add: async (projectPath: string): Promise<AnalysisProject | null> => {
+        const next: AnalysisProject = {
+          path: projectPath,
+          name: projectPath.split("/").filter(Boolean).at(-1) ?? projectPath,
+          sources: ["claude-code"],
+          enabled: true,
+          addedAt: Date.now(),
+        };
+        setConfig((current) => ({
+          ...(current ?? PREVIEW_CONFIG),
+          projects: [
+            next,
+            ...((current ?? PREVIEW_CONFIG).projects ?? []).filter(
+              (project) => project.path !== projectPath
+            ),
+          ],
+        }));
+        return next;
+      },
+    }),
+    []
+  );
+
   return {
     config,
     state,
     report: reports[0] ?? null,
     reports,
     patch,
+    projects: window.hd?.projects ?? previewProjects,
     actions: window.hd?.actions ?? previewActions,
   };
 }

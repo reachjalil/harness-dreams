@@ -25,9 +25,18 @@ export const DEFAULT_CONFIG: AppConfig = {
   schedule: { mode: "nightly", time: "03:00" },
   notifications: true,
   analysisDepth: "standard",
+  remRunner: {
+    provider: "claude-code",
+    model: "opus",
+    claudePath: "claude",
+    codexPath: "codex",
+    timeoutMs: 180_000,
+  },
   launchAtLogin: false,
   reduceMotion: false,
+  cloudSyncInterest: false,
   connectors: { claudeCode: true, codex: false, cursor: false },
+  projects: [],
 };
 
 type Listener = (config: AppConfig) => void;
