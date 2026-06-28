@@ -7,6 +7,9 @@ struct WatchRootView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
+                    Text(store.syncStatus)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
                     WatchScore(snapshot: store.snapshot)
                     WatchRingList(rings: store.snapshot.rings)
 
@@ -14,7 +17,7 @@ struct WatchRootView: View {
                         WatchFinding(finding: finding)
                     }
 
-                    WatchPrivacyNote()
+                    WatchPrivacyNote(status: store.syncStatus)
                 }
                 .padding(.horizontal, 4)
             }
@@ -136,11 +139,16 @@ private struct WatchFinding: View {
 }
 
 private struct WatchPrivacyNote: View {
+    let status: String
+
     var body: some View {
-        Label("Scores, findings, and goals only", systemImage: "lock.shield")
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .padding(.vertical, 4)
+        VStack(alignment: .leading, spacing: 4) {
+            Label("Scores, findings, and goals only", systemImage: "lock.shield")
+            Text(status)
+        }
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .padding(.vertical, 4)
     }
 }
 

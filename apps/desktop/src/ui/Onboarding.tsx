@@ -39,7 +39,6 @@ const SCHEDULE_OPTIONS: { value: ScheduleMode; title: string; sub: string }[] =
     },
   ];
 
-type SetupMode = "real" | "demo";
 type ProjectSourceFilter = "all" | "claude-code" | "codex" | "code";
 
 export default function Onboarding({
@@ -50,7 +49,6 @@ export default function Onboarding({
   const { actions, patch, projects } = hd;
   const [step, setStep] = useState(0);
   const [name, setName] = useState(hd.config?.userName ?? "");
-  const [setupMode, setSetupMode] = useState<SetupMode>("real");
   const [privacy, setPrivacy] = useState<PrivacyMode>("local");
   const [remProvider, setRemProvider] = useState<RemRunnerProvider>("codex");
   const [remModel, setRemModel] = useState(
@@ -73,11 +71,10 @@ export default function Onboarding({
   const [projectSourceFilter, setProjectSourceFilter] =
     useState<ProjectSourceFilter>("all");
   const [scanning, setScanning] = useState(false);
-  const lastStep = setupMode === "demo" ? 2 : 5;
+  const lastStep = 4;
 
   useEffect(() => {
-    if (setupMode === "demo") return;
-    if (step !== 3 || discovered.length > 0 || scanning) return;
+    if (step !== 2 || discovered.length > 0 || scanning) return;
     setScanning(true);
     void projects
       .discover()
@@ -87,7 +84,7 @@ export default function Onboarding({
         setSelected(Object.fromEntries(top.map((item) => [item.path, true])));
       })
       .finally(() => setScanning(false));
-  }, [discovered.length, projects, scanning, setupMode, step]);
+  }, [discovered.length, projects, scanning, step]);
 
   const visibleProjects = useMemo(() => {
     const query = projectSearch.trim().toLowerCase();
@@ -115,24 +112,6 @@ export default function Onboarding({
   );
 
   function finish(): void {
-    if (setupMode === "demo") {
-      patch({
-        userName: name.trim() || "Alex",
-        demoMode: true,
-        privacyMode: "local",
-        schedule: { mode: "manual" },
-        cloudSyncInterest: false,
-        cloudSync: { enabled: false },
-        projects: [],
-        connectors: {
-          claudeCode: false,
-          codex: false,
-        },
-      });
-      void actions.completeOnboarding();
-      return;
-    }
-
     const added: AnalysisProject[] = selectedProjects.map((project) => ({
       path: project.path,
       name: project.name,
@@ -173,19 +152,15 @@ export default function Onboarding({
 
   function back(): void {
     if (step === 0) return;
-    if (setupMode === "demo" && step > 2) {
-      setStep(2);
-      return;
-    }
     setStep(step - 1);
   }
 
   return (
-    <div className={`onb${step === 3 ? " project-step" : ""}`}>
+    <div className={`onb${step === 2 ? " project-step" : ""}`}>
       <div className="titlebar" />
       <div
-        className={`onb-body${step === 3 ? " project-step" : ""}${
-          step === 4 ? " sync-step" : ""
+        className={`onb-body${step === 2 ? " project-step" : ""}${
+          step === 3 ? " sync-step" : ""
         }`}
       >
         {step === 0 ? (
@@ -245,47 +220,6 @@ export default function Onboarding({
         ) : null}
 
         {step === 2 ? (
-          <>
-            <h2>Choose your starting point</h2>
-            <p>
-              Try the full product with fictional data, or connect local
-              projects when you are ready.
-            </p>
-            <div className="choices">
-              <button
-                type="button"
-                className={`choice${setupMode === "demo" ? " selected" : ""}`}
-                onClick={() => setSetupMode("demo")}
-              >
-                <div className="choice-title">
-                  <Icon name="cycle" size={15} />
-                  Demo Mode
-                </div>
-                <div className="choice-sub">
-                  Use fictional projects, sample Sleep Cycles, simulated review
-                  choices, and measured verdicts. No transcript scan, LLM run,
-                  repo write, or push.
-                </div>
-              </button>
-              <button
-                type="button"
-                className={`choice${setupMode === "real" ? " selected" : ""}`}
-                onClick={() => setSetupMode("real")}
-              >
-                <div className="choice-title">
-                  <Icon name="data" size={15} />
-                  Use my local data
-                </div>
-                <div className="choice-sub">
-                  Select real Claude Code and Codex projects, then choose
-                  local-only or opt-in cloud REM analysis.
-                </div>
-              </button>
-            </div>
-          </>
-        ) : null}
-
-        {step === 3 ? (
           <>
             <h2>Add projects</h2>
             <p>Choose the local projects Harness Dreams should analyze.</p>
@@ -369,7 +303,7 @@ export default function Onboarding({
           </>
         ) : null}
 
-        {step === 4 ? (
+        {step === 3 ? (
           <>
             <h2>Privacy &amp; sync</h2>
             <p>
@@ -496,7 +430,7 @@ export default function Onboarding({
           </>
         ) : null}
 
-        {step === 5 ? (
+        {step === 4 ? (
           <>
             <h2>When should it dream?</h2>
             <p>You can change this anytime in Settings.</p>
@@ -531,11 +465,7 @@ export default function Onboarding({
           </Button>
         ) : null}
         <Button variant="accent" onClick={next}>
-          {step >= lastStep
-            ? setupMode === "demo"
-              ? "Start Demo Mode"
-              : "Enter Harness Dreams"
-            : "Continue"}
+          {step >= lastStep ? "Enter Harness Dreams" : "Continue"}
         </Button>
       </div>
     </div>

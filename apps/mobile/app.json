@@ -11,6 +11,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.harnessdreams.mobile",
       "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        },
         "NSCameraUsageDescription": "Scan the Harness Dreams desktop pairing QR code."
       }
     },
