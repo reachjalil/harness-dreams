@@ -32,6 +32,10 @@ export const Invoke = {
   RevealData: "action:revealData",
   OpenMain: "action:openMain",
   Quit: "action:quit",
+  ChatSend: "chat:send",
+  ChatAbort: "chat:abort",
+  ChatGetSession: "chat:getSession",
+  ChatListSessions: "chat:listSessions",
 } as const;
 export type Invoke = (typeof Invoke)[keyof typeof Invoke];
 
@@ -43,5 +47,7 @@ export const Send = {
   BroadcastCloudSync: "broadcast:cloudSync",
   /** main → UI: select and show a specific past session */
   SelectReport: "broadcast:selectReport",
+  /** main → renderer: streaming chat events (token, tool_call, done, error) */
+  ChatChunk: "chat:chunk",
 } as const;
 export type Send = (typeof Send)[keyof typeof Send];

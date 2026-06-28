@@ -16,6 +16,24 @@ import type {
   RuntimeState,
 } from "./shared/types";
 
+interface ChatSession {
+  sessionId: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: Array<{ role: "user" | "assistant"; content: string; at: number }>;
+}
+
+interface SessionSummary {
+  sessionId: string;
+  updatedAt: number;
+  preview: string;
+}
+
+type ChatChunk =
+  | { type: "token"; data: string }
+  | { type: "error"; message: string }
+  | { type: "done"; sessionId: string };
+
 /**
  * The one and only bridge. We expose a narrow, app-shaped `window.hd` API —
  * never raw ipcRenderer — and validate everything again in main.
@@ -118,6 +136,21 @@ const api = {
       subscribe(Send.BroadcastCloudSync, cb),
     onSelectReport: (cb: (id: string) => void): Unsubscribe =>
       subscribe(Send.SelectReport, cb),
+  },
+  chat: {
+    send: (
+      messages: Array<{ role: string; content: string }>,
+      sessionId?: string
+    ): Promise<string> =>
+      ipcRenderer.invoke(Invoke.ChatSend, messages, sessionId),
+    abort: (sessionId: string): Promise<void> =>
+      ipcRenderer.invoke(Invoke.ChatAbort, sessionId),
+    getSession: (sessionId: string): Promise<ChatSession | null> =>
+      ipcRenderer.invoke(Invoke.ChatGetSession, sessionId),
+    listSessions: (limit?: number): Promise<SessionSummary[]> =>
+      ipcRenderer.invoke(Invoke.ChatListSessions, limit),
+    onChunk: (cb: (chunk: ChatChunk) => void): Unsubscribe =>
+      subscribe(Send.ChatChunk, cb),
   },
 };
 

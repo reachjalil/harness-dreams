@@ -5,12 +5,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { ConnectionState, Room, RoomEvent, Track } from "livekit-client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
-const API_URL = "http://localhost:8000";
-type Mode = "text" | "voice";
 
 interface TextMessage {
   kind: "text";
@@ -20,22 +16,13 @@ interface TextMessage {
   streaming?: boolean;
 }
 
-interface ToolEvent {
-  kind: "tool";
-  id: string;
-  name: string;
-  label: string;
-  done: boolean;
-  summary?: string;
-}
-
 interface StatusEvent {
   kind: "status";
   id: string;
   text: string;
 }
 
-type ChatItem = TextMessage | ToolEvent | StatusEvent;
+type ChatItem = TextMessage | StatusEvent;
 
 const SUGGESTIONS = [
   { label: "Why was my alignment low?", sub: "Explain yesterday's score" },
@@ -142,54 +129,6 @@ function ThinkingRow(): ReactElement {
   );
 }
 
-function ToolEventRow({ item }: { item: ToolEvent }): ReactElement {
-  return (
-    <div className="chat-row chat-row-assistant">
-      <div className="chat-ai-icon-spacer" aria-hidden="true" />
-      <div
-        className={`chat-tool-call${item.done ? " chat-tool-call-done" : ""}`}
-      >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        >
-          <path d="M2 8a6 6 0 1 0 12 0A6 6 0 0 0 2 8z" strokeLinecap="round" />
-          <path d="M8 5v3l2 1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span>{item.label}</span>
-        {item.done && item.summary ? (
-          <span className="chat-tool-summary">— {item.summary}</span>
-        ) : null}
-        {item.done ? (
-          <svg
-            className="chat-tool-check"
-            aria-hidden="true"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <path
-              d="M2 6l3 3 5-5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        ) : (
-          <span className="chat-tool-dots">
-            <span />
-            <span />
-            <span />
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function StatusRow({ item }: { item: StatusEvent }): ReactElement {
   return (
     <div className="chat-row chat-row-assistant">
@@ -200,7 +139,6 @@ function StatusRow({ item }: { item: StatusEvent }): ReactElement {
 }
 
 function MessageRow({ item }: { item: ChatItem }): ReactElement {
-  if (item.kind === "tool") return <ToolEventRow item={item} />;
   if (item.kind === "status") return <StatusRow item={item} />;
   if (item.role === "user") {
     return (
@@ -224,11 +162,9 @@ function MessageRow({ item }: { item: ChatItem }): ReactElement {
   );
 }
 
-const SESSION_KEY = "dream-chat-session-id";
-
 interface SessionSummary {
-  session_id: string;
-  updated_at: string;
+  sessionId: string;
+  updatedAt: number;
   preview: string;
 }
 
@@ -245,9 +181,9 @@ function HistoryPanel({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch(`${API_URL}/chat/sessions?limit=50`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data: SessionSummary[]) => setSessions(data))
+    window.hd.chat
+      .listSessions(50)
+      .then((data) => setSessions(data))
       .catch(() => {})
       .finally(() => setLoading(false));
     inputRef.current?.focus();
@@ -259,12 +195,12 @@ function HistoryPanel({
       )
     : sessions;
 
-  function fmt(iso: string): string {
-    const d = new Date(iso);
+  function fmt(ts: number): string {
+    const d = new Date(ts);
     const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffDays = Math.floor(diffMs / 86400000);
-    if (diffDays === 0) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+    if (diffDays === 0)
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return d.toLocaleDateString([], { weekday: "short" });
     return d.toLocaleDateString([], { month: "short", day: "numeric" });
@@ -280,13 +216,26 @@ function HistoryPanel({
           onClick={onClose}
           aria-label="Close history"
         >
-          <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
             <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
           </svg>
         </button>
       </div>
       <div className="chat-history-search-wrap">
-        <svg aria-hidden="true" className="chat-history-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <svg
+          aria-hidden="true"
+          className="chat-history-search-icon"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+        >
           <circle cx="6.5" cy="6.5" r="4" />
           <path d="M11 11l3 3" strokeLinecap="round" />
         </svg>
@@ -305,13 +254,15 @@ function HistoryPanel({
         )}
         {filtered.map((s) => (
           <button
-            key={s.session_id}
+            key={s.sessionId}
             type="button"
             className="chat-history-item"
-            onClick={() => onSelect(s.session_id)}
+            onClick={() => onSelect(s.sessionId)}
           >
-            <span className="chat-history-preview">{s.preview || "Empty session"}</span>
-            <span className="chat-history-time">{fmt(s.updated_at)}</span>
+            <span className="chat-history-preview">
+              {s.preview || "Empty session"}
+            </span>
+            <span className="chat-history-time">{fmt(s.updatedAt)}</span>
           </button>
         ))}
       </div>
@@ -326,43 +277,47 @@ function TextChat(): ReactElement {
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const sessionIdRef = useRef<string | null>(
-    typeof localStorage !== "undefined"
-      ? localStorage.getItem(SESSION_KEY)
-      : null
-  );
+  const sessionIdRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
 
-  function loadSession(sid: string): void {
-    fetch(`${API_URL}/chat/sessions/${sid}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((doc) => {
-        if (!doc?.messages?.length) return;
-        const loaded: TextMessage[] = doc.messages
-          .filter(
-            (m: { role: string }) => m.role === "user" || m.role === "assistant"
-          )
-          .map((m: { role: string; content: string }, i: number) => ({
-            kind: "text" as const,
-            id: `loaded-${i}`,
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          }));
-        sessionIdRef.current = sid;
-        localStorage.setItem(SESSION_KEY, sid);
-        setItems(loaded);
-        setError(null);
-      })
-      .catch(() => {});
-  }
-
-  // Load previous session on mount
+  // Subscribe to streaming chunks from main process
   useEffect(() => {
-    const sid = sessionIdRef.current;
-    if (sid) loadSession(sid);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const unsub = window.hd.chat.onChunk((chunk) => {
+      if (chunk.type === "token") {
+        setThinking(false);
+        setItems((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (last?.kind === "text" && last.role === "assistant") {
+            next[next.length - 1] = {
+              ...last,
+              content: last.content + chunk.data,
+            };
+          }
+          return next;
+        });
+      } else if (chunk.type === "error") {
+        setThinking(false);
+        setError(chunk.message);
+        setItems((prev) => prev.slice(0, -1));
+        setBusy(false);
+      } else if (chunk.type === "done") {
+        sessionIdRef.current = chunk.sessionId;
+        setThinking(false);
+        setItems((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (last?.kind === "text" && last.role === "assistant")
+            next[next.length - 1] = { ...last, streaming: false };
+          return next;
+        });
+        setBusy(false);
+        textareaRef.current?.focus();
+      }
+    });
+    return unsub;
+  }, []);
 
   const itemCount = items.length;
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom on new items
@@ -378,7 +333,38 @@ function TextChat(): ReactElement {
   }
 
   function stop(): void {
-    abortRef.current?.abort();
+    if (sessionIdRef.current) {
+      void window.hd.chat.abort(sessionIdRef.current);
+    }
+    setThinking(false);
+    setItems((prev) => {
+      const next = [...prev];
+      const last = next[next.length - 1];
+      if (last?.kind === "text" && last.role === "assistant")
+        next[next.length - 1] = { ...last, streaming: false };
+      return next;
+    });
+    setBusy(false);
+  }
+
+  function loadSession(sid: string): void {
+    window.hd.chat
+      .getSession(sid)
+      .then((doc) => {
+        if (!doc?.messages?.length) return;
+        const loaded: TextMessage[] = doc.messages
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .map((m, i) => ({
+            kind: "text" as const,
+            id: `loaded-${i}`,
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          }));
+        sessionIdRef.current = sid;
+        setItems(loaded);
+        setError(null);
+      })
+      .catch(() => {});
   }
 
   async function send(text?: string): Promise<void> {
@@ -407,131 +393,17 @@ function TextChat(): ReactElement {
     setBusy(true);
     setThinking(true);
 
-    const abort = new AbortController();
-    abortRef.current = abort;
-
-    // Build history from text messages only (no tool events)
     const history = [...items, userItem]
       .filter((item): item is TextMessage => item.kind === "text")
       .map((m) => ({ role: m.role, content: m.content }));
 
     try {
-      const res = await fetch(`${API_URL}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: history,
-          session_id: sessionIdRef.current,
-        }),
-        signal: abort.signal,
-      });
-
-      if (!res.ok || !res.body) throw new Error(`API error ${res.status}`);
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { value: chunk, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(chunk, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const payload = JSON.parse(line.slice(6));
-            if (payload.done) break;
-            if (payload.error) throw new Error(payload.error);
-            if (payload.type === "session_id") {
-              sessionIdRef.current = payload.session_id;
-              localStorage.setItem(SESSION_KEY, payload.session_id);
-            } else if (payload.type === "tool_call") {
-              setThinking(false);
-              const toolItem: ToolEvent = {
-                kind: "tool",
-                id: `tool-${Date.now()}-${payload.name}`,
-                name: payload.name,
-                label: payload.label,
-                done: false,
-              };
-              setItems((prev) => {
-                // Insert before the streaming assistant message (last item)
-                const rest = prev.slice(0, -1);
-                const last = prev[prev.length - 1];
-                return [...rest, toolItem, last];
-              });
-            } else if (payload.type === "tool_result") {
-              setItems((prev) =>
-                prev.map((item) =>
-                  item.kind === "tool" &&
-                  item.name === payload.name &&
-                  !item.done
-                    ? {
-                        ...item,
-                        done: true,
-                        summary: payload.summary ?? undefined,
-                      }
-                    : item
-                )
-              );
-            } else if (payload.type === "status") {
-              setThinking(false);
-              const statusItem: StatusEvent = {
-                kind: "status",
-                id: `status-${Date.now()}`,
-                text: payload.text,
-              };
-              setItems((prev) => {
-                // Replace any existing status line, insert before assistant bubble
-                const withoutStatus = prev.filter(
-                  (item) => item.kind !== "status"
-                );
-                const rest = withoutStatus.slice(0, -1);
-                const last = withoutStatus[withoutStatus.length - 1];
-                return [...rest, statusItem, last];
-              });
-            } else if (payload.type === "token") {
-              setThinking(false);
-              // Drop status lines once real text starts flowing
-              setItems((prev) => {
-                const next = prev.filter((item) => item.kind !== "status");
-                const last = next[next.length - 1];
-                if (last?.kind === "text" && last.role === "assistant") {
-                  next[next.length - 1] = {
-                    ...last,
-                    content: last.content + payload.data,
-                  };
-                }
-                return next;
-              });
-            }
-          } catch {
-            // skip malformed lines
-          }
-        }
-      }
+      await window.hd.chat.send(history, sessionIdRef.current ?? undefined);
     } catch (err) {
       setThinking(false);
-      // AbortError = user stopped — keep the partial response, no error banner
-      if (!(err instanceof Error && err.name === "AbortError")) {
-        setError(err instanceof Error ? err.message : "Something went wrong");
-        setItems((prev) =>
-          prev.filter((item) => item.kind !== "tool" || item.done).slice(0, -1)
-        );
-      }
-    } finally {
-      setThinking(false);
-      setItems((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        if (last?.kind === "text" && last.role === "assistant")
-          next[next.length - 1] = { ...last, streaming: false };
-        return next;
-      });
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setItems((prev) => prev.slice(0, -1));
       setBusy(false);
-      textareaRef.current?.focus();
     }
   }
 
@@ -641,9 +513,19 @@ function TextChat(): ReactElement {
               aria-label="Chat history"
               title="Chat history"
             >
-              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+              >
                 <circle cx="10" cy="10" r="7" />
-                <path d="M10 6v4l2.5 2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M10 6v4l2.5 2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
             {items.length > 0 && !busy && (
@@ -652,7 +534,6 @@ function TextChat(): ReactElement {
                 className="chat-new-btn"
                 onClick={() => {
                   sessionIdRef.current = null;
-                  localStorage.removeItem(SESSION_KEY);
                   setItems([]);
                   setError(null);
                 }}
@@ -667,273 +548,10 @@ function TextChat(): ReactElement {
   );
 }
 
-// ── Voice mode ────────────────────────────────────────────────────────────────
-
-type VoiceStatus =
-  | "idle"
-  | "connecting"
-  | "connected"
-  | "agent-speaking"
-  | "error";
-
-function VoiceMode(): ReactElement {
-  const [status, setStatus] = useState<VoiceStatus>("idle");
-  const [muted, setMuted] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const roomRef = useRef<Room | null>(null);
-  const audioElemsRef = useRef<HTMLAudioElement[]>([]);
-
-  useEffect(() => {
-    let active = true;
-
-    function cleanupAudio() {
-      for (const el of audioElemsRef.current) el.remove();
-      audioElemsRef.current = [];
-    }
-
-    async function connect() {
-      setStatus("connecting");
-      setErrorMsg(null);
-      try {
-        const res = await fetch(`${API_URL}/voice/token`, { method: "POST" });
-        if (!res.ok) throw new Error(`Token error ${res.status}`);
-        const { token, url } = (await res.json()) as {
-          token: string;
-          url: string;
-        };
-
-        if (!active) return; // unmounted before token arrived
-
-        const room = new Room();
-        roomRef.current = room;
-
-        room.on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
-          if (!active) return;
-          if (state === ConnectionState.Connected) setStatus("connected");
-          if (state === ConnectionState.Disconnected) setStatus("idle");
-        });
-
-        room.on(RoomEvent.TrackSubscribed, (track) => {
-          if (track.kind === Track.Kind.Audio) {
-            const el = track.attach() as HTMLAudioElement;
-            el.autoplay = true;
-            audioElemsRef.current.push(el);
-            document.body.appendChild(el);
-          }
-        });
-
-        room.on(RoomEvent.TrackUnsubscribed, (track) => {
-          if (track.kind === Track.Kind.Audio) {
-            track.detach();
-            cleanupAudio();
-          }
-        });
-
-        room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
-          if (!active) return;
-          const agentSpeaking = speakers.some(
-            (s) => s.identity !== room.localParticipant.identity
-          );
-          setStatus(agentSpeaking ? "agent-speaking" : "connected");
-        });
-
-        await room.connect(url, token);
-        // echo cancellation prevents the agent's audio from looping back into the mic
-        await room.localParticipant.setMicrophoneEnabled(true, {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        });
-      } catch (err) {
-        if (!active) return;
-        setStatus("error");
-        setErrorMsg(err instanceof Error ? err.message : "Connection failed");
-      }
-    }
-
-    void connect();
-
-    return () => {
-      active = false;
-      cleanupAudio();
-      roomRef.current?.disconnect();
-      roomRef.current = null;
-    };
-  }, []);
-
-  async function togglePause(): Promise<void> {
-    const room = roomRef.current;
-    if (!room) return;
-    const next = !paused;
-    // Freeze/unfreeze mic
-    const pub = room.localParticipant.getTrackPublication(
-      Track.Source.Microphone
-    );
-    if (pub) {
-      if (next) await pub.mute();
-      else if (!muted) await pub.unmute();
-    }
-    // Freeze/unfreeze agent audio
-    for (const el of audioElemsRef.current) {
-      el.muted = next;
-    }
-    setPaused(next);
-  }
-
-  async function toggleMute(): Promise<void> {
-    const room = roomRef.current;
-    if (!room) return;
-    const pub = room.localParticipant.getTrackPublication(
-      Track.Source.Microphone
-    );
-    if (!pub) return;
-    const next = !muted;
-    if (next) {
-      await pub.mute();
-    } else {
-      if (!paused) await pub.unmute();
-    }
-    setMuted(next);
-  }
-
-  const statusLabel: Record<VoiceStatus, string> = {
-    idle: "Starting…",
-    connecting: "Connecting…",
-    connected: paused ? "Paused" : "Listening",
-    "agent-speaking": paused ? "Paused" : "Dream is speaking",
-    error: errorMsg ?? "Error",
-  };
-
-  return (
-    <div className="voice-shell">
-      <div
-        className={`voice-orb${status === "agent-speaking" && !paused ? " voice-orb-active" : ""}${paused ? " voice-orb-paused" : ""}`}
-      >
-        <AssistantIcon />
-      </div>
-      <p className="voice-status">{statusLabel[status]}</p>
-      {status !== "error" && status !== "idle" && (
-        <div className="voice-controls">
-          <button
-            type="button"
-            className={`voice-mic-btn${muted ? " voice-mic-muted" : ""}`}
-            onClick={() => void toggleMute()}
-            disabled={paused}
-            aria-label={muted ? "Unmute" : "Mute"}
-          >
-            {muted ? (
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <line x1="1" y1="1" x2="23" y2="23" />
-                <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-                <path
-                  d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"
-                  strokeLinecap="round"
-                />
-                <line x1="12" y1="19" x2="12" y2="23" />
-                <line x1="8" y1="23" x2="16" y2="23" />
-              </svg>
-            ) : (
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" strokeLinecap="round" />
-                <line x1="12" y1="19" x2="12" y2="23" />
-                <line x1="8" y1="23" x2="16" y2="23" />
-              </svg>
-            )}
-          </button>
-          <button
-            type="button"
-            className={`voice-pause-btn${paused ? " voice-paused" : ""}`}
-            onClick={() => void togglePause()}
-            aria-label={paused ? "Resume" : "Pause"}
-          >
-            {paused ? (
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            ) : (
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="4" width="4" height="16" rx="1" />
-                <rect x="14" y="4" width="4" height="16" rx="1" />
-              </svg>
-            )}
-          </button>
-        </div>
-      )}
-      {status === "error" && (
-        <p className="chat-error" style={{ marginTop: "1rem" }}>
-          {errorMsg ?? "Failed to connect"}
-          <br />
-          <small>Make sure livekit-server and voice agent are running.</small>
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ── Main Chat shell with mode toggle ─────────────────────────────────────────
-
 export default function Chat(): ReactElement {
-  const [mode, setMode] = useState<Mode>("text");
-  const [chatKey, setChatKey] = useState(0);
-
-  function newChat(): void {
-    localStorage.removeItem(SESSION_KEY);
-    setChatKey((k) => k + 1);
-  }
-
   return (
     <div className="chat-shell">
-      <div className="chat-mode-toggle">
-        <button
-          type="button"
-          className={mode === "text" ? "active" : ""}
-          onClick={() => setMode("text")}
-        >
-          Text
-        </button>
-        <button
-          type="button"
-          className={mode === "voice" ? "active" : ""}
-          onClick={() => setMode("voice")}
-        >
-          Voice
-        </button>
-        {mode === "text" && (
-          <button
-            type="button"
-            className="chat-new-session-btn"
-            onClick={newChat}
-            aria-label="New chat"
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            >
-              <path d="M8 3v10M3 8h10" />
-            </svg>
-            New chat
-          </button>
-        )}
-      </div>
-      {mode === "text" ? <TextChat key={chatKey} /> : <VoiceMode />}
+      <TextChat />
     </div>
   );
 }

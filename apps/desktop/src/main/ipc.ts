@@ -3,6 +3,12 @@ import { z } from "zod";
 
 import { Invoke } from "../shared/channels";
 import { ConfigPatchSchema } from "../shared/schemas";
+import {
+  abortChatStream,
+  getChatSession,
+  listChatSessions,
+  sendChatMessage,
+} from "./chat";
 import { getCloudSyncStatus, syncCloudNow } from "./cloudSync";
 import type { Controller } from "./controller";
 import { createCloudSyncPairing, removeCloudSyncDevice } from "./deviceSync";
@@ -127,4 +133,24 @@ export function registerIpc(controller: Controller): void {
   ipcMain.handle(Invoke.Quit, () => {
     controller.quit();
   });
+
+  ipcMain.handle(
+    Invoke.ChatSend,
+    (event, messages: unknown, sessionId: unknown) => {
+      const validMessages = z
+        .array(z.object({ role: z.string(), content: z.string() }))
+        .parse(messages);
+      const validSessionId = z.string().optional().parse(sessionId);
+      return sendChatMessage(event.sender, validMessages, validSessionId);
+    }
+  );
+  ipcMain.handle(Invoke.ChatAbort, (_event, sessionId: unknown) => {
+    abortChatStream(z.string().parse(sessionId));
+  });
+  ipcMain.handle(Invoke.ChatGetSession, (_event, sessionId: unknown) =>
+    getChatSession(z.string().parse(sessionId))
+  );
+  ipcMain.handle(Invoke.ChatListSessions, (_event, limit: unknown) =>
+    listChatSessions(z.number().optional().parse(limit))
+  );
 }

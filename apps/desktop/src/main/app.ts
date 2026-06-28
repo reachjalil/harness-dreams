@@ -1,6 +1,7 @@
 import { app, Menu, nativeTheme } from "electron";
 import started from "electron-squirrel-startup";
 
+import { initChat } from "./chat";
 import { initCloudSync, shutdownCloudSync } from "./cloudSync";
 import { createController, initOrchestration } from "./controller";
 import { initDeviceSyncServer, shutdownDeviceSyncServer } from "./deviceSync";
@@ -72,6 +73,7 @@ function bootstrap(): void {
   setupMenu();
   initStore();
   initReports();
+  initChat();
   initDeviceSyncServer();
   initCloudSync();
 
