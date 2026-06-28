@@ -14,7 +14,7 @@ A **Dream Session** is a background job that:
 2. Ingests and normalizes the sessions in that window (see
    [14-ingestion-and-connectors.md](14-ingestion-and-connectors.md)).
 3. Runs **Deep Sleep** (deterministic vitals + trends) then **REM** (LLM
-   findings + experiments) — see [15-dream-engine.md](15-dream-engine.md).
+   findings + improvements) — see [15-dream-engine.md](15-dream-engine.md).
 4. Persists a **Dream Report** artifact and notifies the user.
 
 ## Triggers (how a dream starts)
@@ -53,8 +53,8 @@ DreamReport
 ├── header        # date range, harnesses covered, # sessions, overall status
 ├── vitals        # the rings/headline metrics + deltas vs baseline
 ├── trends        # 7/30-day sparklines for key metrics
-├── findings[]    # wins / mistakes / risks / opportunities (with evidence)
-├── experiments   # newly proposed + results of previously-running experiments
+├── findings[]    # wins / mistakes / risks / opportunities, each with a suggested improvement
+├── improvements  # tracked suggested improvements + results from prior tracked changes
 ├── memory        # proposed memory additions/edits/consolidations
 └── digest        # 2-3 sentence plain-language summary ("the TL;DR")
 ```

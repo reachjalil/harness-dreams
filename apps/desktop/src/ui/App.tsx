@@ -1,19 +1,12 @@
 import { type ReactElement, useEffect, useState } from "react";
 
-import { BrandMark } from "./components";
+import Cycle from "./Cycle";
+import { alignmentSplit, band, Sidebar, type Tab } from "./components";
 import Lab from "./Lab";
 import Onboarding from "./Onboarding";
 import Settings from "./Settings";
 import Today from "./Today";
-import { useHarnessDreams } from "./useHarnessDreams";
-
-type Tab = "today" | "lab" | "settings";
-
-const TABS: { value: Tab; label: string }[] = [
-  { value: "today", label: "Today" },
-  { value: "lab", label: "Lab" },
-  { value: "settings", label: "Settings" },
-];
+import { type HarnessDreams, useHarnessDreams } from "./useHarnessDreams";
 
 function Loading(): ReactElement {
   return (
@@ -26,49 +19,111 @@ function Loading(): ReactElement {
   );
 }
 
-function MainShell({
-  hd,
-}: {
-  hd: ReturnType<typeof useHarnessDreams>;
-}): ReactElement {
+function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
   const [tab, setTab] = useState<Tab>("today");
-  const unreviewed = hd.state?.hasUnreviewed ?? false;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const unreviewedCycle =
+    hd.reports[0]?.reviewStatus === "unreviewed" ? hd.reports[0] : undefined;
+  const unreviewed = unreviewedCycle ? 1 : 0;
+  const latestReviewed =
+    hd.reports.find((report) => report.reviewStatus === "reviewed") ??
+    hd.reports[0] ??
+    null;
+
+  // The tray's "Recent sessions" submenu can ask us to open a specific dream.
+  useEffect(() => {
+    if (!window.hd) return;
+    return window.hd.events.onSelectReport((id) => {
+      setSelectedId(id);
+      setTab("cycle");
+    });
+  }, []);
+
+  const selected = selectedId
+    ? (hd.reports.find((r) => r.id === selectedId) ?? null)
+    : null;
+  const reportForProgress = latestReviewed;
+  const phase = hd.state?.phase ?? "resting";
+  const split = reportForProgress
+    ? alignmentSplit(reportForProgress)
+    : { human: 0, agent: 0, band: band(0) };
+  const alignmentScore = reportForProgress
+    ? (reportForProgress.alignment?.score ??
+      reportForProgress.rings.find((r) => r.key === "alignment")?.score ??
+      0)
+    : 0;
+
+  function navigate(next: Tab): void {
+    setTab(next);
+    if (next === "cycle") setSelectedId(null);
+  }
+
+  function selectCycle(id: string): void {
+    setSelectedId(id);
+    setTab("cycle");
+  }
+
+  function runSleepCycle(): void {
+    setSelectedId(null);
+    setTab("cycle");
+    void hd.actions.dreamNow();
+  }
 
   return (
-    <div className="app">
+    <div className="app shell">
       <div className="titlebar" />
-      <header className="topbar">
-        <div className="brand">
-          <BrandMark size={30} />
-          <div>
-            <h1>Harness Dreams</h1>
-            <p>Your harness health app</p>
+
+      <Sidebar
+        active={tab}
+        onNavigate={navigate}
+        alignment={alignmentScore}
+        band={split.band}
+        phase={phase}
+        lastDreamAt={hd.state?.lastDreamAt ?? null}
+        unreviewed={unreviewed || (hd.state?.hasUnreviewed ? 1 : 0)}
+        onDreamNow={() => {
+          if (unreviewedCycle) selectCycle(unreviewedCycle.id);
+          else runSleepCycle();
+        }}
+      />
+
+      <main className="workspace">
+        <div className={`scroll${tab === "today" ? " scroll-dash" : ""}`}>
+          <div
+            className={`scroll-inner${tab === "today" ? " scroll-inner-dash" : ""}`}
+          >
+            {tab === "today" ? (
+              <Today
+                hd={hd}
+                report={reportForProgress}
+                pendingCycle={unreviewedCycle ?? null}
+                onOpenGoals={() => setTab("lab")}
+                onRunSleepCycle={runSleepCycle}
+                onOpenCycle={() => {
+                  if (hd.reports[0]) selectCycle(hd.reports[0].id);
+                  else navigate("cycle");
+                }}
+              />
+            ) : null}
+            {tab === "cycle" ? (
+              <Cycle
+                hd={hd}
+                report={selected}
+                reports={hd.reports}
+                selectedId={selectedId}
+                onSelectCycle={selectCycle}
+                onBackToList={() => setSelectedId(null)}
+                onOpenImprovements={() => setTab("lab")}
+                onRunSleepCycle={runSleepCycle}
+              />
+            ) : null}
+            {tab === "lab" ? <Lab report={reportForProgress} /> : null}
+            {tab === "settings" ? (
+              <Settings hd={hd} onRunSleepCycle={runSleepCycle} />
+            ) : null}
           </div>
         </div>
-        <div className="tabs" role="tablist">
-          {TABS.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.value}
-              className={`tab${tab === t.value ? " active" : ""}`}
-              onClick={() => setTab(t.value)}
-            >
-              {t.label}
-              {t.value === "today" && unreviewed ? (
-                <span className="tab-badge" />
-              ) : null}
-            </button>
-          ))}
-        </div>
-      </header>
-
-      <div className="scroll">
-        {tab === "today" ? <Today hd={hd} /> : null}
-        {tab === "lab" ? <Lab hd={hd} /> : null}
-        {tab === "settings" ? <Settings hd={hd} /> : null}
-      </div>
+      </main>
     </div>
   );
 }

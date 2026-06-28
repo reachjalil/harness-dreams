@@ -1,0 +1,58 @@
+---
+const resources = [
+  {
+    eyebrow: "Cycle",
+    title: "Walk through one overnight review",
+    text: "See what Harness Dreams reads after work stops and what lands in the morning report.",
+    href: "/cycle/",
+    meta: "Product tour",
+  },
+  {
+    eyebrow: "Case studies",
+    title: "Find the patterns worth fixing",
+    text: "Repeated corrections, missing context, and review loops you can catch before they become normal.",
+    href: "/case-studies/",
+    meta: "3 field stories",
+  },
+  {
+    eyebrow: "Docs",
+    title: "Set up the local app",
+    text: "Choose what it can read, review what it suggests, and keep every change under your control.",
+    href: "/docs/",
+    meta: "Operator manual",
+  },
+  {
+    eyebrow: "Blog",
+    title: "Read the product notes",
+    text: "Thoughts on agent health, local telemetry, and making coding agents easier to steer.",
+    href: "/blog/",
+    meta: "Essays",
+  },
+];
+---
+
+<section class="section resource-hub">
+  <div class="container">
+    <div class="section-narrow hub-head reveal">
+      <span class="eyebrow">Explore the product</span>
+      <h2 class="h2">See what happened, then decide what to change.</h2>
+      <p class="lead">
+        Follow a dream cycle, look at the repeated mistakes it catches, and set
+        up the guardrails you want before the next session.
+      </p>
+    </div>
+
+    <div class="resource-grid">
+      {
+        resources.map((item, i) => (
+          <a class="resource-card reveal" data-delay={String((i % 3) + 1)} href={item.href}>
+            <span class="mono">{item.eyebrow}</span>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+            <small>{item.meta} →</small>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</section>

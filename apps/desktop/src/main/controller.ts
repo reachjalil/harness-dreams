@@ -2,6 +2,12 @@ import { app, Notification, shell } from "electron";
 
 import { Send } from "../shared/channels";
 import { stageForProgress } from "../shared/stages";
+import {
+  addDream,
+  getReports,
+  markReportReviewed,
+  onReportsChange,
+} from "./reports";
 import { refreshTray } from "./tray";
 import { getState, onStateChange, patchState } from "./state";
 import {
@@ -21,8 +27,11 @@ import { broadcastToUi, setQuitting, showMain } from "./windows";
 
 export interface Controller {
   dreamNow(): void;
+  pauseDream(): void;
+  resumeDream(): void;
+  openSession(id: string): void;
   completeOnboarding(): void;
-  markReviewed(): void;
+  markReviewed(id?: string): void;
   setLaunchAtLogin(value: boolean): void;
   testNotification(): void;
   resetOnboarding(): void;
@@ -32,8 +41,8 @@ export interface Controller {
   quit(): void;
 }
 
-const DREAM_TICK_MS = 140;
-const DREAM_STEP = 0.06;
+const DREAM_TICK_MS = 200;
+const DREAM_STEP = 0.02;
 
 let dreamTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -62,10 +71,13 @@ function runDream(): void {
     paused: false,
   });
   dreamTimer = setInterval(() => {
+    // While paused, hold position — the icon and UI stay put.
+    if (getState().paused) return;
     const next = getState().progress + DREAM_STEP;
     if (next >= 1) {
       if (dreamTimer) clearInterval(dreamTimer);
       dreamTimer = null;
+      addDream();
       patchState({
         phase: "ready",
         progress: 0,
@@ -84,11 +96,31 @@ function runDream(): void {
 export function createController(): Controller {
   return {
     dreamNow: () => runDream(),
+    pauseDream: () => {
+      if (getState().phase === "dreaming" && !getState().paused) {
+        patchState({ paused: true });
+      }
+    },
+    resumeDream: () => {
+      if (getState().phase === "dreaming" && getState().paused) {
+        patchState({ paused: false });
+      }
+    },
+    openSession: (id: string) => {
+      showMain();
+      broadcastToUi(Send.SelectReport, id);
+    },
     completeOnboarding: () => {
       setConfig({ onboarded: true });
     },
-    markReviewed: () => {
-      if (getState().hasUnreviewed) patchState({ hasUnreviewed: false });
+    markReviewed: (id?: string) => {
+      markReportReviewed(id);
+      const hasUnreviewed = getReports().some(
+        (report) => report.reviewStatus === "unreviewed"
+      );
+      if (getState().hasUnreviewed !== hasUnreviewed) {
+        patchState({ hasUnreviewed });
+      }
     },
     setLaunchAtLogin: (value: boolean) => {
       app.setLoginItemSettings({ openAtLogin: value });
@@ -135,5 +167,8 @@ export function initOrchestration(): void {
   onConfigChange((config) => {
     refreshTray(config, getState());
     broadcastToUi(Send.BroadcastConfig, config);
+  });
+  onReportsChange((reports) => {
+    broadcastToUi(Send.BroadcastReports, reports);
   });
 }

@@ -1,0 +1,74 @@
+---
+import Footer from "../../components/Footer.astro";
+import Nav from "../../components/Nav.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+
+const title = "Docs — Harness Dreams";
+const description =
+  "Documentation for installing, configuring, and operating Harness Dreams as a local-first harness health app.";
+
+const sections = [
+  {
+    title: "Quick start",
+    body: "Clone the repo, install dependencies with pnpm, and start the desktop app while signed downloads are coming soon.",
+    href: "/start/",
+  },
+  {
+    title: "Dream cycle",
+    body: "Understand deep sleep, vitals, REM pattern-finding, improvements, and morning review.",
+    href: "/docs/dream-cycle/",
+  },
+  {
+    title: "Privacy model",
+    body: "What stays local, what cloud opt-in would mean, and why previews matter before anything leaves your Mac.",
+    href: "/#privacy",
+  },
+  {
+    title: "Suggested improvements",
+    body: "How findings become memory, project guidance, workflow nudges, or tracked experiments.",
+    href: "/cycle/",
+  },
+];
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <section class="page-hero docs-hero">
+      <div class="container page-hero-grid">
+        <div>
+          <span class="eyebrow">Docs</span>
+          <h1>Operate Harness Dreams like a quiet overnight system.</h1>
+          <p class="lead">
+            The docs explain the actual product model: local-first ingestion,
+            dream reports, vitals, findings, and the habits that make the
+            harness better with less manual correction.
+          </p>
+        </div>
+        <figure class="page-visual">
+          <img
+            src="/story-standing-desk.png"
+            alt="A modern San Francisco standing desk with multiple monitors, laptop, phone, and subtle health-style workflow cards."
+            loading="eager"
+            decoding="async"
+          />
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container doc-grid">
+        {
+          sections.map((section) => (
+            <a class="doc-card reveal" href={section.href}>
+              <h2>{section.title}</h2>
+              <p>{section.body}</p>
+              <span>Read guide →</span>
+            </a>
+          ))
+        }
+      </div>
+    </section>
+  </main>
+  <Footer />
+</SiteLayout>

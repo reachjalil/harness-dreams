@@ -3,6 +3,24 @@
 A pnpm + Turborepo monorepo centralizing work and shared IP under the
 `@harness-dreams/*` scope.
 
+## Current status
+
+Harness Dreams is in active local development. There is not a signed macOS app
+download or public hosted sign-up flow yet. Both are coming soon.
+
+For now, run the desktop app from source:
+
+```bash
+git clone https://github.com/reachjalil/harness-dreams.git
+cd harness-dreams
+corepack enable
+pnpm install
+pnpm --filter @harness-dreams/desktop start
+```
+
+Requirements: macOS, Node.js 22.12 or newer, and pnpm. Corepack will use the
+pnpm version pinned by this repo.
+
 ## Stack
 
 - **Package manager:** pnpm (workspaces + catalogs)

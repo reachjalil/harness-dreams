@@ -1,0 +1,77 @@
+---
+import Footer from "../../components/Footer.astro";
+import Nav from "../../components/Nav.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+
+const title = "Why AI Coding Agents Need a Health App — Harness Dreams";
+const description =
+  "A product essay on why AI coding agents need longitudinal health reporting instead of only per-session chat history.";
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <article class="article-page">
+      <header class="article-hero">
+        <div class="container section-narrow">
+          <span class="eyebrow">Blog / Product note</span>
+          <h1>Why AI coding agents need a health app.</h1>
+          <p class="lead">
+            The useful question is not “was this one answer good?” It is “is
+            the way I work with this harness getting healthier?”
+          </p>
+        </div>
+      </header>
+
+      <div class="container article-grid">
+        <aside class="article-aside card">
+          <img
+            src="/story-mobile-review.png"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            class="aside-image"
+          />
+          <span class="mono">Thesis</span>
+          <strong>Agent quality is longitudinal.</strong>
+          <p>Repeated patterns matter more than isolated wins or misses.</p>
+        </aside>
+
+        <div class="article-body">
+          <p>
+            AI coding tools already generate plenty of output. What they often
+            lack is reflection. A harness can ship a patch, run tools, and
+            explain itself, but still repeat the same avoidable mistake
+            tomorrow because no system turned today’s friction into guidance.
+          </p>
+
+          <h2>Health is a trend, not a transcript</h2>
+          <p>
+            A single transcript is useful for debugging a moment. Health
+            reporting is useful for changing a habit. Harness Dreams looks
+            across sessions for metrics and repeated shapes: cost per accepted
+            change, correction rate, re-asks, failed tools, and repo-specific
+            gaps.
+          </p>
+
+          <h2>Communication should be calm</h2>
+          <p>
+            The user should not wake up to a dense analytics dashboard. The
+            report should feel closer to a daily readiness check: one important
+            thing, a few supporting vitals, and suggested improvements that can
+            be accepted or ignored.
+          </p>
+
+          <h2>The goal is better collaboration</h2>
+          <p>
+            The best recommendations help both sides. The agent gets clearer
+            project memory and validation paths. The user spends less time
+            repeating instructions. The next report checks whether the change
+            actually helped.
+          </p>
+        </div>
+      </div>
+    </article>
+  </main>
+  <Footer />
+</SiteLayout>

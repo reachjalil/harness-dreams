@@ -1,0 +1,122 @@
+---
+import CTA from "../components/CTA.astro";
+import Footer from "../components/Footer.astro";
+import Nav from "../components/Nav.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
+
+const title = "Dream Cycle — Harness Dreams";
+const description =
+  "Follow the Harness Dreams cycle from session replay to vitals, REM pattern-finding, suggested improvements, and morning review.";
+
+const stages = [
+  {
+    label: "Deep sleep",
+    title: "Replay the day",
+    text: "Harness Dreams collects session transcripts, tool calls, corrections, accepted changes, and repo context without asking you to tag anything manually.",
+  },
+  {
+    label: "Vitals",
+    title: "Score the harness",
+    text: "Tokens per accepted change, cost, re-ask rate, cache hits, and tool success are compared against your recent baseline.",
+  },
+  {
+    label: "REM",
+    title: "Find the pattern",
+    text: "The engine looks for repeated friction, new wins, repo-specific misses, and behaviors worth turning into durable guidance.",
+  },
+  {
+    label: "Improve",
+    title: "Draft the next move",
+    text: "Findings become small, testable improvements: memory updates, AGENTS.md hints, workflow nudges, or experiments.",
+  },
+  {
+    label: "Review",
+    title: "Wake with one useful thing",
+    text: "The morning report starts with the highest-signal insight and lets you accept, snooze, or track the recommendation.",
+  },
+];
+
+const actions = [
+  "Pause or resume a running dream from the menu bar.",
+  "Open the latest report when a morning notification lands.",
+  "Accept a suggested improvement when the evidence is strong.",
+  "Snooze low-confidence ideas without losing the underlying trend.",
+];
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <section class="page-hero cycle-page">
+      <div class="container page-hero-grid">
+        <div>
+          <span class="eyebrow">Dream cycle</span>
+          <h1>A calm loop for making your harness better overnight.</h1>
+          <p class="lead">
+            The app treats agent work like a recovery cycle: observe what
+            happened, score the health of the workflow, find the signal, and
+            wake you with one useful next action.
+          </p>
+        </div>
+
+        <figure class="page-visual">
+          <img
+            src="/story-watch-sf.png"
+            alt="A woman developer walking in downtown San Francisco and checking her watch as the harness cycle completes."
+            loading="eager"
+            decoding="async"
+          />
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container split-layout">
+        <div class="sticky-copy reveal">
+          <span class="eyebrow">Like a health app for agents</span>
+          <h2 class="h2">A readable state, not a wall of telemetry.</h2>
+          <p class="lead">
+            The interface borrows the calm cadence of modern wellness apps:
+            a single headline, clear readiness cues, longitudinal vitals, and
+            gentle guidance instead of dashboard noise.
+          </p>
+        </div>
+
+        <div class="timeline-stack">
+          {
+            stages.map((stage, i) => (
+              <article class="timeline-card reveal" data-delay={String((i % 3) + 1)}>
+                <span class="timeline-index">{String(i + 1).padStart(2, "0")}</span>
+                <div>
+                  <span class="mono">{stage.label}</span>
+                  <h3>{stage.title}</h3>
+                  <p>{stage.text}</p>
+                </div>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="section night-band">
+      <div class="container">
+        <div class="section-narrow reveal">
+          <span class="eyebrow">Interactive progress</span>
+          <h2 class="h2">The cycle shows what is happening while it runs.</h2>
+          <p class="lead">
+            During a dream, progress is not a spinner. You can see the active
+            phase, pause the run, and understand whether the engine is replaying
+            sessions, computing vitals, finding patterns, or drafting actions.
+          </p>
+        </div>
+        <div class="action-grid">
+          {actions.map((action) => <div class="action-tile">{action}</div>)}
+        </div>
+      </div>
+    </section>
+
+    <CTA />
+  </main>
+  <Footer />
+</SiteLayout>

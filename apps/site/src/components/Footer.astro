@@ -1,14 +1,14 @@
 ---
-import BrandMark from "./BrandMark.astro";
 const repoUrl = "https://github.com/reachjalil/harness-dreams";
 const year = new Date().getFullYear();
 const nav = [
-  { href: "#how", label: "How it works" },
-  { href: "#features", label: "Features" },
-  { href: "#experiments", label: "Experiments" },
-  { href: "#privacy", label: "Privacy" },
-  { href: "#faq", label: "FAQ" },
-  { href: "#waitlist", label: "Waitlist" },
+  { href: "/start/", label: "Start locally" },
+  { href: "/cycle/", label: "Dream cycle" },
+  { href: "/case-studies/", label: "Case studies" },
+  { href: "/docs/", label: "Docs" },
+  { href: "/blog/", label: "Blog" },
+  { href: "/#privacy", label: "Privacy" },
+  { href: "/#waitlist", label: "Waitlist" },
 ];
 ---
 
@@ -16,7 +16,9 @@ const nav = [
   <div class="container footer-inner">
     <div class="f-brand">
       <div class="f-id">
-        <span class="f-logo" aria-hidden="true"><BrandMark size={22} /></span>
+        <span class="f-logo" aria-hidden="true"
+          ><img src="/logo.png" alt="" width="32" height="32" /></span
+        >
         <span class="f-name">Harness Dreams</span>
       </div>
       <p class="f-tag">Quiet intelligence, working while you rest.</p>
@@ -63,14 +65,21 @@ const nav = [
     width: 32px;
     height: 32px;
     border-radius: 9px;
+    overflow: hidden;
     background: var(--surface);
     border: 1px solid var(--line);
+  }
+  .f-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .f-name {
     font-family: var(--font-display);
     font-weight: 500;
     font-size: 1.12rem;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     color: var(--ink);
   }
   .f-tag {
