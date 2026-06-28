@@ -5541,6 +5541,34 @@ body {
   background: var(--ink-750);
   border-color: var(--border);
 }
+.chat-new-session-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 5px 11px;
+  font-size: var(--t-label);
+  font-family: var(--font);
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color var(--dur-1),
+    background var(--dur-1),
+    border-color var(--dur-1);
+}
+.chat-new-session-btn svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.chat-new-session-btn:hover {
+  color: var(--text);
+  background: var(--ink-750);
+  border-color: var(--border);
+}
 
 /* Text chat inner wrapper (fills remaining space) */
 .chat-text-inner {
@@ -5605,6 +5633,37 @@ body {
 .chat-suggestion-sub {
   font-size: var(--t-label);
   color: var(--muted);
+}
+
+/* Reply suggestion chips — shown after each assistant response */
+.chat-reply-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-6) var(--s-4);
+  max-width: 680px;
+  align-self: center;
+  width: 100%;
+  padding-left: calc(var(--s-6) + 28px + var(--s-3));
+}
+.chat-reply-chip {
+  font-size: var(--t-label);
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 4px var(--s-3);
+  cursor: pointer;
+  transition:
+    color var(--dur-1),
+    border-color var(--dur-1),
+    background var(--dur-1);
+  white-space: nowrap;
+}
+.chat-reply-chip:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--ink-800);
 }
 
 /* Message rows */
