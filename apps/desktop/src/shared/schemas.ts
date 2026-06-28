@@ -13,6 +13,7 @@ const TimeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 export const AppConfigSchema = z.object({
   onboarded: z.boolean(),
+  showOnboardingOnLaunch: z.boolean(),
   privacyMode: PrivacyModeSchema,
   schedule: z.object({
     mode: ScheduleModeSchema,
@@ -33,6 +34,7 @@ export const AppConfigSchema = z.object({
 export const ConfigPatchSchema = z
   .object({
     onboarded: z.boolean(),
+    showOnboardingOnLaunch: z.boolean(),
     privacyMode: PrivacyModeSchema,
     schedule: z
       .object({

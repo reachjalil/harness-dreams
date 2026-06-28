@@ -1,20 +1,20 @@
 ---
-import BrandMark from "./BrandMark.astro";
 const repoUrl = "https://github.com/reachjalil/harness-dreams";
 const links = [
-  { href: "#how", label: "How it works" },
-  { href: "#features", label: "Features" },
-  { href: "#experiments", label: "Experiments" },
-  { href: "#privacy", label: "Privacy" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/start/", label: "Start" },
+  { href: "/cycle/", label: "Cycle" },
+  { href: "/case-studies/", label: "Case studies" },
+  { href: "/docs/", label: "Docs" },
+  { href: "/blog/", label: "Blog" },
+  { href: "/#privacy", label: "Privacy" },
 ];
 ---
 
 <header class="nav">
   <div class="container nav-inner">
-    <a class="brand" href="#top" aria-label="Harness Dreams home">
+    <a class="brand" href="/" aria-label="Harness Dreams home">
       <span class="logo" aria-hidden="true">
-        <BrandMark size={22} />
+        <img src="/logo.png" alt="" width="34" height="34" />
       </span>
       <span class="brand-name">Harness Dreams</span>
     </a>
@@ -27,7 +27,7 @@ const links = [
       <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer noopener"
         >GitHub</a
       >
-      <a class="btn btn-primary nav-btn" href="#waitlist">Join the waitlist</a>
+      <a class="btn btn-primary nav-btn" href="/start/">Start locally</a>
     </div>
   </div>
 </header>
@@ -37,9 +37,9 @@ const links = [
     position: sticky;
     top: 0;
     z-index: 50;
-    border-bottom: 1px solid var(--line);
-    backdrop-filter: blur(12px);
-    background: rgba(247, 246, 242, 0.72);
+    border-bottom: 1px solid rgba(13, 27, 42, 0.08);
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.82);
   }
   .nav-inner {
     height: 64px;
@@ -53,18 +53,25 @@ const links = [
     gap: 0.6rem;
     color: var(--ink);
     font-family: var(--font-display);
-    font-weight: 500;
+    font-weight: 800;
     font-size: 1.12rem;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
   .logo {
     display: grid;
     place-items: center;
     width: 34px;
     height: 34px;
-    border-radius: 10px;
+    border-radius: 999px;
+    overflow: hidden;
     background: var(--surface);
     border: 1px solid var(--line);
+  }
+  .logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .nav-links {
     display: none;
@@ -95,8 +102,11 @@ const links = [
     color: var(--ink);
   }
   .nav-btn {
-    padding: 0.5rem 0.95rem;
+    padding: 0.52rem 1rem;
     font-size: 0.9rem;
+    background: var(--night);
+    color: #fff;
+    box-shadow: none;
   }
 
   @media (min-width: 880px) {

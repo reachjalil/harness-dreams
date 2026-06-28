@@ -1,0 +1,73 @@
+---
+import Footer from "../../components/Footer.astro";
+import Nav from "../../components/Nav.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+
+const title = "Blog — Harness Dreams";
+const description =
+  "Essays about harness health, local-first AI telemetry, overnight reflection, and making coding agents improve through habit.";
+
+const posts = [
+  {
+    title: "Why AI coding agents need a health app",
+    href: "/blog/harness-health-app/",
+    date: "Product note",
+    text: "A coding agent can be fast and still repeat the same mistake. Harness health is about measuring the loop, not judging one response.",
+  },
+  {
+    title: "The one-big-thing rule for morning reports",
+    href: "/blog/",
+    date: "Design note",
+    text: "The report should start with the most useful signal and let everything else stay secondary.",
+  },
+  {
+    title: "Local-first telemetry for agent workflows",
+    href: "/blog/",
+    date: "Architecture note",
+    text: "Session data is sensitive. The default posture should be local, inspectable, and useful before any cloud analysis exists.",
+  },
+];
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <section class="page-hero">
+      <div class="container page-hero-grid">
+        <div>
+          <span class="eyebrow">Blog</span>
+          <h1>Notes from the harness health lab.</h1>
+          <p class="lead">
+            Short essays on the product idea behind Harness Dreams: calmer
+            agent telemetry, better morning summaries, and workflows that
+            improve through reflection.
+          </p>
+        </div>
+        <figure class="page-visual">
+          <img
+            src="/story-mobile-review.png"
+            alt="A developer walking through a bright San Francisco office lobby while reviewing a morning harness health report on a phone."
+            loading="eager"
+            decoding="async"
+          />
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container resource-grid">
+        {
+          posts.map((post, i) => (
+            <a class="resource-card reveal" data-delay={String((i % 3) + 1)} href={post.href}>
+              <span class="mono">{post.date}</span>
+              <h2>{post.title}</h2>
+              <p>{post.text}</p>
+              <small>Read article →</small>
+            </a>
+          ))
+        }
+      </div>
+    </section>
+  </main>
+  <Footer />
+</SiteLayout>

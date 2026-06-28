@@ -1,151 +1,609 @@
 ---
-import DreamReport from "./DreamReport.astro";
 ---
 
-<section class="hero" id="top">
-  <div class="orbits" aria-hidden="true">
-    <svg viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
-      <g fill="none" stroke="var(--dusk)" stroke-opacity="0.10">
-        <ellipse cx="880" cy="300" rx="520" ry="180" transform="rotate(-16 880 300)"></ellipse>
-        <ellipse cx="880" cy="300" rx="360" ry="120" transform="rotate(-16 880 300)"></ellipse>
-      </g>
-      <g fill="var(--teal-deep)" fill-opacity="0.5">
-        <circle cx="1290" cy="190" r="4"></circle>
-        <circle cx="470" cy="430" r="3"></circle>
-      </g>
-    </svg>
+<section class="hero splash-hero" id="top">
+  <div class="splash-motion" aria-hidden="true">
+    <span class="splash-shape shape-a"></span>
+    <span class="splash-shape shape-b"></span>
+    <span class="splash-shape shape-c"></span>
   </div>
 
-  <div class="container hero-inner">
-    <div class="hero-copy">
-      <span class="eyebrow reveal">
-        <span class="dot" aria-hidden="true"></span> Your Harness Health App
+  <div class="splash-content">
+    <div class="splash-icon-cycle" aria-hidden="true">
+      <!-- dream — Harness Dreams mark -->
+      <span class="splash-icon icon-logo">
+        <img src="/logo-white.png" alt="" loading="eager" decoding="async" />
       </span>
 
-      <h1 class="reveal" data-delay="1">
-        Your coding harness<br />
-        gets better <span class="grad">overnight</span>.
-      </h1>
+      <span class="splash-icon icon-review">
+        <img src="/splash-icons/review.png" alt="" loading="eager" decoding="async" />
+      </span>
 
-      <p class="tagline reveal" data-delay="1">
-        Quiet intelligence, working while you rest.
-      </p>
+      <span class="splash-icon icon-connect">
+        <img src="/splash-icons/connect.png" alt="" loading="eager" decoding="async" />
+      </span>
 
-      <p class="lead reveal" data-delay="2">
-        Harness Dreams is a health app for your AI coding agents. While you
-        rest, it reviews the day, finds what worked and what didn't, and wakes
-        you with a report and experiments to make tomorrow sharper — fewer
-        tokens, less back-and-forth, fewer repeated mistakes.
-      </p>
+      <span class="splash-icon icon-adapt">
+        <img src="/splash-icons/adapt.png" alt="" loading="eager" decoding="async" />
+      </span>
 
-      <div class="hero-cta reveal" data-delay="3">
-        <a class="btn btn-primary" href="#waitlist">Join the waitlist</a>
-        <a class="btn" href="#how">See how it works →</a>
-      </div>
-
-      <ul class="trust reveal" data-delay="3">
-        <li>Local-first — your code stays on your machine</li>
-        <li>Built on your real session telemetry</li>
-        <li>Lives in your macOS menu bar</li>
-      </ul>
+      <span class="splash-icon icon-improve">
+        <img src="/splash-icons/improve.png" alt="" loading="eager" decoding="async" />
+      </span>
     </div>
 
-    <div class="hero-visual reveal" data-delay="2">
-      <div class="glow" aria-hidden="true"></div>
-      <DreamReport />
+    <p class="splash-product">Harness Dreams</p>
+    <h1>What should your harness do when it goes to sleep?</h1>
+    <p
+      class="splash-answer"
+      aria-label="It should dream, review, connect, adapt, and improve."
+    >
+      <span aria-hidden="true">It should&nbsp;</span>
+      <span class="answer-morph" aria-hidden="true">
+        <span class="answer-sizer">improve.</span>
+        <span class="answer-word aw-1">dream.</span>
+        <span class="answer-word aw-2">review.</span>
+        <span class="answer-word aw-3">connect.</span>
+        <span class="answer-word aw-4">adapt.</span>
+        <span class="answer-word aw-5">improve.</span>
+      </span>
+    </p>
+    <p class="splash-lede">
+      A health app for the coding harness you work inside. While you're away it
+      reviews the day's sessions, finds what to fix, and wakes you with a short,
+      reviewable list of changes for tomorrow.
+    </p>
+
+    <div class="hero-cta">
+      <a class="btn btn-primary hero-primary" href="/start/">Start locally</a>
+      <a class="btn hero-secondary" href="#insights">Keep reading</a>
     </div>
   </div>
+
+  <a class="scroll-cue" href="#insights" aria-label="Scroll to more insights">
+    <span></span>
+  </a>
 </section>
 
 <style>
   .hero {
     position: relative;
-    padding-block: clamp(3rem, 8vw, 6rem) clamp(3.5rem, 9vw, 7rem);
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
     overflow: hidden;
+    isolation: isolate;
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.05), transparent 42%),
+      linear-gradient(150deg, #084c9a 0%, #0c82c2 100%);
+    color: #fff;
+    padding: clamp(4.5rem, 8vw, 7rem) clamp(1.25rem, 4vw, 2rem);
   }
-  .orbits {
+
+  .hero::before,
+  .hero::after {
+    content: "";
     position: absolute;
     inset: 0;
-    pointer-events: none;
-  }
-  .orbits svg {
-    width: 100%;
-    height: 100%;
-    mask-image: radial-gradient(80% 70% at 70% 30%, #000, transparent 85%);
-  }
-  .hero-inner {
-    position: relative;
-    display: grid;
-    gap: clamp(2.5rem, 6vw, 4rem);
-    align-items: center;
-  }
-  .hero-copy {
-    display: grid;
-    gap: 1.1rem;
-    justify-items: start;
-  }
-  h1 {
-    font-size: clamp(2.7rem, 7vw, 4.6rem);
-    font-weight: 460;
-    letter-spacing: -0.02em;
-    line-height: 1.03;
-  }
-  .tagline {
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: clamp(1.15rem, 2.6vw, 1.4rem);
-    color: var(--slate);
-    margin-top: -0.3rem;
-  }
-  .hero-cta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.8rem;
-    margin-top: 0.5rem;
-  }
-  .trust {
-    list-style: none;
-    margin: 0.6rem 0 0;
-    padding: 0;
-    display: grid;
-    gap: 0.5rem;
-    color: var(--muted);
-    font-size: 0.92rem;
-  }
-  .trust li {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-  }
-  .trust li::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--teal-deep);
-    flex: none;
-  }
-  .hero-visual {
-    position: relative;
-    display: flex;
-    justify-content: center;
-  }
-  .glow {
-    position: absolute;
-    inset: -14% -8%;
-    background: radial-gradient(
-      58% 58% at 52% 38%,
-      rgba(167, 139, 250, 0.28),
-      rgba(74, 108, 247, 0.12) 45%,
-      transparent 72%
-    );
-    filter: blur(26px);
+    z-index: 0;
+    opacity: 0;
     pointer-events: none;
   }
 
-  @media (min-width: 940px) {
-    .hero-inner {
-      grid-template-columns: 1.05fr 0.95fr;
+  .hero::before {
+    background: linear-gradient(150deg, #075f57 0%, #169f91 100%);
+    animation: gradient-teal 20s ease-in-out infinite;
+  }
+
+  .hero::after {
+    background: linear-gradient(150deg, #302e87 0%, #655fd0 100%);
+    animation: gradient-violet 20s ease-in-out infinite;
+  }
+
+  .splash-motion {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .splash-shape {
+    position: absolute;
+    display: block;
+    left: -18vw;
+    width: 136vw;
+    height: clamp(15rem, 31vw, 28rem);
+    opacity: 0.52;
+    transform-origin: 50% 50%;
+    filter: blur(7px);
+    mix-blend-mode: screen;
+    will-change: transform, opacity, border-radius;
+  }
+
+  .shape-a {
+    top: 4vh;
+    border-radius: 43% 57% 61% 39% / 58% 42% 58% 42%;
+    background:
+      radial-gradient(ellipse at 18% 50%, rgba(255, 255, 255, 0.24), transparent 38%),
+      radial-gradient(ellipse at 62% 45%, rgba(169, 224, 255, 0.2), transparent 42%),
+      linear-gradient(92deg, transparent 0%, rgba(255, 255, 255, 0.15) 22%, rgba(255, 255, 255, 0.06) 68%, transparent 100%);
+    animation: wave-layer-a 15s ease-in-out infinite;
+  }
+
+  .shape-b {
+    top: 25vh;
+    border-radius: 55% 45% 48% 52% / 43% 57% 43% 57%;
+    background:
+      radial-gradient(ellipse at 30% 48%, rgba(196, 179, 255, 0.2), transparent 40%),
+      radial-gradient(ellipse at 76% 52%, rgba(255, 255, 255, 0.17), transparent 38%),
+      linear-gradient(96deg, transparent 0%, rgba(255, 255, 255, 0.11) 20%, rgba(169, 224, 255, 0.12) 58%, transparent 100%);
+    opacity: 0.46;
+    animation: wave-layer-b 19s ease-in-out infinite;
+  }
+
+  .shape-c {
+    top: 47vh;
+    border-radius: 49% 51% 54% 46% / 65% 35% 65% 35%;
+    background:
+      radial-gradient(ellipse at 24% 54%, rgba(255, 255, 255, 0.18), transparent 36%),
+      radial-gradient(ellipse at 70% 46%, rgba(157, 180, 255, 0.18), transparent 40%),
+      linear-gradient(88deg, transparent 0%, rgba(255, 255, 255, 0.1) 28%, rgba(255, 255, 255, 0.15) 58%, transparent 100%);
+    opacity: 0.44;
+    animation: wave-layer-c 24s ease-in-out infinite;
+  }
+
+  .splash-content {
+    position: relative;
+    z-index: 2;
+    width: min(100%, 68rem);
+    display: grid;
+    justify-items: center;
+    gap: 0.85rem;
+    text-align: center;
+  }
+
+  .splash-icon-cycle {
+    position: relative;
+    width: 5.4rem;
+    height: 5.4rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .splash-icon-cycle::before,
+  .splash-icon-cycle::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .splash-icon-cycle::before {
+    inset: -0.4rem;
+    background: conic-gradient(
+      from 30deg,
+      rgba(255, 255, 255, 0.03),
+      rgba(255, 255, 255, 0.28),
+      rgba(255, 255, 255, 0.02) 34%,
+      transparent 56%,
+      rgba(255, 255, 255, 0.18) 72%,
+      rgba(255, 255, 255, 0.03)
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 0);
+    mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 0);
+    animation: icon-orbit 20s linear infinite;
+  }
+
+  .splash-icon-cycle::after {
+    inset: 0.34rem;
+    background: conic-gradient(
+      from -70deg,
+      transparent,
+      rgba(255, 255, 255, 0.18),
+      transparent 42%,
+      rgba(255, 255, 255, 0.11) 58%,
+      transparent
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 0);
+    mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 0);
+    animation: icon-orbit 28s linear infinite reverse;
+  }
+
+  .splash-icon {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    transform: translateY(14px) rotate(-10deg) scale(0.84);
+    animation: icon-cycle 20s linear infinite;
+  }
+
+  .splash-icon img {
+    width: 94%;
+    height: 94%;
+    object-fit: contain;
+  }
+
+  /* Each phase runs on a shared 20s timeline: logo first, then enhancement icons. */
+  .icon-logo {
+    animation-delay: 0s;
+  }
+  .icon-review {
+    animation-delay: 4s;
+  }
+  .icon-connect {
+    animation-delay: 8s;
+  }
+  .icon-adapt {
+    animation-delay: 12s;
+  }
+  .icon-improve {
+    animation-delay: 16s;
+  }
+
+  .splash-product {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: clamp(1rem, 1.6vw, 1.22rem);
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  h1 {
+    max-width: 20ch;
+    font-size: clamp(2.35rem, 5vw, 4.4rem);
+    font-weight: 800;
+    letter-spacing: 0;
+    line-height: 1.02;
+  }
+
+  /* The cycling answer to the headline — synced to the icon via icon-cycle */
+  .splash-answer {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    margin-top: 0.1rem;
+    font-size: clamp(1.5rem, 3.4vw, 2.7rem);
+    font-weight: 800;
+    line-height: 1.1;
+    color: #fff;
+  }
+
+  .answer-morph {
+    position: relative;
+    display: inline-block;
+    text-align: left;
+  }
+
+  .answer-sizer {
+    visibility: hidden;
+  }
+
+  .answer-word {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    color: #a9e0ff;
+    text-shadow: 0 0 26px rgba(140, 200, 255, 0.5);
+    animation: word-pop 20s linear infinite;
+  }
+
+  .aw-1 {
+    animation-delay: 0s;
+  }
+  .aw-2 {
+    animation-delay: 4s;
+  }
+  .aw-3 {
+    animation-delay: 8s;
+  }
+  .aw-4 {
+    animation-delay: 12s;
+  }
+  .aw-5 {
+    animation-delay: 16s;
+  }
+
+  .splash-lede {
+    max-width: 35rem;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: clamp(1rem, 1.35vw, 1.12rem);
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.8rem;
+    margin-top: 0.9rem;
+  }
+
+  .hero-primary {
+    background: #fff;
+    color: #0f3c91;
+    box-shadow: 0 18px 50px -28px rgba(0, 0, 0, 0.5);
+  }
+
+  .hero-secondary {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+
+  .scroll-cue {
+    position: absolute;
+    z-index: 2;
+    right: clamp(1.2rem, 3vw, 2.4rem);
+    bottom: clamp(1.2rem, 3vw, 2.4rem);
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #0f3c91;
+  }
+
+  .scroll-cue span {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .splash-icon-cycle,
+    .splash-product,
+    h1,
+    .splash-answer,
+    .splash-lede,
+    .hero-cta,
+    .scroll-cue {
+      opacity: 0;
+      animation: splash-enter 0.82s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform, opacity, filter;
+    }
+
+    .splash-icon-cycle {
+      animation-delay: 0.08s;
+    }
+
+    .splash-product {
+      animation-delay: 0.38s;
+    }
+
+    h1 {
+      animation-delay: 0.52s;
+    }
+
+    .splash-answer {
+      animation-delay: 1.04s;
+    }
+
+    .splash-lede {
+      animation-delay: 1.3s;
+    }
+
+    .hero-cta {
+      animation-delay: 1.5s;
+    }
+
+    .scroll-cue {
+      animation-delay: 1.75s;
+    }
+  }
+
+  @keyframes gradient-teal {
+    0%,
+    18% {
+      opacity: 0;
+    }
+    28%,
+    46% {
+      opacity: 1;
+    }
+    58%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes gradient-violet {
+    0%,
+    50% {
+      opacity: 0;
+    }
+    62%,
+    80% {
+      opacity: 1;
+    }
+    92%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes wave-layer-a {
+    0% {
+      opacity: 0.44;
+      transform: translate3d(-5vw, 1vh, 0) rotate(-8deg) scaleX(0.96);
+      border-radius: 43% 57% 61% 39% / 58% 42% 58% 42%;
+    }
+    35% {
+      opacity: 0.62;
+      transform: translate3d(3vw, -2vh, 0) rotate(-5deg) scaleX(1.04);
+      border-radius: 55% 45% 48% 52% / 45% 55% 45% 55%;
+    }
+    68% {
+      opacity: 0.5;
+      transform: translate3d(8vw, 2vh, 0) rotate(-10deg) scaleX(1.02);
+      border-radius: 48% 52% 57% 43% / 62% 38% 62% 38%;
+    }
+    100% {
+      opacity: 0.44;
+      transform: translate3d(-5vw, 1vh, 0) rotate(-8deg) scaleX(0.96);
+      border-radius: 43% 57% 61% 39% / 58% 42% 58% 42%;
+    }
+  }
+
+  @keyframes wave-layer-b {
+    0% {
+      opacity: 0.4;
+      transform: translate3d(6vw, -1vh, 0) rotate(7deg) scaleX(1.02);
+      border-radius: 55% 45% 48% 52% / 43% 57% 43% 57%;
+    }
+    38% {
+      opacity: 0.54;
+      transform: translate3d(-4vw, 2vh, 0) rotate(4deg) scaleX(0.96);
+      border-radius: 46% 54% 60% 40% / 58% 42% 58% 42%;
+    }
+    72% {
+      opacity: 0.44;
+      transform: translate3d(-8vw, -2vh, 0) rotate(9deg) scaleX(1.08);
+      border-radius: 60% 40% 45% 55% / 40% 60% 40% 60%;
+    }
+    100% {
+      opacity: 0.4;
+      transform: translate3d(6vw, -1vh, 0) rotate(7deg) scaleX(1.02);
+      border-radius: 55% 45% 48% 52% / 43% 57% 43% 57%;
+    }
+  }
+
+  @keyframes wave-layer-c {
+    0% {
+      opacity: 0.38;
+      transform: translate3d(-7vw, 1vh, 0) rotate(-4deg) scaleX(1.04);
+      border-radius: 49% 51% 54% 46% / 65% 35% 65% 35%;
+    }
+    32% {
+      opacity: 0.5;
+      transform: translate3d(2vw, -2vh, 0) rotate(-7deg) scaleX(0.98);
+      border-radius: 56% 44% 47% 53% / 58% 42% 58% 42%;
+    }
+    66% {
+      opacity: 0.42;
+      transform: translate3d(9vw, 2vh, 0) rotate(-2deg) scaleX(1.08);
+      border-radius: 44% 56% 59% 41% / 62% 38% 62% 38%;
+    }
+    100% {
+      opacity: 0.38;
+      transform: translate3d(-7vw, 1vh, 0) rotate(-4deg) scaleX(1.04);
+      border-radius: 49% 51% 54% 46% / 65% 35% 65% 35%;
+    }
+  }
+
+  @keyframes icon-orbit {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  @keyframes splash-enter {
+    0% {
+      opacity: 0;
+      filter: blur(8px);
+      transform: translateY(18px) scale(0.96);
+    }
+    65% {
+      opacity: 1;
+      filter: blur(0);
+    }
+    100% {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Slow logo-to-icon phase loop. The icon rotates gently as it enters so the
+     motion feels like a handoff instead of a random spinner. */
+  @keyframes icon-cycle {
+    0% {
+      opacity: 0;
+      transform: translateY(14px) rotate(-10deg) scale(0.84);
+      animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    5% {
+      opacity: 1;
+      transform: translateY(0) rotate(0deg) scale(1);
+      animation-timing-function: linear;
+    }
+    16% {
+      opacity: 1;
+      transform: translateY(0) rotate(0deg) scale(1);
+      animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.2);
+    }
+    20%,
+    100% {
+      opacity: 0;
+      transform: translateY(-12px) rotate(9deg) scale(0.9);
+    }
+  }
+
+  @keyframes word-pop {
+    0% {
+      opacity: 0;
+      transform: translateY(0.62em) scale(0.9);
+      animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    5% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      animation-timing-function: linear;
+    }
+    16% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.2);
+    }
+    20%,
+    100% {
+      opacity: 0;
+      transform: translateY(-0.5em) scale(0.96);
+    }
+  }
+
+  @media (max-width: 700px) {
+    .hero {
+      place-items: end center;
+      padding-bottom: 6rem;
+    }
+
+    h1 {
+      font-size: clamp(2.55rem, 11.6vw, 4.25rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero::before,
+    .hero::after,
+    .splash-shape,
+    .splash-icon,
+    .splash-icon-cycle,
+    .splash-icon-cycle::before,
+    .splash-icon-cycle::after,
+    .splash-product,
+    h1,
+    .splash-answer,
+    .splash-lede,
+    .hero-cta,
+    .scroll-cue,
+    .answer-word {
+      animation: none;
+    }
+
+    .splash-shape {
+      opacity: 0.18;
+      transform: none;
+    }
+
+    .splash-icon.icon-logo,
+    .answer-word.aw-1 {
+      opacity: 1;
+      transform: none;
     }
   }
 </style>

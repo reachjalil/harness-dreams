@@ -19,7 +19,7 @@
     </mask>
   </defs>
 
-  <rect width="1200" height="630" fill="#f7f6f2"/>
+  <rect width="1200" height="630" fill="#ffffff"/>
   <rect width="1200" height="630" fill="url(#wash)"/>
   <rect width="1200" height="630" fill="url(#wash2)"/>
 
@@ -32,14 +32,14 @@
       <circle cx="47" cy="18" r="3.4" fill="#3aab9c"/>
     </g>
   </g>
-  <text x="164" y="118" font-family="Fraunces, Georgia, serif" font-size="32" font-weight="500" fill="#0d1b2a">Harness Dreams</text>
+  <text x="164" y="118" font-family="-apple-system, BlinkMacSystemFont, SF Pro Display, Segoe UI, sans-serif" font-size="32" font-weight="500" fill="#0d1b2a">Harness Dreams</text>
 
   <!-- headline -->
-  <text x="80" y="318" font-family="Fraunces, Georgia, serif" font-size="76" font-weight="460" letter-spacing="-1.5" fill="#0d1b2a">Your coding harness</text>
-  <text x="80" y="404" font-family="Fraunces, Georgia, serif" font-size="76" font-weight="460" letter-spacing="-1.5"><tspan fill="#0d1b2a">gets better </tspan><tspan fill="url(#grad)">overnight.</tspan></text>
+  <text x="80" y="318" font-family="-apple-system, BlinkMacSystemFont, SF Pro Display, Segoe UI, sans-serif" font-size="76" font-weight="800" letter-spacing="0" fill="#0d1b2a">Meaningful insights.</text>
+  <text x="80" y="404" font-family="-apple-system, BlinkMacSystemFont, SF Pro Display, Segoe UI, sans-serif" font-size="76" font-weight="800" letter-spacing="0"><tspan fill="#0d1b2a">Better agents </tspan><tspan fill="url(#grad)">tomorrow.</tspan></text>
 
   <!-- tagline -->
-  <text x="82" y="470" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="30" fill="#39424e">Quiet intelligence, working while you rest.</text>
+  <text x="82" y="470" font-family="-apple-system, BlinkMacSystemFont, SF Pro Display, Segoe UI, sans-serif"  font-size="30" fill="#39424e">Daily collaboration health for coding agents.</text>
 
   <!-- rings motif -->
   <g transform="translate(980 430)">
@@ -48,7 +48,7 @@
     <circle r="64" fill="none" stroke="rgba(13,27,42,0.07)" stroke-width="14"/>
     <circle r="64" fill="none" stroke="#3aab9c" stroke-width="14" stroke-linecap="round" stroke-dasharray="402.1" stroke-dashoffset="104.5" transform="rotate(-90)"/>
     <circle r="42" fill="none" stroke="rgba(13,27,42,0.07)" stroke-width="14"/>
-    <circle r="42" fill="none" stroke="#e89a7c" stroke-width="14" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="23.8" transform="rotate(-90)"/>
+    <circle r="42" fill="none" stroke="#8aa2ff" stroke-width="14" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="23.8" transform="rotate(-90)"/>
   </g>
 
   <text x="80" y="566" font-family="ui-monospace, monospace" font-size="22" letter-spacing="3" fill="#98a1ad">HARNESSDREAMS.COM</text>

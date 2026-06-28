@@ -1,10 +1,11 @@
-import { app, Menu } from "electron";
+import { app, Menu, nativeTheme } from "electron";
 import started from "electron-squirrel-startup";
 
 import { createController, initOrchestration } from "./controller";
 import { registerIpc } from "./ipc";
+import { initReports } from "./reports";
 import { getState } from "./state";
-import { getConfig, initStore } from "./store";
+import { getConfig, initStore, setConfig } from "./store";
 import { initTray } from "./tray";
 import { setQuitting, showMain } from "./windows";
 
@@ -56,8 +57,22 @@ function bootstrap(): void {
   // No Dock icon — Harness Dreams lives only in the menu bar.
   app.dock?.hide();
 
+  // Follow the macOS system appearance. The window's "sidebar" vibrancy and the
+  // renderer's prefers-color-scheme tokens both track this in lockstep, so the
+  // whole UI flips with the user's Light/Dark setting. (Default is "system";
+  // set explicitly so the intent is documented and stable.)
+  nativeTheme.themeSource = "system";
+
   setupMenu();
   initStore();
+  initReports();
+
+  // Honor the Settings "Show setup on launch" toggle: re-arm onboarding so the
+  // welcome flow appears on this start. Consumed here in the main process (not
+  // the renderer) so toggling it in Settings never disrupts the live session.
+  if (getConfig().showOnboardingOnLaunch) {
+    setConfig({ onboarded: false });
+  }
 
   const controller = createController();
   initTray(controller, getConfig(), getState());

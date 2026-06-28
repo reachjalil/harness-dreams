@@ -4,7 +4,7 @@
 
 Vitals tell you *what* happened in numbers. **Findings** tell you *what it means*
 and *what to do about it* — in plain language, with evidence, and with a single
-clear action.
+clear suggested improvement.
 
 ## What a finding is
 
@@ -29,6 +29,10 @@ Finding
 ├── impact          # estimated size (tokens/$/time/quality)
 ├── evidence[]      # links to sessions, events, line ranges, diffs
 ├── scope           # which project(s)/harness(es)/model(s)
+├── improvement     # plain-language suggested improvement
+├── agentBenefit    # how the harness/agent should improve
+├── userBenefit     # how the user's workflow should improve
+├── reflection      # what the next report should keep checking
 ├── proposedAction  # the one recommended next step (see below)
 └── state           # new | accepted | rejected | snoozed | applied
 ```
@@ -45,7 +49,7 @@ Each finding has **one primary action** plus secondary options:
 |---|---|
 | **Accept** | Acknowledge; for wins, log + reinforce in memory; for others, proceed to the proposed action |
 | **Accept protection** *(mistakes/risks)* | Apply the proposed config/memory change — **always shown as a diff first** |
-| **Turn into experiment** | Convert an opportunity/recommendation into a tracked experiment (see `08`) |
+| **Track improvement** | Convert an uncertain recommendation into a measured improvement (see `08`) |
 | **Snooze** | Hide for N days; re-surface only if it recurs/worsens |
 | **Reject** | Dismiss; record the rejection so future dreams learn not to resurface it |
 | **Explain** | Open chat (`10`) scoped to this finding's evidence |
@@ -56,14 +60,16 @@ Rejections and snoozes are **signal**: the dream engine uses them to calibrate
 ## Proposed actions & "mistake protection"
 
 The differentiator: a finding doesn't just describe a problem, it proposes a
-*concrete, reviewable fix*. Proposed-action kinds:
+*concrete, reviewable improvement*. Each finding should make three things
+obvious: what changes for the harness/agent, what gets easier for the user, and
+what the next report should keep reflecting on. Proposed-action kinds:
 
 - **Config change** — e.g. add a line to AGENTS.md, adjust a skill description,
   toggle a setting. Rendered as a **diff** the user approves.
 - **Memory note** — e.g. record "in `agent-fleet`, tests run via `pnpm test
   --filter`." Written to the harness's memory on accept.
-- **Experiment** — when the fix is uncertain, propose testing it rather than
-  applying it (links to `08`).
+- **Tracked improvement** — when the fix is uncertain, propose measuring it
+  rather than applying it permanently (links to `08`).
 - **Behavioral nudge** — advice with no automatic change ("consider plan mode
   for multi-file edits"), optionally reinforced via memory.
 

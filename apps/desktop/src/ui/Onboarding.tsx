@@ -85,14 +85,14 @@ export default function Onboarding({
                 <span className="num">2</span>
                 <div>
                   <b>Dream.</b> Overnight, it reviews sessions, finds patterns,
-                  and grades experiments.
+                  and drafts suggested goals.
                 </div>
               </li>
               <li>
                 <span className="num">3</span>
                 <div>
-                  <b>Reflect.</b> Each morning, a health report — accept
-                  findings, run experiments.
+                  <b>Reflect.</b> Each morning, a health report — accept useful
+                  findings, track goals.
                 </div>
               </li>
             </ul>

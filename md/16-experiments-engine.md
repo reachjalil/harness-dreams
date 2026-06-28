@@ -1,16 +1,18 @@
-# 16 · Experiments Engine
+# 16 · Improvements Measurement Engine
 
 *Status: 🔴 Exploratory (the hard, novel part)*
 
 The product feature is in [08-feature-experiments.md](08-feature-experiments.md).
-This doc covers the two genuinely hard engineering problems: **how an experiment
+User-facing reports call these **suggested improvements**. This doc covers the
+two genuinely hard engineering problems behind them: **how a tracked improvement
 actually changes harness behavior** (enablement) and **how we measure its effect
-honestly** (attribution + statistics).
+honestly** (attribution + statistics). Internally, the measurement model can
+still use experiment-style treatment/control language.
 
 ## Problem 1 — Enablement: how do we change behavior?
 
-An experiment is only real if it can actually alter what the harness does. The
-levers, from lowest to highest risk:
+A tracked improvement is only real if it can actually alter what the harness
+does. The levers, from lowest to highest risk:
 
 | Mechanism | How | Risk | MVP? |
 |---|---|---|:--:|
@@ -22,10 +24,10 @@ levers, from lowest to highest risk:
 
 **MVP stance:** support **instruction injection** + **manual nudge**. These are
 text-only, fully reversible, and require no privileged execution. Effort/model
-experiments that can't be set programmatically fall back to *manual nudge*: the
+improvements that can't be set programmatically fall back to *manual nudge*: the
 app reminds the user and measures whether they complied and what resulted.
 
-**Scoping an intervention.** An experiment targets a slice: project(s),
+**Scoping an intervention.** A tracked improvement targets a slice: project(s),
 task-type, harness, file globs. Instruction injection writes a clearly-marked,
 revertible block, e.g.:
 
@@ -45,11 +47,11 @@ To measure an effect we must label each subsequent session/task as **treated**
 (intervention in scope) or **control** (out of scope), recorded as
 `ExperimentObservation` rows ([12-data-model.md](12-data-model.md)).
 
-Two designs, used per experiment:
+Two designs, used per tracked improvement:
 
 1. **Pre/Post** (simplest): compare the metric before vs after `enabledAt` within
-   the experiment's scope. Confounded by time trends — use when a clean control
-   isn't available.
+   the improvement's scope. Confounded by time trends — use when a clean
+   control isn't available.
 2. **Treated/Control by scope** (better): the intervention applies only to a
    slice (e.g. UI tasks); non-UI tasks act as a concurrent control for
    general drift. Requires the **task-type classifier**.
@@ -59,7 +61,7 @@ explainable.
 
 ## Problem 3 — Measurement: is the effect real?
 
-Personal experiments have **tiny samples** (5–20 sessions), so naive p-values
+Personal improvements have **tiny samples** (5–20 sessions), so naive p-values
 mislead. Approach:
 
 - **Effect size first.** Report the magnitude ("−22% follow-ups") and the sample
@@ -76,14 +78,14 @@ mislead. Approach:
 - **Pre-registration.** Success metrics + duration are fixed at enable-time so we
   don't cherry-pick after seeing the data.
 
-> Honesty rule: most personal experiments will be **inconclusive**, and saying so
-> is a feature. Manufacturing false certainty would destroy trust — the whole
+> Honesty rule: many personal improvements will be **inconclusive**, and saying
+> so is a feature. Manufacturing false certainty would destroy trust — the whole
 > value prop is evidence-based.
 
 ## Grading flow
 
 ```
- experiment running ──(duration reached or enough obs)──► grade in next dream
+ improvement measuring ──(duration reached or enough obs)──► reflect in next dream
    │                                                          │
    │   compute treated vs control deltas on successMetrics    │
    │   + guardrail check + uncertainty interval               ▼
@@ -91,24 +93,24 @@ mislead. Approach:
 ```
 
 The verdict appears as a Finding (`07`) with **Adopt** (make permanent — e.g.
-keep the AGENTS.md block, remove the experiment markers) or **Revert** (strip the
+keep the AGENTS.md block, remove the tracking markers) or **Revert** (strip the
 block) actions.
 
 ## Lifecycle hooks & cleanup
 
-- On **adopt**: convert the marked experiment block into a permanent instruction
-  (drop the markers), archive the experiment with its result.
+- On **adopt**: convert the marked improvement block into a permanent instruction
+  (drop the markers), archive the improvement with its result.
 - On **revert**: remove the marked block, restore backup, archive as rejected.
 - On **guardrail trip** mid-run: flag early in the next dream, recommend stopping.
-- **Concurrency cap**: ≤2–3 active experiments to keep attribution clean and the
+- **Concurrency cap**: ≤2–3 active improvements to keep attribution clean and the
   user un-overwhelmed.
 
 ## Templates → instances
 
 The seed library (`08`) defines **templates** (hypothesis + metric + enablement
 shape). The engine **instantiates** a template against the user's data when the
-data supports the hypothesis (e.g. only propose the "test-runner hint" experiment
-for repos where re-asks about running tests actually occurred). This keeps
+data supports the hypothesis (e.g. only propose the "test-runner hint"
+improvement for repos where re-asks about running tests actually occurred). This keeps
 proposals personal and earned, not generic tips.
 
 ## Why this is exploratory

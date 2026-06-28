@@ -31,14 +31,20 @@ const api = {
     get: (): Promise<RuntimeState> => ipcRenderer.invoke(Invoke.StateGet),
   },
   report: {
-    get: (): Promise<DreamReport> => ipcRenderer.invoke(Invoke.ReportGet),
+    get: (): Promise<DreamReport | null> =>
+      ipcRenderer.invoke(Invoke.ReportGet),
+    list: (): Promise<DreamReport[]> => ipcRenderer.invoke(Invoke.ReportList),
   },
   actions: {
     dreamNow: (): Promise<RuntimeState> => ipcRenderer.invoke(Invoke.DreamNow),
+    pauseDream: (): Promise<RuntimeState> =>
+      ipcRenderer.invoke(Invoke.PauseDream),
+    resumeDream: (): Promise<RuntimeState> =>
+      ipcRenderer.invoke(Invoke.ResumeDream),
     completeOnboarding: (): Promise<AppConfig> =>
       ipcRenderer.invoke(Invoke.CompleteOnboarding),
-    markReviewed: (): Promise<RuntimeState> =>
-      ipcRenderer.invoke(Invoke.MarkReviewed),
+    markReviewed: (id?: string): Promise<RuntimeState> =>
+      ipcRenderer.invoke(Invoke.MarkReviewed, id),
     setLaunchAtLogin: (value: boolean): Promise<AppConfig> =>
       ipcRenderer.invoke(Invoke.SetLaunchAtLogin, value),
     testNotification: (): Promise<void> =>
@@ -55,6 +61,10 @@ const api = {
       subscribe(Send.BroadcastConfig, cb),
     onState: (cb: (state: RuntimeState) => void): Unsubscribe =>
       subscribe(Send.BroadcastState, cb),
+    onReports: (cb: (reports: DreamReport[]) => void): Unsubscribe =>
+      subscribe(Send.BroadcastReports, cb),
+    onSelectReport: (cb: (id: string) => void): Unsubscribe =>
+      subscribe(Send.SelectReport, cb),
   },
 };
 

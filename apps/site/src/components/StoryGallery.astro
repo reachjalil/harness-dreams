@@ -1,0 +1,123 @@
+---
+const stories = [
+  {
+    kind: "person",
+    src: "/story-action-morning.png",
+    label: "Morning check",
+    title: "Start with the signal.",
+    text: "Open the day with the changes worth your attention before the first edit.",
+  },
+  {
+    kind: "laptop",
+    src: "/story-daily-report.png",
+    label: "Daily report",
+    title: "Review the report before you open the editor.",
+    text: "See which prompts, tool calls, and validations shaped the recommendation.",
+  },
+  {
+    kind: "rings",
+    src: "/story-agent-health.png",
+    label: "Agent health",
+    title: "Keep the three health scores separate.",
+    text: "Efficiency, effectiveness, and alignment stay visible, so one strong score cannot hide a weak spot.",
+  },
+  {
+    kind: "pulse",
+    src: "/story-overnight-report.png",
+    label: "Overnight review",
+    title: "Let the workday close cleanly.",
+    text: "Harness Dreams prepares the next report without changing your setup behind your back.",
+  },
+];
+---
+
+<section class="apple-story story-gallery" id="developer-day">
+  <div class="apple-copy reveal">
+    <span class="health-glyph" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </span>
+    <h2>Stay close to your agent health.</h2>
+    <p>
+      Your prompts, tool calls, edits, and corrections already tell a story.
+      Harness Dreams turns that trail into
+      <strong>a short review you can act on before the next session</strong>.
+    </p>
+  </div>
+
+  <div class="story-carousel" data-story-carousel>
+    <div
+      class="embla-viewport"
+      data-carousel-viewport
+      aria-label="Developer day stories"
+    >
+      <div class="embla-container health-slider">
+        {
+          stories.map((story, i) => (
+            <article
+              class={`embla-slide health-slide health-slide-${story.kind} reveal`}
+              data-delay={String((i % 3) + 1)}
+            >
+              <div class="health-card">
+                <div class="health-image">
+                  <img src={story.src} alt="" loading="lazy" decoding="async" />
+                </div>
+              </div>
+              <div class="health-caption">
+                <span>{story.label}</span>
+                <h3>{story.title}</h3>
+                <p>{story.text}</p>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="carousel-controls" aria-label="Carousel controls">
+      <button type="button" class="carousel-button" data-carousel-prev aria-label="Previous story">
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M12.5 4.5 7 10l5.5 5.5"></path>
+        </svg>
+      </button>
+      <button type="button" class="carousel-button" data-carousel-next aria-label="Next story">
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M7.5 4.5 13 10l-5.5 5.5"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<script>
+  import EmblaCarousel from "embla-carousel";
+
+  for (const root of document.querySelectorAll("[data-story-carousel]")) {
+    const viewport = root.querySelector("[data-carousel-viewport]");
+    const previous = root.querySelector("[data-carousel-prev]");
+    const next = root.querySelector("[data-carousel-next]");
+
+    if (!(viewport instanceof HTMLElement)) continue;
+    if (!(previous instanceof HTMLButtonElement)) continue;
+    if (!(next instanceof HTMLButtonElement)) continue;
+
+    const embla = EmblaCarousel(viewport, {
+      align: "start",
+      containScroll: "trimSnaps",
+      dragFree: true,
+      skipSnaps: true,
+    });
+
+    const updateButtons = () => {
+      previous.disabled = !embla.canScrollPrev();
+      next.disabled = !embla.canScrollNext();
+    };
+
+    previous.addEventListener("click", () => embla.scrollPrev());
+    next.addEventListener("click", () => embla.scrollNext());
+    embla.on("select", updateButtons);
+    embla.on("reInit", updateButtons);
+    updateButtons();
+  }
+</script>

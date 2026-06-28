@@ -86,3 +86,22 @@ const DREAM_FRAMES: NativeImage[] = [1, 0.82, 0.6, 0.45, 0.6, 0.82].map((a) =>
 export function getDreamingFrame(i: number): NativeImage {
   return DREAM_FRAMES[i % DREAM_FRAMES.length];
 }
+
+/**
+ * A waxing moon whose lit area grows with dream progress (thin crescent → full
+ * disc): the menu-bar icon literally fills as the session runs. Paused dims it.
+ */
+function moonAt(p: number): AlphaFn {
+  const offset = R * (0.52 + 1.7 * clamp01(p));
+  return (x, y) =>
+    clamp01(
+      disc(x, y, C, C, R) - disc(x, y, C + offset, C - R * 0.16, R * 0.9)
+    );
+}
+
+export function moonForProgress(
+  progress: number,
+  paused: boolean
+): NativeImage {
+  return build(moonAt(progress), paused ? 0.45 : 1);
+}

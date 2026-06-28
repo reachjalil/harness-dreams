@@ -74,7 +74,7 @@
   /* neuromodulator matrix */
   .nm{display:grid;grid-template-columns:140px repeat(3,1fr);gap:10px;margin-top:8px;align-items:center;}
   .nm .h{font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:center;}
-  .nm .rl{font-family:"IBM Plex Sans";font-size:14px;color:var(--moon);}
+  .nm .rl{font-family:"IBM Plex Sans",sans-serif;font-size:14px;color:var(--moon);}
   .nm .rl small{display:block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--faint);letter-spacing:.02em;}
   .cell{height:46px;border-radius:10px;border:1px solid var(--line);position:relative;display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--moon);overflow:hidden;}
   .cell .fill{position:absolute;inset:0;opacity:.9;}
@@ -97,7 +97,7 @@
   footer{margin-top:74px;padding-top:22px;border-top:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--faint);letter-spacing:.04em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
 
   @media (max-width:740px){.wrap{padding:48px 20px 72px;}.nm{grid-template-columns:100px repeat(3,1fr);}.duo{grid-template-columns:1fr;}}
-  @media (prefers-reduced-motion:reduce){.star{animation:none;}.pulse{animation:none !important;}.wave{stroke-dasharray:none !important;stroke-dashoffset:0 !important;animation:none !important;}}
+  @media (prefers-reduced-motion:reduce){.star{animation:none;}.pulse{animation:none;}.wave{stroke-dasharray:none;stroke-dashoffset:0;animation:none;}}
 </style>
 </head>
 <body>
@@ -258,29 +258,29 @@
 
 <script>
   // starfield
-  (function(){
-    var sky=document.getElementById('stars');
-    var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    for(var i=0;i<64;i++){
-      var s=document.createElement('div');s.className='star';
-      var sz=(Math.random()<0.22?2.4:1.4);
-      s.style.width=s.style.height=sz+'px';
-      s.style.left=(Math.random()*100)+'%';s.style.top=(Math.random()*72)+'%';
+  (()=> {
+    const sky=document.getElementById('stars');
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    for(let i=0;i<64;i++){
+      const s=document.createElement('div');s.className='star';
+      const sz=(Math.random()<0.22?2.4:1.4);
+      s.style.width=s.style.height=`${sz}px`;
+      s.style.left=`${Math.random()*100}%`;s.style.top=`${Math.random()*72}%`;
       s.style.opacity=(0.25+Math.random()*0.4).toFixed(2);
-      if(!reduce)s.style.animationDelay=(Math.random()*4)+'s';
+      if(!reduce)s.style.animationDelay=`${Math.random()*4}s`;
       sky.appendChild(s);
     }
   })();
 
   // animate the replay pulse along the hippocampus->cortex edge
-  (function(){
-    var pulse=document.getElementById('pulse');
+  (()=> {
+    const pulse=document.getElementById('pulse');
     if(!pulse)return;
-    var len=pulse.getTotalLength();
-    pulse.style.strokeDasharray='14 '+(len);
-    var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const len=pulse.getTotalLength();
+    pulse.style.strokeDasharray=`14 ${len}`;
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(reduce){pulse.style.strokeDashoffset=0;return;}
-    var t=0;
+    let t=0;
     function step(){
       t=(t+ len/150 )% (len+40);
       pulse.style.strokeDashoffset=(len - t);
@@ -290,27 +290,28 @@
   })();
 
   // generate the nested-oscillation waveforms
-  (function(){
-    var x0=120, x1=900, span=x1-x0;
+  (()=> {
+    const x0=120, x1=900, span=x1-x0;
     function buildPath(baseline, amp, fn){
-      var d='', N=1400;
-      for(var i=0;i<=N;i++){
-        var t=i/N;
-        var x=x0+t*span;
-        var y=baseline - amp*fn(t);
-        d+=(i===0?'M':'L')+x.toFixed(2)+','+y.toFixed(2)+' ';
+      let d='';
+      const N=1400;
+      for(let i=0;i<=N;i++){
+        const t=i/N;
+        const x=x0+t*span;
+        const y=baseline - amp*fn(t);
+        d+=`${i===0?'M':'L'}${x.toFixed(2)},${y.toFixed(2)} `;
       }
       return d;
     }
-    var tc=0.62;                 // center of the up-state (where spindle/ripple nest)
+    const tc=0.62;                 // center of the up-state (where spindle/ripple nest)
     function gauss(t,c,s){return Math.exp(-((t-c)*(t-c))/(2*s*s));}
 
-    var so = function(t){ return Math.sin(2*Math.PI*(1.15*t) - 0.6); };               // slow oscillation <1Hz
-    var spEnv = function(t){ return gauss(t,tc,0.052); };
-    var sp = function(t){ return spEnv(t)*Math.sin(2*Math.PI*42*t); };                 // spindle ~12-15Hz band
-    var rpEnv = function(t){ return gauss(t,tc,0.022); };
-    var rp = function(t){ return rpEnv(t)*Math.sin(2*Math.PI*210*t); };                // ripple, dense burst
-    var comp = function(t){ return 0.62*so(t) + 0.5*sp(t) + 0.34*rp(t); };             // electrode view
+    const so = (t)=> Math.sin(2*Math.PI*(1.15*t) - 0.6);               // slow oscillation <1Hz
+    const spEnv = (t)=> gauss(t,tc,0.052);
+    const sp = (t)=> spEnv(t)*Math.sin(2*Math.PI*42*t);                 // spindle ~12-15Hz band
+    const rpEnv = (t)=> gauss(t,tc,0.022);
+    const rp = (t)=> rpEnv(t)*Math.sin(2*Math.PI*210*t);                // ripple, dense burst
+    const comp = (t)=> 0.62*so(t) + 0.5*sp(t) + 0.34*rp(t);             // electrode view
 
     document.getElementById('w-comp').setAttribute('d', buildPath(64, 30, comp));
     document.getElementById('w-so').setAttribute('d',   buildPath(160,26, so));
@@ -318,20 +319,20 @@
     document.getElementById('w-rp').setAttribute('d',   buildPath(316,20, rp));
 
     // place the up-state band over the spindle/ripple window
-    var bandT0=tc-0.075, bandT1=tc+0.075;
-    var bx=x0+bandT0*span, bw=(bandT1-bandT0)*span;
-    var band=document.getElementById('upband');
+    const bandT0=tc-0.075, bandT1=tc+0.075;
+    const bx=x0+bandT0*span, bw=(bandT1-bandT0)*span;
+    const band=document.getElementById('upband');
     band.setAttribute('x',bx.toFixed(1)); band.setAttribute('width',bw.toFixed(1));
-    var cap=document.getElementById('upcap'); cap.setAttribute('x',(bx+6).toFixed(1));
+    const cap=document.getElementById('upcap'); cap.setAttribute('x',(bx+6).toFixed(1));
 
     // draw-on animation for each wave
-    var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(reduce)return;
-    ['w-so','w-sp','w-rp','w-comp'].forEach(function(id,k){
-      var p=document.getElementById(id); var L=p.getTotalLength();
+    ['w-so','w-sp','w-rp','w-comp'].forEach((id,k)=> {
+      const p=document.getElementById(id); const L=p.getTotalLength();
       p.style.strokeDasharray=L; p.style.strokeDashoffset=L;
-      p.style.transition='stroke-dashoffset 1.6s cubic-bezier(.5,.1,.2,1) '+(0.25+k*0.45)+'s';
-      requestAnimationFrame(function(){requestAnimationFrame(function(){p.style.strokeDashoffset=0;});});
+      p.style.transition=`stroke-dashoffset 1.6s cubic-bezier(.5,.1,.2,1) ${0.25+k*0.45}s`;
+      requestAnimationFrame(()=> {requestAnimationFrame(()=> {p.style.strokeDashoffset=0;});});
     });
   })();
 </script>

@@ -1,0 +1,244 @@
+---
+import Footer from "../components/Footer.astro";
+import Nav from "../components/Nav.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
+
+const title = "Start Locally - Harness Dreams";
+const description =
+  "Harness Dreams is not shipping a signed macOS app yet. Clone the repo and run the desktop app locally with pnpm while sign-up and signed downloads are coming soon.";
+const repoUrl = "https://github.com/reachjalil/harness-dreams";
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <section class="page-hero start-hero">
+      <div class="container page-hero-grid">
+        <div>
+          <span class="eyebrow">Current status</span>
+          <h1>Signed app download and sign-up are coming soon.</h1>
+          <p class="lead">
+            Harness Dreams is in active local development. Until the macOS app
+            is signed and the hosted sign-up flow is ready, the supported way to
+            try it is to clone the repo and run the desktop app with pnpm.
+          </p>
+          <div class="start-actions">
+            <a class="btn btn-primary" href="#run">Run with pnpm</a>
+            <a class="btn" href={repoUrl} target="_blank" rel="noreferrer noopener">
+              Open GitHub
+            </a>
+          </div>
+        </div>
+
+        <aside class="status-panel">
+          <span class="mono">Availability</span>
+          <ul>
+            <li><strong>Now:</strong> local repo run for developers and testers.</li>
+            <li><strong>Soon:</strong> account sign-up and early access invites.</li>
+            <li><strong>Soon:</strong> signed macOS build for normal download.</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section start-section" id="run">
+      <div class="container start-grid">
+        <div class="start-copy">
+          <span class="eyebrow">Local preview</span>
+          <h2 class="h2">Clone the repo, install dependencies, start Electron.</h2>
+          <p class="lead">
+            This path runs the app from source. You need macOS, Node.js 22.12 or
+            newer, and pnpm. If Corepack is enabled, it will use the pnpm version
+            pinned by the repo.
+          </p>
+        </div>
+
+        <div class="steps">
+          <section class="step-card reveal">
+            <span class="step-index mono">01</span>
+            <h3>Clone the repository</h3>
+            <pre><code>git clone https://github.com/reachjalil/harness-dreams.git
+cd harness-dreams</code></pre>
+          </section>
+
+          <section class="step-card reveal" data-delay="1">
+            <span class="step-index mono">02</span>
+            <h3>Install the workspace</h3>
+            <pre><code>corepack enable
+pnpm install</code></pre>
+          </section>
+
+          <section class="step-card reveal" data-delay="2">
+            <span class="step-index mono">03</span>
+            <h3>Start the desktop app</h3>
+            <pre><code>pnpm --filter @harness-dreams/desktop start</code></pre>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="section status-section">
+      <div class="container status-grid">
+        <article class="info-block reveal">
+          <span class="mono">Why no download?</span>
+          <h2>We are not distributing an unsigned app as the main path.</h2>
+          <p>
+            The product is a local-first macOS menu-bar app, so trust matters.
+            The signed build, updater, and onboarding flow need to be ready
+            before the site points people at a normal download.
+          </p>
+        </article>
+
+        <article class="info-block reveal" data-delay="1">
+          <span class="mono">What works now?</span>
+          <h2>The source app can be run locally.</h2>
+          <p>
+            Running from the repo starts the Electron app in development mode.
+            That is the current preview path for contributors, testers, and
+            anyone who wants to follow the product before sign-up opens.
+          </p>
+        </article>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</SiteLayout>
+
+<style>
+  .start-hero {
+    background:
+      linear-gradient(135deg, rgba(167, 218, 211, 0.18), transparent 46%),
+      linear-gradient(180deg, rgba(11, 18, 28, 0.98), rgba(16, 28, 42, 0.94));
+  }
+
+  .start-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .status-panel {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.07);
+    padding: clamp(1.25rem, 3vw, 1.7rem);
+    box-shadow: 0 26px 70px -42px rgba(0, 0, 0, 0.75);
+  }
+
+  .status-panel ul {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .status-panel li {
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .status-panel strong {
+    color: var(--cream);
+  }
+
+  .start-section {
+    background:
+      linear-gradient(180deg, var(--bg), rgba(167, 218, 211, 0.12)),
+      var(--bg);
+  }
+
+  .start-grid {
+    display: grid;
+    gap: clamp(2rem, 6vw, 4rem);
+    align-items: start;
+  }
+
+  .start-copy {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .steps {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .step-card,
+  .info-block {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .step-card {
+    display: grid;
+    gap: 0.85rem;
+    padding: clamp(1.2rem, 3vw, 1.6rem);
+  }
+
+  .step-index {
+    color: var(--dusk);
+  }
+
+  .step-card h3,
+  .info-block h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    line-height: 1.12;
+  }
+
+  .step-card h3 {
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+  }
+
+  pre {
+    margin: 0;
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid rgba(13, 27, 42, 0.1);
+    background: var(--night);
+    color: var(--cream);
+    padding: 1rem;
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    line-height: 1.65;
+  }
+
+  .status-section {
+    background: var(--bg-soft);
+  }
+
+  .status-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .info-block {
+    padding: clamp(1.3rem, 3vw, 1.8rem);
+  }
+
+  .info-block h2 {
+    margin-top: 0.65rem;
+    font-size: clamp(1.35rem, 3vw, 1.85rem);
+  }
+
+  .info-block p {
+    color: var(--muted);
+    margin-top: 0.75rem;
+  }
+
+  @media (min-width: 860px) {
+    .start-grid {
+      grid-template-columns: minmax(0, 0.78fr) minmax(0, 1fr);
+    }
+
+    .status-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

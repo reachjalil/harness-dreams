@@ -1,0 +1,69 @@
+---
+import Footer from "../../components/Footer.astro";
+import Nav from "../../components/Nav.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+
+const title = "Case Study: Agent-fleet — Harness Dreams";
+const description =
+  "A Harness Dreams case study showing how repeated test-command re-asks become durable project guidance.";
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <article class="article-page">
+      <header class="article-hero">
+        <div class="container section-narrow">
+          <span class="eyebrow">Case study</span>
+          <h1>Agent-fleet stopped re-learning the same test command.</h1>
+          <p class="lead">
+            A small missing hint created repeated friction. Harness Dreams
+            caught the pattern, explained the user and agent benefit, and turned
+            it into a measurable improvement.
+          </p>
+        </div>
+      </header>
+
+      <div class="container article-grid">
+        <aside class="article-aside card">
+          <img
+            src="/story-standing-desk.png"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            class="aside-image"
+          />
+          <span class="mono">Result</span>
+          <strong>4 repeated prompts targeted</strong>
+          <p>Suggested fix: add the exact test command to AGENTS.md.</p>
+        </aside>
+
+        <div class="article-body">
+          <h2>The signal</h2>
+          <p>
+            In several sessions, the agent guessed the validation command,
+            failed, and needed the user to redirect it. The raw mistake was
+            small. The repeated shape was the important part.
+          </p>
+
+          <h2>The dream report</h2>
+          <p>
+            Harness Dreams framed the finding as an improvement instead of a
+            scolding: add the test command where the harness already looks for
+            project guidance. The agent benefit is fewer guesses. The user
+            benefit is fewer prompts that say, effectively, “run the actual
+            tests.”
+          </p>
+
+          <h2>The follow-up</h2>
+          <p>
+            The next dream keeps watching the same metric. If re-asks drop
+            without raising token cost or tool failures, the habit stays. If the
+            signal weakens, the suggestion can be snoozed or revised.
+          </p>
+        </div>
+      </div>
+    </article>
+  </main>
+  <Footer />
+</SiteLayout>

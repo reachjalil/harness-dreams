@@ -4,7 +4,7 @@
 > What does your coding harness do when it goes to sleep? Right now, nothing.
 > Harness Dreams goes to work while your harness rests — reviewing the day,
 > replaying scenarios, consolidating wins and mistakes, and waking you up with a
-> health report and a set of experiments to make tomorrow better.
+> health report and a set of suggested improvements to make tomorrow better.
 
 This folder is the canonical design spec for the product. It is a set of living
 documents meant to be read, argued with, and built from.
@@ -17,9 +17,9 @@ later). While you sleep, it ingests the day's agent sessions, computes
 **vitals** (token efficiency, code delivered, re-ask rate, model mix, cost…),
 finds **patterns across your projects**, and produces a **Dream Report** styled
 like the Apple Health app. Each morning you run a **Reflection** ritual: review
-findings, accept or reject them, and opt into **experiments** ("try medium
-thinking effort for UI work") that the *next* dream measures and grades. Over
-time your harness adapts, learns, and evolves with you.
+findings, accept or reject them, and track **suggested improvements** ("try
+medium thinking effort for UI work") that the *next* dream measures and reflects
+on. Over time your harness adapts, learns, and evolves with you.
 
 ## How to read these docs
 
@@ -46,7 +46,7 @@ time your harness adapts, learns, and evolves with you.
 | [05-feature-dream-sessions.md](05-feature-dream-sessions.md) | Dream Sessions | The core loop: sleep → dream → report |
 | [06-feature-metrics-and-health.md](06-feature-metrics-and-health.md) | Metrics & Health | Vitals, rings, trends, the Health-app surface |
 | [07-feature-findings-and-actions.md](07-feature-findings-and-actions.md) | Findings & Actions | Findings, accept/reject, mistake protection |
-| [08-feature-experiments.md](08-feature-experiments.md) | Experiments | The experiment lifecycle as a product feature |
+| [08-feature-experiments.md](08-feature-experiments.md) | Suggested Improvements | Testable improvements and their measurement lifecycle |
 | [09-feature-config-and-memory.md](09-feature-config-and-memory.md) | Config & Memory | Tuning AGENTS.md, skills, MCP, and memory |
 | [10-feature-chat-assistant.md](10-feature-chat-assistant.md) | Chat Assistant | Conversational optimization interface |
 | [11-feature-comparative-insights.md](11-feature-comparative-insights.md) | Comparative Insights | Cross-harness, cross-model, cross-project patterns |
@@ -58,7 +58,7 @@ time your harness adapts, learns, and evolves with you.
 | [13-metrics-catalog.md](13-metrics-catalog.md) | Metrics Catalog | Every metric: definition, formula, source |
 | [14-ingestion-and-connectors.md](14-ingestion-and-connectors.md) | Ingestion & Connectors | Data sources, parsing, normalization |
 | [15-dream-engine.md](15-dream-engine.md) | Dream Engine | The analysis pipeline and LLM orchestration |
-| [16-experiments-engine.md](16-experiments-engine.md) | Experiments Engine | Enablement mechanisms, measurement, statistics |
+| [16-experiments-engine.md](16-experiments-engine.md) | Improvements Engine | Enablement mechanisms, measurement, statistics |
 | [17-architecture.md](17-architecture.md) | Architecture | System components, data flow, the daemon |
 | [18-macos-app.md](18-macos-app.md) | macOS App | Menu-bar shell, windows, packaging, notifications |
 | [19-ui-ux-design.md](19-ui-ux-design.md) | UI/UX & Design | Design language, screens, components, motion |

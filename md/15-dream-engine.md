@@ -15,7 +15,7 @@ and **REM** (LLM) — and is the most technically central component.
  ┌──────────────┐   facts    ┌───────────────┐ interpretation ┌──────────────┐
  │  DEEP SLEEP  │ ─────────► │      REM      │ ─────────────► │   ASSEMBLE   │
  │ (vitals,     │            │ (findings,    │                │ (rank, cap,  │
- │  trends,     │            │  experiments, │                │  digest,     │
+ │  trends,     │            │  improvements,│                │  digest,     │
  │  dedupe)     │            │  config recs) │                │  persist)    │
  └──────────────┘            └───────────────┘                └──────────────┘
 ```
@@ -32,7 +32,7 @@ available even offline.
    (the classifiers flagged in `13`).
 4. **Detect accepted changes** by correlating proposed edits with `file-history`
    and survival (no later revert).
-5. **Dedupe & roll up** trends; attach experiment markers.
+5. **Dedupe & roll up** trends; attach improvement markers.
 
 Output: a complete, grounded facts package. If REM fails, the report still ships
 with vitals + trends.
@@ -49,8 +49,8 @@ REM sub-tasks (each a focused, schema-constrained call):
 - **Mistake classification** — label mistake events with cause hypotheses.
 - **Config correlation** — tie outcomes to AGENTS.md/skill/MCP state → proposed
   edits (`09`).
-- **Experiment ideation** — propose ≤2–3 testable interventions tied to findings
-  (`08`).
+- **Improvement ideation** — propose ≤2–3 testable improvements tied to
+  findings (`08`).
 - **Cross-project pass** — relate patterns across repos (`11`); overnight only
   (more expensive).
 - **Digest** — the 2–3 sentence TL;DR.
@@ -67,7 +67,7 @@ REM sub-tasks (each a focused, schema-constrained call):
 ## Stage 3 — Assemble
 
 - **Rank** findings by `confidence × impact`; **cap** to the report budget
-  (default ≤5 findings, ≤3 experiments).
+  (default ≤5 findings, ≤3 improvements).
 - **Dedupe** against recent reports + the user's snooze/reject history (`07`).
 - Build the `DreamReport` artifact and persist (`12`).
 - Emit the notification / update menu-bar state.
