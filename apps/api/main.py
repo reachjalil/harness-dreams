@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import json
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -20,6 +21,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Dream API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # In-memory job tracker
 _jobs: dict[str, dict] = {}
