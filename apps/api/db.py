@@ -22,5 +22,8 @@ def get_db() -> AsyncIOMotorDatabase:
 
 async def ensure_indexes():
     db = get_db()
-    # Only dream_logs is persisted — all other data stays on local disk
     await db.dream_logs.create_index([("date", 1)], unique=True)
+    await db.chat_sessions.create_index([("session_id", 1)], unique=True)
+    await db.chat_sessions.create_index([("updated_at", -1)])
+    await db.voice_sessions.create_index([("room_name", 1)], unique=True)
+    await db.voice_sessions.create_index([("started_at", -1)])
