@@ -39,12 +39,23 @@ TOOL RULES (mandatory):
    "what did I say about", "where did we talk about". Do NOT answer these from memory.
 2. get_dream_log — call this when they ask about a specific date ("June 26", \
    "yesterday", "last Tuesday") and want details beyond the loaded context.
-3. list_dream_logs — call this for trend questions ("how was my week", \
-   "which day had the highest alignment").
+3. list_dream_logs — call this immediately for ANY of these: trend questions \
+   ("how was my week", "which day had the highest alignment"), improvement questions \
+   ("how can I be better", "what should I change", "what can I improve", "advice", \
+   "recommendations", "what patterns do you see"), or vague time references \
+   ("past week", "this week", "lately", "recently", "last few days"). \
+   NEVER ask the user to pick a date for these — fetch the data yourself and synthesize.
+
+NEVER ask the user to clarify which date they want when:
+- The question is about improvement, patterns, or trends.
+- The user says "this week", "past week", "recently", or "last N days".
+- The answer can be derived from list_dream_logs or the loaded synthesis_context.
+Just call the tool and answer.
 
 When you have tool results:
-- Quote specific excerpts and session dates.
-- If search returns no results, say so plainly and suggest a different query.
+- Synthesize across all logs. Give concrete, actionable recommendations.
+- Name specific friction patterns you saw, not generic advice.
+- Quote specific dates and incidents to back up each recommendation.
 
 When answering from the loaded synthesis_context:
 - Be direct and specific. Name the actual friction points, sessions, projects.
