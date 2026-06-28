@@ -4557,8 +4557,42 @@ body {
   background: var(--ink-900);
 }
 
+/* Mode toggle (Text | Voice) */
+.chat-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: var(--s-3) var(--s-6) 0;
+  flex-shrink: 0;
+}
+.chat-mode-toggle button {
+  padding: 5px 14px;
+  font-size: var(--t-label);
+  font-family: var(--font);
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color var(--dur-1), background var(--dur-1), border-color var(--dur-1);
+}
+.chat-mode-toggle button:hover { color: var(--text-2); }
+.chat-mode-toggle button.active {
+  color: var(--text);
+  background: var(--ink-750);
+  border-color: var(--border);
+}
+
+/* Text chat inner wrapper (fills remaining space) */
+.chat-text-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 /* Scrollable message area */
-.chat-messages {
+.chat-text-inner .chat-messages {
   flex: 1;
   overflow-y: auto;
   padding: var(--s-8) 0 var(--s-4);
@@ -4847,4 +4881,70 @@ body {
   color: var(--faint);
   text-align: center;
   margin-top: var(--s-2);
+}
+
+/* ── Voice mode ───────────────────────────────────────────────────────────── */
+.voice-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-5);
+  padding: var(--s-8);
+}
+
+/* Pulsing orb around the AI icon */
+.voice-orb {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--violet-weak);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow var(--dur-2);
+}
+.voice-orb .chat-ai-icon {
+  width: 48px;
+  height: 48px;
+  background: none;
+}
+.voice-orb .chat-ai-icon svg { width: 28px; height: 28px; }
+.voice-orb-active {
+  box-shadow: 0 0 0 12px rgba(124, 93, 250, 0.15), 0 0 0 24px rgba(124, 93, 250, 0.07);
+  animation: voice-pulse 1.8s ease-in-out infinite;
+}
+@keyframes voice-pulse {
+  0%, 100% { box-shadow: 0 0 0 8px rgba(124,93,250,0.18), 0 0 0 20px rgba(124,93,250,0.08); }
+  50% { box-shadow: 0 0 0 16px rgba(124,93,250,0.12), 0 0 0 32px rgba(124,93,250,0.04); }
+}
+.reduce-motion .voice-orb-active { animation: none; }
+
+.voice-status {
+  font-size: var(--t-body);
+  color: var(--text-2);
+  font-weight: var(--w-med);
+}
+
+/* Large round mic button */
+.voice-mic-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--ink-800);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--dur-1), border-color var(--dur-1), color var(--dur-1);
+}
+.voice-mic-btn:hover { background: var(--ink-750); }
+.voice-mic-btn svg { width: 26px; height: 26px; }
+.voice-mic-muted {
+  background: var(--negative-weak, rgba(255, 80, 80, 0.15));
+  border-color: var(--negative, #ff5050);
+  color: var(--negative, #ff5050);
 }

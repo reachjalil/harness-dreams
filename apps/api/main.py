@@ -12,6 +12,7 @@ from ingestion.pipeline import ingest_all
 from synthesis.agent import synthesize
 from synthesis.schema import DreamLog
 from chat.agent import stream_chat
+from voice.token import create_participant_token, LIVEKIT_URL, ROOM_NAME
 
 
 @asynccontextmanager
@@ -123,6 +124,13 @@ async def chat(req: ChatRequest):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.post("/voice/token")
+async def voice_token():
+    """Return a LiveKit JWT for the renderer to join the voice room."""
+    token = create_participant_token()
+    return {"token": token, "url": LIVEKIT_URL, "room": ROOM_NAME}
 
 
 @app.get("/health")
