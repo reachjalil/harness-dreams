@@ -53,7 +53,8 @@ export const METRIC_TIP: Record<string, string> = {
 export const CATEGORY_TIP: Record<ActionCategory, string> = {
   agentsmd:
     "Lands as a patch to AGENTS.md / harness memory before your next session.",
-  claudemd: "Lands as a patch to CLAUDE.md before your next Claude Code session.",
+  claudemd:
+    "Lands as a patch to CLAUDE.md before your next Claude Code session.",
   contextdoc: "Saved as durable project context that future agents can cite.",
   prompthabit: "Surfaces as a prompt checkpoint when similar work begins.",
   skill: "Routes the work to a more specific skill, or adds one.",
@@ -101,9 +102,9 @@ export const TERM = {
     "A quiet-period analysis run that replays your work, scores the day, and turns friction into suggested goals you can accept.",
   dreamScore:
     "Your three rings — Efficiency, Effectiveness, and Alignment — blended into one 0–100 score.",
-  composite: "Efficiency, Effectiveness, and Alignment combined into one 0–100 score.",
-  alignmentBand:
-    "Bands: Collaborating 80+, Friction 45–79, Fighting under 45.",
+  composite:
+    "Efficiency, Effectiveness, and Alignment combined into one 0–100 score.",
+  alignmentBand: "Bands: Collaborating 80+, Friction 45–79, Fighting under 45.",
   suggestedGoals:
     "Patterns the Sleep Cycle found that you can accept as goals to carry forward — or reject.",
   frictionPoints:

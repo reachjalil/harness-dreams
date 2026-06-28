@@ -193,11 +193,7 @@ export default function Today({
       />
 
       {pendingCycle ? (
-        <button
-          type="button"
-          className="dash-pending"
-          onClick={onOpenCycle}
-        >
+        <button type="button" className="dash-pending" onClick={onOpenCycle}>
           <span className="dash-pending-dot" />
           <span className="dash-pending-main">
             <b>A fresh Sleep Cycle is ready to review</b>

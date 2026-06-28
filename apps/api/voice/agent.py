@@ -61,11 +61,7 @@ async def dream_voice(ctx: agents.JobContext):
 
 
 if __name__ == "__main__":
-    agents.cli.run_app(
-        server,
-        opts=agents.WorkerOptions(
-            ws_url=LIVEKIT_URL,
-            api_key=API_KEY,
-            api_secret=API_SECRET,
-        ),
-    )
+    os.environ.setdefault("LIVEKIT_URL", LIVEKIT_URL)
+    os.environ.setdefault("LIVEKIT_API_KEY", API_KEY)
+    os.environ.setdefault("LIVEKIT_API_SECRET", API_SECRET)
+    agents.cli.run_app(server)

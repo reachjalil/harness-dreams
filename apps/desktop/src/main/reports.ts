@@ -19,7 +19,11 @@ import type {
   Finding,
   ReviewDecisions,
 } from "../shared/types";
-import { applyAgentsBlock, applyClaudeBlock, applySkillFile } from "./agentConfig";
+import {
+  applyAgentsBlock,
+  applyClaudeBlock,
+  applySkillFile,
+} from "./agentConfig";
 import { runSleepCycle } from "./cycleEngine";
 import { getConfig } from "./store";
 
@@ -144,7 +148,9 @@ export function addDream(): DreamReport {
       analysisDepth: config.analysisDepth,
       remRunner: config.remRunner,
     }) ??
-    (samplePath ? reportsFromDreamLogs(readJsonFile(samplePath), now)[0] : null) ??
+    (samplePath
+      ? reportsFromDreamLogs(readJsonFile(samplePath), now)[0]
+      : null) ??
     makeReport(now, Math.floor(now / 997) % 1000, "unreviewed");
   const fresh = {
     ...base,

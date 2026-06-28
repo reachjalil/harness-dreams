@@ -43,14 +43,87 @@ const HEDGE_RE =
   /\b(i think|i believe|i'?m not sure|might be|may be|possibly|presumably|perhaps|unclear|not certain|hard to say|i assume|i'?ll guess)\b/i;
 
 const STOPWORDS = new Set([
-  "the","and","that","this","with","from","have","will","your","what","when",
-  "they","them","then","there","here","just","like","into","also","because",
-  "should","would","could","about","which","while","being","does","done","need",
-  "want","make","made","using","used","than","then","some","more","most","very",
-  "code","file","files","line","lines","function","change","changes","work",
-  "working","right","okay","yeah","sure","let's","lets","going","still","back",
-  "now","one","two","get","got","add","added","fix","fixed","issue","thing",
-  "things","good","great","please","thanks","actually","really","maybe","sense",
+  "the",
+  "and",
+  "that",
+  "this",
+  "with",
+  "from",
+  "have",
+  "will",
+  "your",
+  "what",
+  "when",
+  "they",
+  "them",
+  "then",
+  "there",
+  "here",
+  "just",
+  "like",
+  "into",
+  "also",
+  "because",
+  "should",
+  "would",
+  "could",
+  "about",
+  "which",
+  "while",
+  "being",
+  "does",
+  "done",
+  "need",
+  "want",
+  "make",
+  "made",
+  "using",
+  "used",
+  "than",
+  "then",
+  "some",
+  "more",
+  "most",
+  "very",
+  "code",
+  "file",
+  "files",
+  "line",
+  "lines",
+  "function",
+  "change",
+  "changes",
+  "work",
+  "working",
+  "right",
+  "okay",
+  "yeah",
+  "sure",
+  "let's",
+  "lets",
+  "going",
+  "still",
+  "back",
+  "now",
+  "one",
+  "two",
+  "get",
+  "got",
+  "add",
+  "added",
+  "fix",
+  "fixed",
+  "issue",
+  "thing",
+  "things",
+  "good",
+  "great",
+  "please",
+  "thanks",
+  "actually",
+  "really",
+  "maybe",
+  "sense",
 ]);
 
 const RULE_HINTS: { re: RegExp; rule: string }[] = [
@@ -211,9 +284,7 @@ interface ProjectAgg {
   topicSessions: Map<string, number>;
 }
 
-function aggregate(
-  signals: SessionSignals[]
-): Map<string, ProjectAgg> {
+function aggregate(signals: SessionSignals[]): Map<string, ProjectAgg> {
   const byProject = new Map<string, ProjectAgg>();
   for (const sig of signals) {
     const key = sig.session.projectPath;
@@ -291,7 +362,9 @@ function makeCandidates(agg: ProjectAgg): Candidate[] {
   const out: Candidate[] = [];
   const topics = topTopics(agg, 5);
   const topic = topics[0];
-  const reask = Math.round((agg.corrections / Math.max(1, agg.userTurns)) * 100);
+  const reask = Math.round(
+    (agg.corrections / Math.max(1, agg.userTurns)) * 100
+  );
 
   // A · Missing AGENTS.md on a project with real activity.
   if (agg.turns >= 8 && !agg.config.hasAgentsMd && !agg.config.hasClaudeMd) {
@@ -469,7 +542,8 @@ function baseFinding(
       "You spend fewer turns correcting assumptions, repeated questions, or missed state.",
     reflection: `Whether ${agg.name}'s ${fields.category === "agentsmd" ? "corrections" : fields.category === "skill" ? "repeated task" : "friction"} drops in the next cycle.`,
     confidence:
-      fields.evidence.length > 0 && (agg.corrections >= 2 || agg.toolFailures >= 2)
+      fields.evidence.length > 0 &&
+      (agg.corrections >= 2 || agg.toolFailures >= 2)
         ? "high"
         : "medium",
     project: agg.name,
@@ -713,14 +787,17 @@ function makeAlignment(
   const reask = Math.round((t.corrections / Math.max(1, t.userTurns)) * 100);
   const busiest = [...aggs].sort((a, b) => b.turns - a.turns)[0];
   const topic = busiest ? topTopics(busiest, 1)[0] : undefined;
-  const humanSignals = aggs
-    .flatMap((agg) => agg.frustrationQuotes)
-    .slice(0, 3);
+  const humanSignals = aggs.flatMap((agg) => agg.frustrationQuotes).slice(0, 3);
   return {
     score,
     band: score >= 80 ? "collaborating" : score >= 45 ? "friction" : "fighting",
     human: {
-      mood: reask > 22 ? "frustrated" : t.corrections > 2 ? "scattered" : "deep-focus",
+      mood:
+        reask > 22
+          ? "frustrated"
+          : t.corrections > 2
+            ? "scattered"
+            : "deep-focus",
       question: topic
         ? `How do I get the agent to handle ${topic} without repeated corrections?`
         : "How do I keep the agent aligned with my intent across sessions?",
@@ -731,7 +808,11 @@ function makeAlignment(
     },
     agent: {
       mood:
-        t.hedges > 4 ? "uncertain" : t.toolFailures > 2 ? "overloaded" : "confident",
+        t.hedges > 4
+          ? "uncertain"
+          : t.toolFailures > 2
+            ? "overloaded"
+            : "confident",
       question: topic
         ? `What's the intended approach for ${topic} here?`
         : "What conventions should I carry into the next session?",
@@ -767,7 +848,12 @@ function computeWindow(
   for (const session of sessions) {
     let sessionTurns = 0;
     for (const turn of session.turns) {
-      if (turn.timestamp < start || turn.timestamp > end || turn.kind === "tool_result") continue;
+      if (
+        turn.timestamp < start ||
+        turn.timestamp > end ||
+        turn.kind === "tool_result"
+      )
+        continue;
       turns += 1;
       sessionTurns += 1;
       if (turn.timestamp < earliest) earliest = turn.timestamp;
@@ -777,9 +863,7 @@ function computeWindow(
   }
   const spanMs = sessionCount > 0 ? Math.max(0, latest - earliest) : 0;
   const basisLabel =
-    basis === "since-last-cycle"
-      ? `Since ${fmtTime(start)}`
-      : "Last 24 hours";
+    basis === "since-last-cycle" ? `Since ${fmtTime(start)}` : "Last 24 hours";
   const label =
     sessions.length > 0
       ? `${basisLabel} · ${fmtDuration(spanMs)} of activity`
@@ -838,9 +922,12 @@ function quietReport(
     type: "win",
     title: "Quiet window — nothing new to review",
     body: `No agent activity in the ${enabled.length} tracked project${enabled.length === 1 ? "" : "s"} since the last Sleep Cycle.`,
-    improvement: "Keep your project scope current so the next active window is captured.",
-    agentBenefit: "Nothing to change — the agent had no friction to learn from.",
-    userBenefit: "A calm cycle is a healthy one; review resumes when work does.",
+    improvement:
+      "Keep your project scope current so the next active window is captured.",
+    agentBenefit:
+      "Nothing to change — the agent had no friction to learn from.",
+    userBenefit:
+      "A calm cycle is a healthy one; review resumes when work does.",
     reflection: "Whether the next window picks up fresh sessions to analyze.",
     confidence: "high",
     project: enabled[0]?.name ?? "workspace",
@@ -930,7 +1017,9 @@ export function runSleepCycle(
   const boundedSessions = sessions
     .map((session) => ({
       ...session,
-      turns: session.turns.filter((turn) => turn.timestamp >= start && turn.timestamp <= now),
+      turns: session.turns.filter(
+        (turn) => turn.timestamp >= start && turn.timestamp <= now
+      ),
     }))
     .filter((session) =>
       session.turns.some((turn) => turn.kind !== "tool_result")
@@ -940,7 +1029,9 @@ export function runSleepCycle(
     return quietReport(window, projects, prev, now);
   }
 
-  const signals = boundedSessions.map((session) => analyzeSession(session, start));
+  const signals = boundedSessions.map((session) =>
+    analyzeSession(session, start)
+  );
   const aggs = [...aggregate(signals).values()].filter((agg) => agg.turns > 0);
   const totals = totalsOf(aggs);
   const rem =
@@ -953,7 +1044,8 @@ export function runSleepCycle(
         )
       : null;
   const heuristicFindings = selectFindings(aggs);
-  const findings = rem && rem.findings.length > 0 ? rem.findings : heuristicFindings;
+  const findings =
+    rem && rem.findings.length > 0 ? rem.findings : heuristicFindings;
   const rings = makeRings(totals, prev);
   const alignmentScore =
     rings.find((ring) => ring.key === "alignment")?.score ?? 70;

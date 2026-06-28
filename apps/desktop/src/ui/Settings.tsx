@@ -209,9 +209,7 @@ export default function Settings({
                 <Segmented<RemRunnerProvider>
                   ariaLabel="REM runner"
                   value={config.remRunner.provider}
-                  onChange={(provider) =>
-                    patch({ remRunner: { provider } })
-                  }
+                  onChange={(provider) => patch({ remRunner: { provider } })}
                   options={[
                     { value: "claude-code", label: "Claude Code" },
                     { value: "codex", label: "Codex" },

@@ -216,7 +216,12 @@ function extractClaudeContent(content: unknown): ClaudeContent {
     };
   }
   if (!Array.isArray(content)) {
-    return { text: "", isToolResult: false, toolError: false, hasToolUse: false };
+    return {
+      text: "",
+      isToolResult: false,
+      toolError: false,
+      hasToolUse: false,
+    };
   }
   const parts: string[] = [];
   let isToolResult = false;

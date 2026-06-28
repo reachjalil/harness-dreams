@@ -64,7 +64,9 @@ function skillNamesIn(dir: string): string[] {
   }
 }
 
-function skillFilesIn(dir: string): Array<{ name: string; file: string; content: string }> {
+function skillFilesIn(
+  dir: string
+): Array<{ name: string; file: string; content: string }> {
   try {
     if (!existsSync(dir)) return [];
     const files: Array<{ name: string; file: string; content: string }> = [];

@@ -10,7 +10,12 @@ import type {
   Finding,
   RemRunnerConfig,
 } from "../shared/types";
-import { agentsPatch, claudePatch, readProjectConfig, skillPatch } from "./agentConfig";
+import {
+  agentsPatch,
+  claudePatch,
+  readProjectConfig,
+  skillPatch,
+} from "./agentConfig";
 import type { LocalSession } from "./localIngest";
 
 const MAX_TURNS_PER_PROJECT = 80;
@@ -73,8 +78,14 @@ function redact(text: string, count: { value: number }): string {
   });
 }
 
-function resolveBinary(provider: RemRunnerConfig["provider"], configured: string): string {
-  if (configured && configured !== (provider === "codex" ? "codex" : "claude")) {
+function resolveBinary(
+  provider: RemRunnerConfig["provider"],
+  configured: string
+): string {
+  if (
+    configured &&
+    configured !== (provider === "codex" ? "codex" : "claude")
+  ) {
     return configured;
   }
   const home = os.homedir();
@@ -83,7 +94,15 @@ function resolveBinary(provider: RemRunnerConfig["provider"], configured: string
       ? [
           process.env.HARNESS_DREAMS_CODEX_BIN,
           process.env.CODEX_BIN,
-          path.join(home, ".codex", "packages", "standalone", "current", "bin", "codex"),
+          path.join(
+            home,
+            ".codex",
+            "packages",
+            "standalone",
+            "current",
+            "bin",
+            "codex"
+          ),
           path.join(home, ".local", "bin", "codex"),
           process.platform === "darwin"
             ? "/Applications/Codex.app/Contents/Resources/codex"
@@ -96,10 +115,13 @@ function resolveBinary(provider: RemRunnerConfig["provider"], configured: string
           path.join(home, ".local", "bin", "claude"),
           "claude",
         ];
-  return candidates.filter(Boolean).find((candidate) => {
-    if (!candidate || candidate === "codex" || candidate === "claude") return true;
-    return existsSync(candidate);
-  }) ?? configured;
+  return (
+    candidates.filter(Boolean).find((candidate) => {
+      if (!candidate || candidate === "codex" || candidate === "claude")
+        return true;
+      return existsSync(candidate);
+    }) ?? configured
+  );
 }
 
 function promptFor(payload: RemProjectPayload[], depth: AnalysisDepth): string {
@@ -122,11 +144,7 @@ function promptFor(payload: RemProjectPayload[], depth: AnalysisDepth): string {
 
 function argvFor(config: RemRunnerConfig, prompt: string): string[] {
   if (config.provider === "codex") {
-    return [
-      "exec",
-      ...(config.model ? ["--model", config.model] : []),
-      prompt,
-    ];
+    return ["exec", ...(config.model ? ["--model", config.model] : []), prompt];
   }
   return [
     "-p",
@@ -238,7 +256,10 @@ function findingsFromJson(
     if (!evidence) continue;
     const category = categoryFor(item.target);
     const config = readProjectConfig(evidence.projectPath);
-    const rule = item.ruleOrDescription?.trim() || item.configGap?.trim() || "Add project guidance for this recurring friction.";
+    const rule =
+      item.ruleOrDescription?.trim() ||
+      item.configGap?.trim() ||
+      "Add project guidance for this recurring friction.";
     const patch =
       category === "skill"
         ? skillPatch(
@@ -254,18 +275,24 @@ function findingsFromJson(
       id: `rem-${index + 1}-${Buffer.from(evidence.projectPath).toString("hex").slice(0, 8)}`,
       type: category === "skill" ? "opportunity" : "mistake",
       title: short(item.title || item.configGap || "REM finding", 72),
-      body: item.body || item.configGap || "The REM pass found a config-versus-behavior gap.",
+      body:
+        item.body ||
+        item.configGap ||
+        "The REM pass found a config-versus-behavior gap.",
       improvement: rule,
-      agentBenefit: "The CLI runner writes the missing durable instruction before the next session.",
+      agentBenefit:
+        "The CLI runner writes the missing durable instruction before the next session.",
       userBenefit: "You spend fewer turns correcting the same behavior.",
-      reflection: "Whether alignment improves after this managed change is accepted.",
+      reflection:
+        "Whether alignment improves after this managed change is accepted.",
       confidence: "high",
       project: evidence.project,
       projectPath: evidence.projectPath,
       evidence: quote,
       evidenceFile: evidence.file,
       configGap: item.configGap,
-      action: category === "skill" ? `Scaffold skill: ${rule}` : `Add rule: ${rule}`,
+      action:
+        category === "skill" ? `Scaffold skill: ${rule}` : `Add rule: ${rule}`,
       category,
       frictionType: category === "skill" ? "missing-skill" : "config-conflict",
       patch,
@@ -308,7 +335,8 @@ export function runRemAnalysis(
     return {
       findings: [],
       redactionPreview: preview,
-      error: proc.error?.message || proc.stderr || `runner exited ${proc.status}`,
+      error:
+        proc.error?.message || proc.stderr || `runner exited ${proc.status}`,
     };
   }
   const parsed = parseJson(proc.stdout);

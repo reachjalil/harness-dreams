@@ -51,7 +51,8 @@ export default function Onboarding({
   const { actions, patch, projects } = hd;
   const [step, setStep] = useState(0);
   const [privacy, setPrivacy] = useState<PrivacyMode>("local");
-  const [remProvider, setRemProvider] = useState<RemRunnerProvider>("claude-code");
+  const [remProvider, setRemProvider] =
+    useState<RemRunnerProvider>("claude-code");
   const [schedule, setSchedule] = useState<ScheduleMode>("nightly");
   const [cloudSync, setCloudSync] = useState(false);
   const [discovered, setDiscovered] = useState<DiscoveredProject[]>([]);
