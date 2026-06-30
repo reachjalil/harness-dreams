@@ -5492,22 +5492,11 @@ body {
 
 /* ── Chat (ChatGPT-style) ─────────────────────────────────────────────────── */
 
-/* Neutralise the generic .scroll/.scroll-inner wrappers for the chat layout */
-.scroll:has(.chat-shell) {
-  overflow: hidden;
-  padding: 0;
-}
-.scroll-inner:has(.chat-shell) {
-  height: 100%;
-  max-width: none;
-  margin: 0;
-  gap: 0;
-}
-
 .chat-shell {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   background: var(--ink-900);
 }
 

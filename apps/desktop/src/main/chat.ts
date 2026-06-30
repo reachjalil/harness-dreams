@@ -1,5 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
-
 import { app } from "electron";
 import type { WebContents } from "electron";
 import {
@@ -143,6 +141,85 @@ function buildSystemPrompt(): string {
   return ctx;
 }
 
+const DEEPSEEK_BASE = "https://api.deepseek.com/chat/completions";
+const DEEPSEEK_MODEL = "deepseek-chat";
+
+function loadDeepSeekKey(): string {
+  if (process.env.DEEPSEEK_API_KEY) return process.env.DEEPSEEK_API_KEY;
+  try {
+    const envFile = path.join(app.getAppPath(), ".env");
+    if (!existsSync(envFile)) return "";
+    const content = readFileSync(envFile, "utf8");
+    const match = content.match(/^DEEPSEEK_API_KEY=(.+)$/m);
+    return match?.[1]?.trim() ?? "";
+  } catch {
+    return "";
+  }
+}
+
+async function streamDeepSeek(
+  sender: WebContents,
+  messages: Array<{ role: string; content: string }>,
+  system: string,
+  abort: AbortController,
+  out: string[]
+): Promise<void> {
+  const apiKey = loadDeepSeekKey();
+  if (!apiKey) throw new Error("DEEPSEEK_API_KEY not configured");
+
+  const response = await fetch(DEEPSEEK_BASE, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: DEEPSEEK_MODEL,
+      max_tokens: 4096,
+      stream: true,
+      messages: [
+        { role: "system", content: system },
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
+    }),
+    signal: abort.signal,
+  });
+
+  if (!response.ok || !response.body) {
+    const text = await response.text().catch(() => response.statusText);
+    throw new Error(`DeepSeek API error ${response.status}: ${text}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6).trim();
+      if (data === "[DONE]") return;
+      try {
+        const chunk = JSON.parse(data) as {
+          choices: Array<{ delta: { content?: string } }>;
+        };
+        const text = chunk.choices?.[0]?.delta?.content;
+        if (text) {
+          out.push(text);
+          sender.send(Send.ChatChunk, { type: "token", data: text });
+        }
+      } catch {
+        // ignore malformed SSE lines
+      }
+    }
+  }
+}
+
 export async function sendChatMessage(
   sender: WebContents,
   incomingMessages: Array<{ role: string; content: string }>,
@@ -189,35 +266,10 @@ export async function sendChatMessage(
   const abort = new AbortController();
   activeStreams.set(sid, abort);
 
-  const client = new Anthropic();
   const assistantTokens: string[] = [];
 
   try {
-    const stream = await client.messages.stream(
-      {
-        model: "claude-opus-4-8",
-        max_tokens: 4096,
-
-        system: buildSystemPrompt(),
-        messages: incomingMessages.map((m) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content,
-        })),
-      },
-      { signal: abort.signal }
-    );
-
-    for await (const event of stream) {
-      if (abort.signal.aborted) break;
-
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
-        assistantTokens.push(event.delta.text);
-        sender.send(Send.ChatChunk, { type: "token", data: event.delta.text });
-      }
-    }
+    await streamDeepSeek(sender, incomingMessages, buildSystemPrompt(), abort, assistantTokens);
   } catch (err) {
     if (!abort.signal.aborted) {
       const message = err instanceof Error ? err.message : "Chat error";

@@ -95,46 +95,51 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
       />
 
       <main className="workspace">
-        <div className={`scroll${tab === "today" ? " scroll-dash" : ""}`}>
-          <div
-            className={`scroll-inner${tab === "today" ? " scroll-inner-dash" : ""}`}
-          >
-            {tab === "today" ? (
-              <Today
-                hd={hd}
-                report={reportForProgress}
-                pendingCycle={unreviewedCycle ?? null}
-                onOpenGoals={() => setTab("lab")}
-                onRunSleepCycle={runSleepCycle}
-                onRunNap={runNapCycle}
-                onOpenCycle={() => {
-                  if (hd.reports[0]) selectCycle(hd.reports[0].id);
-                  else navigate("cycle");
-                }}
-              />
-            ) : null}
-            {tab === "cycle" ? (
-              <Cycle
-                hd={hd}
-                report={selected}
-                reports={hd.reports}
-                selectedId={selectedId}
-                onSelectCycle={selectCycle}
-                onBackToList={() => setSelectedId(null)}
-                onOpenImprovements={() => setTab("lab")}
-                onRunSleepCycle={runSleepCycle}
-              />
-            ) : null}
-            {tab === "lab" ? <Lab hd={hd} report={reportForProgress} /> : null}
-            {tab === "config" ? (
-              <ConfigUpdates hd={hd} reports={hd.reports} />
-            ) : null}
-            {tab === "chat" ? <Chat /> : null}
-            {tab === "settings" ? (
-              <Settings hd={hd} onRunSleepCycle={runSleepCycle} />
-            ) : null}
+        {tab === "chat" ? (
+          <Chat />
+        ) : (
+          <div className={`scroll${tab === "today" ? " scroll-dash" : ""}`}>
+            <div
+              className={`scroll-inner${tab === "today" ? " scroll-inner-dash" : ""}`}
+            >
+              {tab === "today" ? (
+                <Today
+                  hd={hd}
+                  report={reportForProgress}
+                  pendingCycle={unreviewedCycle ?? null}
+                  onOpenGoals={() => setTab("lab")}
+                  onRunSleepCycle={runSleepCycle}
+                  onRunNap={runNapCycle}
+                  onOpenCycle={() => {
+                    if (hd.reports[0]) selectCycle(hd.reports[0].id);
+                    else navigate("cycle");
+                  }}
+                />
+              ) : null}
+              {tab === "cycle" ? (
+                <Cycle
+                  hd={hd}
+                  report={selected}
+                  reports={hd.reports}
+                  selectedId={selectedId}
+                  onSelectCycle={selectCycle}
+                  onBackToList={() => setSelectedId(null)}
+                  onOpenImprovements={() => setTab("lab")}
+                  onRunSleepCycle={runSleepCycle}
+                />
+              ) : null}
+              {tab === "lab" ? (
+                <Lab hd={hd} report={reportForProgress} />
+              ) : null}
+              {tab === "config" ? (
+                <ConfigUpdates hd={hd} reports={hd.reports} />
+              ) : null}
+              {tab === "settings" ? (
+                <Settings hd={hd} onRunSleepCycle={runSleepCycle} />
+              ) : null}
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       <CloudSyncDialog
