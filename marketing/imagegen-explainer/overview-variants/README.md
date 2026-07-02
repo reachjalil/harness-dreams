@@ -1,4 +1,4 @@
-# Harness Dreams Overview Variants
+# Harness Health Overview Variants
 
 Fully image-generated marketing variants based on the approved overview poster direction.
 All visible marketing text is generated inside the artwork; no deterministic text overlay was added.
@@ -28,16 +28,16 @@ All visible marketing text is generated inside the artwork; no deterministic tex
 
 ### 01 Classic Overview
 
-Use case: ads-marketing. Asset type: fully image-generated portrait print handout, based on the attached reference image style. Create a new polished variant of the attached Harness Dreams overview poster. Keep the same core concept: Harness Dreams as a health app for coding agents, with desktop, phone, and watch companion views. Text: "Harness Dreams" / "A health app for coding agents" / "While you rest, it reviews sessions, scores the harness, and finds the next improvement." / "Efficiency" / "Effectiveness" / "Alignment" / "harnessdreams.com".
+Use case: ads-marketing. Asset type: fully image-generated portrait print handout, based on the attached reference image style. Create a new polished variant of the attached Harness Health overview poster. Keep the same core concept: Harness Health as a health app for coding agents, with desktop, phone, and watch companion views. Text: "Harness Health" / "A health app for coding agents" / "While you rest, it reviews sessions, scores the harness, and finds the next improvement." / "Efficiency" / "Effectiveness" / "Alignment" / "harnesshealth.com".
 
 ### 02 Closeup Flyer
 
-Use case: ads-marketing. Asset type: fully image-generated portrait flyer variation, based on the attached reference image style. Create a second distinct portrait variation of the Harness Dreams overview handout. Keep the same message but make the product mockup feel more close-up and premium. Text: "Harness Dreams" / "A health app for coding agents" / "Review the night. Improve tomorrow." / "Efficiency" / "Effectiveness" / "Alignment" / "harnessdreams.com".
+Use case: ads-marketing. Asset type: fully image-generated portrait flyer variation, based on the attached reference image style. Create a second distinct portrait variation of the Harness Health overview handout. Keep the same message but make the product mockup feel more close-up and premium. Text: "Harness Health" / "A health app for coding agents" / "Review the night. Improve tomorrow." / "Efficiency" / "Effectiveness" / "Alignment" / "harnesshealth.com".
 
 ### 03 Explainer Handout
 
-Use case: ads-marketing. Asset type: fully image-generated portrait handout variation, based on the attached reference image style. Create a third portrait variation, more explanatory and handout-friendly. Text: "Harness Dreams" / "Sleep on the session" / "Wake up to a better harness" / "Agent vitals" / "Repeated friction" / "Next improvement" / "harnessdreams.com".
+Use case: ads-marketing. Asset type: fully image-generated portrait handout variation, based on the attached reference image style. Create a third portrait variation, more explanatory and handout-friendly. Text: "Harness Health" / "Rest on the session" / "Wake up to a better harness" / "Agent vitals" / "Repeated friction" / "Next improvement" / "harnesshealth.com".
 
 ### 04 Widescreen Presentation
 
-Use case: ads-marketing. Asset type: fully image-generated widescreen presentation slide, 16:9 landscape, based on the attached reference image style. Create a widescreen presentation version suitable for a keynote slide or TV display. Text: "Harness Dreams" / "A health app for coding agents" / "While you rest, it reviews sessions, scores the harness, and finds the next improvement." / "Efficiency" / "Effectiveness" / "Alignment" / "harnessdreams.com".
+Use case: ads-marketing. Asset type: fully image-generated widescreen presentation slide, 16:9 landscape, based on the attached reference image style. Create a widescreen presentation version suitable for a keynote slide or TV display. Text: "Harness Health" / "A health app for coding agents" / "While you rest, it reviews sessions, scores the harness, and finds the next improvement." / "Efficiency" / "Effectiveness" / "Alignment" / "harnesshealth.com".

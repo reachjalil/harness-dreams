@@ -356,7 +356,7 @@ def draw_header(draw: ImageDraw.ImageDraw, doc: Doc) -> int:
     y += 74
 
     draw_brand_mark(draw, (WIDTH - MARGIN - 130, y + 70), 128, PAPER)
-    draw.text((WIDTH - MARGIN - 330, y + 148), "Harness Dreams", font=FONTS["brand"], fill=INK)
+    draw.text((WIDTH - MARGIN - 330, y + 148), "Harness Health", font=FONTS["brand"], fill=INK)
 
     title_width = WIDTH - 2 * MARGIN - 440
     title_lines = wrap(draw, doc.title, FONTS["title"], title_width, 3)

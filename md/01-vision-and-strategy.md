@@ -23,13 +23,13 @@ something felt slow or wrong — and usually not even acting on it. There is:
 - **No experimentation.** "Should I use medium thinking effort for UI work?" is
   answerable from your own data — but nobody is asking or testing it.
 
-> Your harness has been awake too long. It's time to sleep on it.
+> Your harness has been awake too long. It's time to idle on it.
 
 ## The insight
 
 A coding harness produces a **complete, structured diary of its own behavior**
 every single day. That diary is the perfect substrate for offline reflection —
-the same way sleep consolidates a human's day into memory and learning. The work
+the same way idle consolidates a human's day into memory and learning. The work
 doesn't need to happen live (which would slow the agent down and cost tokens
 mid-task). It should happen **overnight, in the background, while the harness
 rests** — exactly when the machine and the human are both idle.
@@ -40,24 +40,24 @@ compounds learning over time.
 
 ## Vision
 
-> **Harness Dreams is the health app for your AI coding harnesses.** It turns the
+> **Harness Health is the health app for your AI coding harnesses.** It turns the
 > exhaust of every agent session into measured, compounding improvement —
 > reviewed by you each morning, applied with your consent, and graded by the next
-> night's dream.
+> night's review.
 
-Three-year vision: every serious harness user wakes up to a Dream Report the way
+Three-year vision: every serious harness user wakes up to a Health Report the way
 they check their step count — and their harness measurably gets cheaper, faster,
 and more aligned to how *they* work, month over month, without them having to
 become a prompt engineer.
 
 ## Value proposition
 
-| For the user | Harness Dreams delivers |
+| For the user | Harness Health delivers |
 |---|---|
 | "Is my setup getting better or worse?" | Trends on cost, tokens, code delivered, re-ask rate |
 | "What did I do wrong yesterday?" | Mistake findings + protections so it doesn't recur |
 | "How do I improve?" | Concrete, testable experiments tailored to *your* data |
-| "Did that change actually help?" | Every experiment is measured and graded next dream |
+| "Did that change actually help?" | Every experiment is measured and graded next review |
 | "Which tool/model when?" | Comparative insights (Claude vs Codex, effort levels…) |
 | "My config is a mess." | Guided tuning of AGENTS.md, skills, MCP servers, memory |
 
@@ -78,7 +78,7 @@ with the human always in control.**
 
 ## Positioning
 
-Harness Dreams is **not** an observability dashboard (Datadog for agents), a
+Harness Health is **not** an observability dashboard (Datadog for agents), a
 prompt manager, or an eval harness — though it borrows from all three.
 
 - vs. **observability tools**: those show you live charts; we *reflect* and
@@ -93,7 +93,7 @@ experiment loop**, both grounded in the user's own private data.
 
 ## What success looks like
 
-- A user opens the Dream Report most mornings (habit formed).
+- A user opens the Health Report most mornings (habit formed).
 - Measured improvement in their own vitals over 30/60/90 days.
 - Experiments are enabled, graded, and acted on — not just generated.
 - Findings are trusted enough that "accept" is the common action.

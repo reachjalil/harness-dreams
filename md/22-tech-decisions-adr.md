@@ -53,13 +53,13 @@ and purge, no server. Fits local-first (`20`).
 
 ---
 
-### ADR-004 — Analysis: cloud Claude API for REM, deterministic Deep Sleep, local-only mode supported
+### ADR-004 — Analysis: cloud Claude API for Insight, deterministic Deterministic Vitals, local-only mode supported
 
-**Decision.** Deep Sleep is deterministic (no LLM). REM uses the **Claude API**
+**Decision.** Deterministic Vitals is deterministic (no LLM). Insight uses the **Claude API**
 by default (opt-in, redacted), with a **local-only mode** (vitals-only now,
 local model later).
 
-**Why.** Quality of findings depends on a strong model; Deep Sleep guarantees a
+**Why.** Quality of findings depends on a strong model; Deterministic Vitals guarantees a
 useful report even offline; local-only respects privacy-max users (`20`).
 
 **Model tiers.** Strong model (e.g. Opus-class) for findings/config/cross-project;
@@ -121,7 +121,7 @@ iteration. Rust appears only in the Tauri shell (ADR-001).
 
 ### Decisions deferred (need a spike before committing)
 
-- Local-model runtime for REM (Ollama? which models are good enough?) — see `24`.
+- Local-model runtime for Insight (Ollama? which models are good enough?) — see `24`.
 - Exact Codex/Cursor on-disk formats — confirm during connector work.
 - Statistics library/approach for small-sample experiment grading (`16`).
 - Updater mechanism specifics (Tauri updater vs Sparkle).

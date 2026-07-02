@@ -1,10 +1,10 @@
-# Harness Dreams — Synthesized Design Spec ("Clinic")
+# Harness Health — Synthesized Design Spec ("Clinic")
 
 The single, implementation-ready spec. Flat, Apple-Health-grade dark UI. System sans only (no serif). Accents = teal / blue / violet only; no yellow/brown/amber. One persistent sidebar, one page-header pattern, one card vocabulary, one hero metric per page. Every surface answers: **What happened? / Why does it matter? / What next?**
 
-The product spine is **Human ↔ Agent alignment**: an alignment score split into a human side and an agent side, categorized friction points, and findings that carry a recommended action + category, flowing through a Cycle review wizard into an action queue and the experiments loop.
+The product spine is **Human ↔ Agent alignment**: an alignment score split into a human side and an agent side, categorized friction points, and findings that carry a recommended action + category, flowing through a Review review wizard into an action queue and the experiments loop.
 
-**HARD CONSTRAINT — data contract preserved.** The renderer talks to main via `window.hd` + `useHarnessDreams`. Rings keyed `efficiency`/`effectiveness`/`alignment`; metric keys `tokens_per_change`/`cost`/`reask`/`cache`/`tool_success`/`sessions`; `Finding`/`Experiment`/`DreamReport` shapes are read by main (`tray.ts`, `controller.ts`, `reports.ts`). All type changes below are **ADDITIVE + OPTIONAL**; UI degrades gracefully when new fields are absent. Keep `makeReport(timestamp, seed)` and `seedReports(now)` exports in `mock.ts`. Real repo names in mock data: `agent-fleet`, `harness-dreams`, `zod-to-sql`, `waker`.
+**HARD CONSTRAINT — data contract preserved.** The renderer talks to main via `window.hd` + `useHarnessHealth`. Rings keyed `efficiency`/`effectiveness`/`alignment`; metric keys `tokens_per_change`/`cost`/`reask`/`cache`/`tool_success`/`sessions`; `Finding`/`Experiment`/`HealthReport` shapes are read by main (`tray.ts`, `controller.ts`, `reports.ts`). All type changes below are **ADDITIVE + OPTIONAL**; UI degrades gracefully when new fields are absent. Keep `makeReport(timestamp, seed)` and `seedReports(now)` exports in `mock.ts`. Real repo names in mock data: `agent-fleet`, `harness-health`, `zod-to-sql`, `waker`.
 
 ---
 
@@ -70,10 +70,10 @@ Drop-in replacement for the `:root` block in `styles.css`. Legacy names that oth
   --ring-effectiveness: var(--teal);
   --ring-alignment:     var(--violet);
 
-  /* Cycle/progress accents reuse violet+blue (no cyan dominance) */
-  --cycle:      var(--violet);
-  --cycle-2:    var(--blue);
-  --cycle-soft: var(--violet-weak);
+  /* Review/progress accents reuse violet+blue (no cyan dominance) */
+  --review:      var(--violet);
+  --review-2:    var(--blue);
+  --review-soft: var(--violet-weak);
 }
 ```
 
@@ -143,7 +143,7 @@ Drop-in replacement for the `:root` block in `styles.css`. Legacy names that oth
 | `--t-eyebrow` | `--w-semi` | UPPERCASE, `letter-spacing:0.08em`, `--muted` | eyebrows, kickers, status chips |
 | `--t-mono` | `--w-med` | `--font-mono` | evidence pointers, file paths, config diffs |
 
-Delete every `font-family: var(--font-display)` serif usage (`.sidebar-score`, `.hero-date`, `.workspace-head h2`, `.improvement-hero-copy h3`, `.cycle-copy h3`, `.scorering-num`, `.review-finding-main h3`, `.queue-cell b`, `.history-score b`). Never two competing large numbers on one screen. Numerals use `font-variant-numeric: tabular-nums`.
+Delete every `font-family: var(--font-display)` serif usage (`.sidebar-score`, `.hero-date`, `.workspace-head h2`, `.improvement-hero-copy h3`, `.review-copy h3`, `.scorering-num`, `.review-finding-main h3`, `.queue-cell b`, `.history-score b`). Never two competing large numbers on one screen. Numerals use `font-variant-numeric: tabular-nums`.
 
 ### 1.5 Spacing — 4px base + responsive insets
 
@@ -186,7 +186,7 @@ No cards-inside-cards. Nested groupings use a hairline (`border-top: 1px solid v
 | card-hover | `background: var(--ink-750); border-color: var(--border-strong)` | clickable cards |
 | float | `background: var(--ink-750); border:1px solid var(--border-strong); box-shadow:var(--elev-2)` | menus, tooltips only |
 
-**Hard removals (flatness).** Delete `body` radial gradient → flat `var(--bg)`. Delete `.app.shell` linear-gradient. Delete every `box-shadow: 0 0 Npx …glow…` and `drop-shadow(0 0 Npx …)` (`.brand-mark`, `.scorering`, `.onb-mark`, `.cycle-ring`, `.map-node`). Delete every decorative `::before` sweep (`.improvement-hero::before`, `.cycle-splash::before`, `.history-hero::before`, `.workspace-identity::before`).
+**Hard removals (flatness).** Delete `body` radial gradient → flat `var(--bg)`. Delete `.app.shell` linear-gradient. Delete every `box-shadow: 0 0 Npx …glow…` and `drop-shadow(0 0 Npx …)` (`.brand-mark`, `.scorering`, `.onb-mark`, `.review-ring`, `.map-node`). Delete every decorative `::before` sweep (`.improvement-hero::before`, `.review-splash::before`, `.history-hero::before`, `.workspace-identity::before`).
 
 ### 1.7 Layout frame + motion tokens
 
@@ -217,9 +217,9 @@ export function Sidebar(props: {
   onNavigate: (tab: Tab) => void;
   alignment: number;            // 0..100, the persistent signature number
   band: AlignmentBand;          // "collaborating" | "friction" | "fighting"
-  phase: DreamPhase;            // status dot + label
+  phase: HealthReviewPhase;            // status dot + label
   lastDreamAt: number | null;
-  unreviewed: number;          // badge count on Cycle (0 = hidden)
+  unreviewed: number;          // badge count on Review (0 = hidden)
   onDreamNow: () => void;
 }): ReactElement;
 
@@ -269,7 +269,7 @@ export function AlignmentSides(props: {
   human: AlignmentSide;         // mood, question, signals[]
   agent: AlignmentSide;
 }): ReactElement;
-// two-column "Your side / Agent side" detail (Cycle hero)
+// two-column "Your side / Agent side" detail (Review hero)
 
 export function FrictionChip(props: {
   point: FrictionPoint;         // type + example + linked findingId
@@ -287,17 +287,17 @@ export function FindingCard(props: {
   onAccept?: () => void;
   onSnooze?: () => void;
   onQueue?: () => void;
-  compact?: boolean;            // Dashboard top-findings vs full Cycle panel
+  compact?: boolean;            // Dashboard top-findings vs full Review panel
 }): ReactElement;
 // fixed field order: type+confidence+project → title → body → EVIDENCE →
 //   WHY YOU (userBenefit) / WHY AGENT (agentBenefit) → RECOMMENDED ACTION (action)
 //   → CategoryChip → NEXT CYCLE WATCHES (reflection, collapsed)
 
-// ── Cycle wizard ─────────────────────────────────────────────────────────────
-export function CycleProgress(props: {
+// ── Review wizard ─────────────────────────────────────────────────────────────
+export function ReviewProgress(props: {
   progress: number;             // state.progress 0..1
   stage: string | null;
-  stages: { at: number; label: string }[]; // DREAM_STAGES
+  stages: { at: number; label: string }[]; // HEALTH_REVIEW_STAGES
   paused: boolean;
 }): ReactElement;
 // linear determinate bar + named stage list. Replaces StarField + 214px ring.
@@ -323,18 +323,18 @@ export function TrendChart(props: {
   activeIndex?: number;
   onPick?: (index: number) => void;
 }): ReactElement;
-// flat line chart; dots colored by alignment band; click → select cycle
+// flat line chart; dots colored by alignment band; click → select review
 
 export function HistoryRow(props: {
-  report: DreamReport;
+  report: HealthReport;
   selected: boolean;
   delta?: number | null;        // alignment Δ vs previous (memoized upstream)
   onSelect: (id: string) => void;
 }): ReactElement;
 
 export function CompareStrip(props: {
-  current: DreamReport;
-  previous: DreamReport | null; // null → "First cycle — no comparison yet"
+  current: HealthReport;
+  previous: HealthReport | null; // null → "First review — no comparison yet"
 }): ReactElement;
 
 export function SettingsGroup(props: {
@@ -353,13 +353,13 @@ export function StatusChip(props: {
 | Concern | Classes |
 |---|---|
 | Shell | `.app.shell`, `.titlebar`, `.sidebar`, `.workspace`, `.scroll` (max-width `--content-max`) |
-| Sidebar | `.side-brand`, `.side-nav`, `.side-nav-item` (`.active`), `.side-nav-badge`, `.side-foot`, `.side-align`, `.side-status` (`.dot.resting/.dreaming/.ready`), `.side-dream-btn` |
+| Sidebar | `.side-brand`, `.side-nav`, `.side-nav-item` (`.active`), `.side-nav-badge`, `.side-foot`, `.side-align`, `.side-status` (`.dot.resting/.reviewing/.ready`), `.side-review-btn` |
 | Page header | `.page-head`, `.page-eyebrow`, `.page-title`, `.page-sub`, `.page-actions` |
 | Cards | `.card`, `.card-head`, `.card-title`, `.card-hint`, `.summary-card` (`.hero`), `.summary-value`, `.summary-trend`, `.summary-sub` |
 | Rings | `.scorering`, `.ring-track`, `.ring-arc.efficiency/.effectiveness/.alignment`, `.ring-chip`, `.contribs`, `.contrib-bar` |
 | Alignment | `.align-bar`, `.align-human`, `.align-agent`, `.align-mid`, `.align-band`, `.align-sides`, `.align-side`, `.align-mood`, `.align-question`, `.friction-chip`, `.friction-type` |
 | Findings / actions | `.finding`, `.finding-kicker`, `.finding-body`, `.finding-evidence`, `.finding-benefits`, `.finding-action`, `.category-chip` (`.agentsmd/.contextdoc/.prompthabit/.skill`), `.finding-controls` |
-| Cycle wizard | `.cycle-progress`, `.cycle-bar`, `.cycle-stages`, `.cycle-stage` (`.done/.active/.pending`), `.step-rail`, `.step-rail-item` (`.accepted/.snoozed/.queued/.active`), `.review-panel`, `.review-controls` |
+| Review wizard | `.review-progress`, `.review-bar`, `.review-stages`, `.review-stage` (`.done/.active/.pending`), `.step-rail`, `.step-rail-item` (`.accepted/.snoozed/.queued/.active`), `.review-panel`, `.review-controls` |
 | Action queue | `.action-queue`, `.queue-item` (`.accepted/.queued/.snoozed`), `.queue-tally`, `.queue-apply` |
 | History | `.trend-chart`, `.trend-line`, `.trend-dot`, `.history-row` (`.selected`), `.history-row-rail`, `.compare-strip`, `.compare-row`, `.compare-delta` |
 | Settings | `.settings-status`, `.status-chip` (`.on`), `.settings-group`, `.settings-row` (hairline divider), `.connector-row` (`.soon`) |
@@ -417,8 +417,8 @@ export interface ActionQueueEntry {
   state: ActionState;    // accepted | queued | snoozed
 }
 
-// DreamReport gains ONE optional field; everything else unchanged.
-export interface DreamReport {
+// HealthReport gains ONE optional field; everything else unchanged.
+export interface HealthReport {
   // …all existing fields stay exactly as-is…
   alignment?: AlignmentDetail;       // optional; UI derives a fallback if absent
 }
@@ -475,41 +475,41 @@ All pages: `<PageHeader>` at top, then a scrollable card grid capped at `--conte
 
 ### 4.1 App shell + nav (`App.tsx`)
 - Layout: `.app.shell` → `<Sidebar>` + `.workspace` (`<PageHeader>` + `.scroll`).
-- `<Sidebar>`: `BrandMark` + harness/privacy line, `<NavItem>` ×5 (Dashboard/Cycle/Improvements/History/Settings), foot = persistent **Alignment** number + band label + phase status dot + full-width "Dream now" `Button variant="accent"`. Cycle gets `badge={unreviewedCount}` from `state.hasUnreviewed`.
+- `<Sidebar>`: `BrandMark` + harness/privacy line, `<NavItem>` ×5 (Dashboard/Review/Improvements/History/Settings), foot = persistent **Alignment** number + band label + phase status dot + full-width "Run Health Review" `Button variant="accent"`. Review gets `badge={unreviewedCount}` from `state.hasUnreviewed`.
 - Remove the animated `workspace-identity` glyph and the old serif `sidebar-score` panel.
 - `setTab` drives `active`; `selectedId` (via `selectSession()` or tray `onSelectReport`) pivots all pages. < 920px → icon rail.
 
 ### 4.2 Dashboard (`Today.tsx`) — living summary, compact
 Hero metric: **Alignment (0–100)** + band.
-- Hero strip: 3 `SummaryCard` — `[Alignment hero]` · `[Human ↔ Agent via AlignmentBar: You 88 · Agent 79 · 2 friction]` · `[Open actions N → Review in Cycle]`.
+- Hero strip: 3 `SummaryCard` — `[Alignment hero]` · `[Human ↔ Agent via AlignmentBar: You 88 · Agent 79 · 2 friction]` · `[Open actions N → Review in Review]`.
 - Rings row: three `RingChip` (efficiency/effectiveness/alignment) + `report.digest` sentence (`--t-body`).
 - Vitals: `MetricCell` ×6 in one wrapping responsive row (no drilldown duplicate).
-- Top findings: top **2** `FindingCard compact` ("What to act on") + "See all in Cycle →".
+- Top findings: top **2** `FindingCard compact` ("What to act on") + "See all in Review →".
 - Friction snapshot: 2–3 `FrictionChip`; each → its finding.
-- **Remove**: `live-summary-grid`, explainer trio, timeline mini-bars, "Recent dreams" rail (→ History), the full "All findings" dump. Project filter removed here (lives in Improvements).
+- **Remove**: `live-summary-grid`, explainer trio, timeline mini-bars, "Recent reviews" rail (→ History), the full "All findings" dump. Project filter removed here (lives in Improvements).
 
-### 4.3 Cycle (`Cycle.tsx`) — wizard → action queue
-Hero metric: **Alignment for this cycle** (with human/agent split).
-- **Mode A — dreaming** (`phase==="dreaming"`): one `CycleProgress` card (linear bar + `DREAM_STAGES` list + `state.stage`). The only live animation. No StarField, no 214px ring, no explainer/log/queue trio.
+### 4.3 Review (`Review.tsx`) — wizard → action queue
+Hero metric: **Alignment for this review** (with human/agent split).
+- **Mode A — reviewing** (`phase==="running"`): one `ReviewProgress` card (linear bar + `HEALTH_REVIEW_STAGES` list + `state.stage`). The only live animation. No StarField, no 214px ring, no explainer/log/queue trio.
 - **Mode B — ready** (report + `hasUnreviewed`):
   - Alignment summary card: `SummaryCard hero` (alignment) + `AlignmentSides` (human/agent) + `FrictionChip` count.
   - Review wizard: `<StepRail>` (vertical, one entry per finding, priority-sorted, last = "Action queue (n)") + `.review-panel` showing **one** `FindingCard` (full) with `CategoryChip` and controls `[Prev] [Snooze] [Queue] [Accept ▸]`. Accept advances to next pending finding.
   - Action queue (rail's last entry): list of `ActionQueueItem` grouped by category with `[Apply]/[Undo]`, a `.queue-tally` (n accepted · n queued · n snoozed), and a single **"Apply n accepted → Improvements"** button → calls `actions.markReviewed()`, clears badge, routes accepted-testable items to Lab as `proposed` experiments. This is the explicit "what happens next."
-- Action/decision state is local (a `Map<findingId, ActionState>`), lifted to the page so Dashboard "Open actions" and the Cycle badge stay in sync. No contract change.
+- Action/decision state is local (a `Map<findingId, ActionState>`), lifted to the page so Dashboard "Open actions" and the Review badge stay in sync. No contract change.
 
 ### 4.4 Improvements (`Lab.tsx`) — measured changes & evidence
-Hero metric: **Re-ask rate** (headline experiment metric) + delta, with a small `TrendChart` over recent cycles.
+Hero metric: **Re-ask rate** (headline experiment metric) + delta, with a small `TrendChart` over recent reviews.
 - Signal row: 4 `MetricCell` the experiments move (reask, tokens_per_change, tool_success, cache) via a `byKey(metrics)` map (no hardcoded lookups).
 - **Running** (`status==="running"`): cards with progress (`experiment.progress`/`progressLabel`) + `[Conclude early]`/`[Pause]` — **never** a dead enable toggle.
-- **Proposed** (`status==="proposed"`, incl. items routed from Cycle): cards with `[Start measuring ▸]`.
+- **Proposed** (`status==="proposed"`, incl. items routed from Review): cards with `[Start measuring ▸]`.
 - **Concluded** (`status==="concluded"`): `verdict` with semantic color + one-line reflection.
 - Project filter = `Segmented` in the page header; cascades to signal row + experiment list. Confidence meters driven by data, not magic numbers; "Show all (n)" instead of `.slice(0,4)`.
 
-### 4.5 History (`History.tsx`) — compare cycles over time
+### 4.5 History (`History.tsx`) — compare reviews over time
 Hero metric: **Alignment trend** (the `TrendChart` line itself).
 - Hero: wide `TrendChart` (alignment line + efficiency/effectiveness faded) with a `Segmented` series picker; dots colored by band; click a point → `onSelect(id)`.
-- `CompareStrip`: selected vs previous (alignment/efficiency/re-ask/findings Δ, colored by good/bad); `previous===null` → "First cycle — no comparison yet."
-- Cycle list: `HistoryRow` ×N, newest first; click → `onSelect(id)` pivots all pages; selected row gets `.selected` + violet rail.
+- `CompareStrip`: selected vs previous (alignment/efficiency/re-ask/findings Δ, colored by good/bad); `previous===null` → "First review — no comparison yet."
+- Review list: `HistoryRow` ×N, newest first; click → `onSelect(id)` pivots all pages; selected row gets `.selected` + violet rail.
 - Memoize the "strongest ring" sort; ring labels from `ring.label` (no hardcoded "Eff").
 
 ### 4.6 Settings (`Settings.tsx`) — control center, grouped + scannable
@@ -524,7 +524,7 @@ No hero metric. A status strip + grouped `SettingsGroup` cards (two columns ≥1
 Animation **only** explains state, progress, or change. Everything decorative is deleted.
 
 **Allowed**
-1. **Dream progress** — `CycleProgress` bar fills with `state.progress`; stage label cross-fades 150ms on change. The `phase` status dot pulses (1.6s opacity) **only** while `phase==="dreaming"` — the single looping animation, and it carries meaning.
+1. **Review progress** — `ReviewProgress` bar fills with `state.progress`; stage label cross-fades 150ms on change. The `phase` status dot pulses (1.6s opacity) **only** while `phase==="running"` — the single looping animation, and it carries meaning.
 2. **Ring draw-on** — arcs animate 0→score once on report load (`stroke-dashoffset`, `--dur-3` ease-out), then static.
 3. **Count-up** — hero metric + deltas via `useCountUp` (≤`--dur-4`) on report change; tabular nums.
 4. **Sparkline / trend reveal** — one-shot left-to-right path draw (~`--dur-3`) on first paint; static after.
@@ -538,6 +538,6 @@ Animation **only** explains state, progress, or change. Everything decorative is
 ---
 
 ### Constraints honored
-Data contract preserved (rings `efficiency`/`effectiveness`/`alignment`; metric keys `tokens_per_change`/`cost`/`reask`/`cache`/`tool_success`/`sessions`; `Finding`/`Experiment`/`DreamReport` read by main as-is; `window.hd` + `useHarnessDreams`; `makeReport`/`seedReports` kept). All new types/fields additive + optional with derivation fallbacks. No yellow/brown/amber; teal/blue/violet + rose-negative only. System sans only, serif removed. Flat cards + hairlines + one whisper shadow, responsive `clamp()` gutters, no cards-in-cards, one hero metric per page, consistent sidebar + page-header. Mock keeps real repo names: agent-fleet, harness-dreams, zod-to-sql, waker.
+Data contract preserved (rings `efficiency`/`effectiveness`/`alignment`; metric keys `tokens_per_change`/`cost`/`reask`/`cache`/`tool_success`/`sessions`; `Finding`/`Experiment`/`HealthReport` read by main as-is; `window.hd` + `useHarnessHealth`; `makeReport`/`seedReports` kept). All new types/fields additive + optional with derivation fallbacks. No yellow/brown/amber; teal/blue/violet + rose-negative only. System sans only, serif removed. Flat cards + hairlines + one whisper shadow, responsive `clamp()` gutters, no cards-in-cards, one hero metric per page, consistent sidebar + page-header. Mock keeps real repo names: agent-fleet, harness-health, zod-to-sql, waker.
 
-Relevant files: `apps/desktop/src/ui/styles.css` (tokens + decoration removal), `apps/desktop/src/ui/components.tsx` (new components), `apps/desktop/src/shared/types.ts` (additive types), `apps/desktop/src/shared/mock.ts` (additive mock fields), and the five pages `App.tsx` / `Today.tsx` / `Cycle.tsx` / `Lab.tsx` / `History.tsx` / `Settings.tsx`.
+Relevant files: `apps/desktop/src/ui/styles.css` (tokens + decoration removal), `apps/desktop/src/ui/components.tsx` (new components), `apps/desktop/src/shared/types.ts` (additive types), `apps/desktop/src/shared/mock.ts` (additive mock fields), and the five pages `App.tsx` / `Today.tsx` / `Review.tsx` / `Lab.tsx` / `History.tsx` / `Settings.tsx`.

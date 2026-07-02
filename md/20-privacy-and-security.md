@@ -2,7 +2,7 @@
 
 *Status: 🟢 Locked (principles) / 🟡 Draft (mechanisms)*
 
-Harness Dreams reads the most sensitive data a developer has: full transcripts of
+Harness Health reads the most sensitive data a developer has: full transcripts of
 their coding sessions, including source code, file paths, commands, and
 potentially secrets. Privacy is not a feature here — it's the license to operate.
 These principles are **locked**; the mechanisms that implement them are draft.
@@ -10,8 +10,8 @@ These principles are **locked**; the mechanisms that implement them are draft.
 ## Principles (locked)
 
 1. **Local-first.** All raw data stays on the user's machine. Ingestion,
-   storage, and Deep Sleep are 100% local and work offline.
-2. **Cloud is opt-in and minimal.** The only egress is the REM LLM call, and only
+   storage, and Deterministic Vitals are 100% local and work offline.
+2. **Cloud is opt-in and minimal.** The only egress is the Insight LLM call, and only
    if the user enables it. It sends **redacted excerpts**, not whole transcripts.
 3. **No telemetry of user content. Ever.** We do not phone home with the user's
    code, prompts, metrics, or usage. (Optional, clearly-labeled, content-free
@@ -29,14 +29,14 @@ These principles are **locked**; the mechanisms that implement them are draft.
 |---|---|---|
 | Raw transcripts (`~/.claude/**`) | high (code+secrets) | read in place, local only; pointers stored, bodies retained only if user opts in |
 | Normalized events/metrics | medium | local SQLite; numbers + pointers, minimal text |
-| Redacted REM excerpts | medium | only data sent to cloud, only if cloud REM is on |
+| Redacted Insight excerpts | medium | only data sent to cloud, only if cloud Insight is on |
 | Findings/experiments/reports | medium | local; reference evidence by pointer |
 | Config/memory files | high | written only on consent, with backups |
 | Secrets / `.env` / credentials | critical | never read into egress, never written, never displayed in full |
 
-## Redaction layer (for cloud REM)
+## Redaction layer (for cloud Insight)
 
-When cloud REM is enabled, the `llm` package runs every excerpt through
+When cloud Insight is enabled, the `llm` package runs every excerpt through
 redaction **before** any network call:
 
 - **Secret scanning**: detect API keys, tokens, private keys, connection strings,
@@ -48,15 +48,15 @@ redaction **before** any network call:
 - **Allowlist of fields**: only fields needed for analysis leave the machine;
   raw `content` is summarized/snippetized, not shipped wholesale.
 - **Preview**: settings show *exactly* what a redacted excerpt looks like before
-  the user enables cloud REM. No surprises.
+  the user enables cloud Insight. No surprises.
 
 If redaction can't confidently clean a span, it's **dropped, not sent**.
 
 ## Local-only mode
 
 A first-class mode where **no data ever leaves the device**:
-- Deep Sleep (all vitals/trends) works fully.
-- REM either (a) runs against a **local model** (e.g. Ollama) — future, or (b) is
+- Deterministic Vitals (all vitals/trends) works fully.
+- Insight either (a) runs against a **local model** (e.g. Ollama) — future, or (b) is
   disabled, leaving a vitals-and-trends-only report.
 - This must be a viable, clearly-supported configuration, not a degraded
   afterthought — some users will never enable cloud.
@@ -76,7 +76,7 @@ A first-class mode where **no data ever leaves the device**:
 | Secret leakage to cloud | redaction + drop-on-doubt + local-only mode |
 | Malicious/compromised config write | diff + consent + backup + undo; marked blocks |
 | Local store theft | OS-level disk encryption assumed; option to encrypt the store; easy purge |
-| Prompt injection via transcript content | REM treats transcript text as **data, not instructions**; structured outputs; no tool execution from REM |
+| Prompt injection via transcript content | Insight treats transcript text as **data, not instructions**; structured outputs; no tool execution from Insight |
 | Over-broad file access | request least privilege; explain; scope to harness dirs |
 | Supply-chain (deps) | minimal deps, lockfile, review; no remote code execution from analysis |
 
@@ -90,8 +90,8 @@ A first-class mode where **no data ever leaves the device**:
 
 ## What the user sees & controls
 
-- A clear privacy choice at onboarding (local-only vs cloud REM).
+- A clear privacy choice at onboarding (local-only vs cloud Insight).
 - A redaction preview.
-- Per-setting toggles: raw-text retention, path minimization, cloud REM, product
+- Per-setting toggles: raw-text retention, path minimization, cloud Insight, product
   analytics (off by default).
 - One-click **purge all data** and **revert all changes**.

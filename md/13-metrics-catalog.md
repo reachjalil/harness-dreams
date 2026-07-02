@@ -58,7 +58,7 @@ Legend — **Dir**: ↑ = higher is better, ↓ = lower is better, ~ = contextua
 | `guardrail.hits` | Guardrail hits | count of permission denials/blocks | ↓ | `permission_decision` events |
 | `tool.success_rate` | Tool success rate | ok ÷ (ok+error+denied) | ↑ | from `toolUseResult` |
 | `tool.retry_rate` | Tool retry rate | retried ÷ tool_calls | ↓ | same command repeated |
-| `mistake.count` | Detected mistakes | REM-classified mistake events | ↓ | also fuels findings |
+| `mistake.count` | Detected mistakes | Insight-classified mistake events | ↓ | also fuels findings |
 
 ### Usage-mix family
 
@@ -94,7 +94,7 @@ engineering work, flagged here and specified in `15`:
   (via `file-history` / subsequent diffs / no revert).
 - **"Goal / re-ask"** — requires segmenting a session into goals to detect when
   the user re-asked for the same thing.
-- **"Mistake"** — requires REM classification with evidence.
+- **"Mistake"** — requires Insight classification with evidence.
 - **"Task archetype"** — UI / refactor / debug / feature / docs classifier, used
   for fair comparisons (`11`).
 - **"Satisfaction proxy"** — derived from follow-up sentiment, acceptance, and

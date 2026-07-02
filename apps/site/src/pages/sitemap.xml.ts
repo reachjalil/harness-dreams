@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 
-const SITE_URL = "https://harnessdreams.com";
+const SITE_URL = "https://harnesshealth.com";
 const escapeXml = (value: string) =>
   value
     .replaceAll("&", "&amp;")

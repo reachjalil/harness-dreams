@@ -11,7 +11,7 @@ is doing. The full metric definitions live in
 
 Apple Health works because it (a) reduces a flood of raw signal to a few legible
 **summaries**, (b) shows **trends** not just snapshots, and (c) frames everything
-relative to **you**. Harness Dreams mirrors this.
+relative to **you**. Harness Health mirrors this.
 
 ### Vitals (the rings)
 
@@ -66,7 +66,7 @@ These are the metrics most likely to lead a report. Full list in `13`.
 
 ## Example narrative summaries (the "digest")
 
-The dream produces a 2–3 sentence plain-language digest from the vitals:
+The review produces a 2–3 sentence plain-language digest from the vitals:
 
 > "Solid day. Tokens-per-change dropped 12% vs your two-week median, mostly in
 > `agent-fleet`. One soft spot: re-ask rate ticked up on UI work — there's an

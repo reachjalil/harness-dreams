@@ -1,5 +1,5 @@
 /* ============================================================
-   Harness Dreams — clean health-product identity
+   Harness Health — clean health-product identity
    White, spacious, system typography, Apple Health-inspired
    communication surfaces, rings, and calm motion.
    ============================================================ */
@@ -356,7 +356,7 @@ h1,
   align-items: center;
 }
 
-.cycle-page {
+.review-page {
   background:
     radial-gradient(
       circle at 74% 44%,
@@ -366,7 +366,7 @@ h1,
     linear-gradient(180deg, #ffffff, var(--cloud));
 }
 
-.cycle-orb {
+.review-orb {
   position: relative;
   width: min(100%, 310px);
   aspect-ratio: 1;
@@ -375,7 +375,7 @@ h1,
   place-items: center;
 }
 
-.cycle-orb-ring {
+.review-orb-ring {
   position: absolute;
   inset: 0;
   border-radius: 50%;
@@ -389,7 +389,7 @@ h1,
     0 26px 70px -34px rgba(0, 0, 0, 0.75);
 }
 
-.cycle-orb-core {
+.review-orb-core {
   position: relative;
   width: 58%;
   aspect-ratio: 1;
@@ -402,8 +402,8 @@ h1,
   border: 1px solid var(--line);
 }
 
-.cycle-orb-core span,
-.cycle-orb-core small {
+.review-orb-core span,
+.review-orb-core small {
   color: var(--faint);
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -411,7 +411,7 @@ h1,
   text-transform: uppercase;
 }
 
-.cycle-orb-core b {
+.review-orb-core b {
   font-family: var(--font-display);
   font-size: clamp(3rem, 8vw, 5.5rem);
   font-weight: 800;
@@ -1480,7 +1480,7 @@ html:not([data-js]) .desktop-rings .ring-arc {
   animation-delay: -2.1s;
 }
 
-.cycle-orbit {
+.review-orbit {
   position: absolute;
   inset: 16%;
   border-radius: 50%;

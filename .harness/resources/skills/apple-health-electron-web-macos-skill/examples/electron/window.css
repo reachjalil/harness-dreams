@@ -1,0 +1,52 @@
+.app-window {
+  min-height: 100vh;
+  background: var(--surface-window);
+  color: var(--text-primary);
+  font-family: var(--font-system);
+}
+
+.app-toolbar {
+  height: var(--toolbar-height);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-4) 0 var(--traffic-light-safe-left, 78px);
+  border-bottom: 1px solid var(--separator);
+  background: color-mix(in srgb, var(--surface-sidebar), transparent 10%);
+  app-region: drag;
+  user-select: none;
+}
+
+.app-toolbar button,
+.app-toolbar input,
+.app-toolbar [role='button'],
+.app-toolbar .no-drag {
+  app-region: no-drag;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  height: calc(100vh - var(--toolbar-height));
+}
+
+.sidebar {
+  border-right: 1px solid var(--separator);
+  background: var(--surface-sidebar);
+  overflow: auto;
+}
+
+.main-content {
+  overflow: auto;
+  padding: var(--space-6);
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+}

@@ -11,7 +11,7 @@ team/fleet features without reshaping the core.
 ```
 Harness ──< Project ──< Session ──< Event
                             │
-DreamSession ──< Finding    │   (a dream reads Sessions/Events in a window)
+DreamSession ──< Finding    │   (a review reads Sessions/Events in a window)
      │      └─< Experiment   │
      └─< VitalsSnapshot ─────┘
 Experiment ──< ExperimentObservation
@@ -115,7 +115,7 @@ is and isn't retained.
 
 - **Harness-agnostic core** (`Event`/`Session`) → new connectors only map *into*
   this model; nothing downstream changes.
-- **Window-based dreams** read `Event` by time → trivial to re-run / re-scope.
+- **Window-based reviews** read `Event` by time → trivial to re-run / re-scope.
 - **Experiments reference sessions** → measurement is just a query over
   `ExperimentObservation`.
 - **Config as first-class data** → optimization and verification close the loop.

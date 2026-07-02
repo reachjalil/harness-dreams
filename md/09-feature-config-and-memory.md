@@ -2,13 +2,13 @@
 
 *Status: 🟡 Draft*
 
-Harness Dreams doesn't just describe problems — it helps you fix the *durable*
+Harness Health doesn't just describe problems — it helps you fix the *durable*
 sources of them: your harness configuration and its memory. This is where
 findings and experiments turn into permanent improvements.
 
 ## The configuration surface
 
-Modern harnesses expose a large, mostly-untuned config surface. Harness Dreams
+Modern harnesses expose a large, mostly-untuned config surface. Harness Health
 reads it, correlates it with outcomes, and proposes edits (always as diffs).
 
 | Artifact | Examples (Claude Code) | What we optimize |
@@ -24,7 +24,7 @@ where these live and how they're read.)
 
 ## How optimization works
 
-1. **Correlate.** During REM, tie outcomes to config. "Projects with an AGENTS.md
+1. **Correlate.** During Insight, tie outcomes to config. "Projects with an AGENTS.md
    test hint have a 30% lower 'how do I run tests' re-ask rate." "The `deep-
    research` skill fires in app repos where it's rarely useful."
 2. **Propose.** Generate a concrete edit as a **diff** against the real file,
@@ -32,7 +32,7 @@ where these live and how they're read.)
 3. **Review.** The user sees the diff inline and approves, edits, or rejects.
 4. **Apply.** On approval, write the change (with a backup/undo). Optionally
    stage it as an **experiment** first if the benefit is uncertain.
-5. **Verify.** A later dream checks whether the targeted metric moved.
+5. **Verify.** A later review checks whether the targeted metric moved.
 
 ## AGENTS.md / CLAUDE.md optimization (MVP lever)
 
@@ -64,7 +64,7 @@ experiment** (apply to some projects, compare) rather than blanket-applied.
 
 ## Memory review & consolidation
 
-The harness's memory is itself data to be groomed. Each dream can propose:
+The harness's memory is itself data to be groomed. Each review can propose:
 - **Add** a fact that would have prevented a re-ask ("record the deploy command
   for `waker`").
 - **Consolidate** duplicates and merge near-identical notes.
@@ -72,7 +72,7 @@ The harness's memory is itself data to be groomed. Each dream can propose:
 - **Re-index** `MEMORY.md` so recall stays sharp.
 
 This mirrors how the real `consolidate-memory` skill works, but driven by
-dream-time evidence about which memories actually helped or were missing.
+review-time evidence about which memories actually helped or were missing.
 
 ## Safety model (non-negotiable)
 

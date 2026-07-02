@@ -1,6 +1,6 @@
-# Harness Dreams Cloud Sync Print
+# Harness Health Cloud Sync Print
 
-Print-oriented marketing asset for the optional iPhone and Apple Watch Cloud Sync upgrade.
+Print-oriented marketing asset for the optional iPhone and Apple Watch companion connection.
 
 Files:
 

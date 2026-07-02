@@ -1,0 +1,49 @@
+:root {
+  color-scheme: light dark;
+  --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  --traffic-light-safe-left: 78px;
+  --sidebar-width: 236px;
+  --toolbar-height: 52px;
+  --radius-card: 18px;
+  --radius-control: 10px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --surface-window: #f5f5f7;
+  --surface-sidebar: rgba(255, 255, 255, 0.66);
+  --surface-card: rgba(255, 255, 255, 0.84);
+  --separator: rgba(60, 60, 67, 0.18);
+  --text-primary: #1d1d1f;
+  --text-secondary: rgba(60, 60, 67, 0.72);
+  --text-tertiary: rgba(60, 60, 67, 0.48);
+  --accent: #0a84ff;
+  --focus-ring: color-mix(in srgb, var(--accent), transparent 35%);
+  --ring-primary: #ff2d55;
+  --ring-secondary: #32d74b;
+  --ring-tertiary: #64d2ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-window: #101014;
+    --surface-sidebar: rgba(28, 28, 30, 0.72);
+    --surface-card: rgba(44, 44, 46, 0.76);
+    --separator: rgba(235, 235, 245, 0.16);
+    --text-primary: #f5f5f7;
+    --text-secondary: rgba(235, 235, 245, 0.72);
+    --text-tertiary: rgba(235, 235, 245, 0.48);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

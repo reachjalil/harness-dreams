@@ -1,0 +1,349 @@
+[
+  {
+    "aspect": "Apple HealthKit official data model",
+    "name": "Apple Developer Documentation: HealthKit",
+    "url": "https://developer.apple.com/documentation/healthkit",
+    "type": "official-docs",
+    "why": "Defines HealthKit as the central health and fitness data repository on iPhone and Apple Watch, gated by user permission.",
+    "use_for": [
+      "permissions",
+      "HealthKit store",
+      "data model",
+      "privacy baseline"
+    ]
+  },
+  {
+    "aspect": "HealthKit privacy",
+    "name": "Apple Developer Documentation: Protecting user privacy",
+    "url": "https://developer.apple.com/documentation/healthkit/protecting-user-privacy",
+    "type": "official-docs",
+    "why": "Canonical source for explicit per-type authorization and privacy messaging.",
+    "use_for": [
+      "permission UX",
+      "data minimization",
+      "review readiness"
+    ]
+  },
+  {
+    "aspect": "Apple Health UI information architecture",
+    "name": "Apple Support: View your data in Health on iPhone",
+    "url": "https://support.apple.com/guide/iphone/view-your-health-data-iphe3d379c32/ios",
+    "type": "official-support",
+    "why": "Documents Summary, Highlights, Trends, and drill-down behavior in the Health app.",
+    "use_for": [
+      "summary dashboard",
+      "trends",
+      "highlights",
+      "metric detail pages"
+    ]
+  },
+  {
+    "aspect": "Activity rings semantics",
+    "name": "Apple Watch - Close Your Rings",
+    "url": "https://www.apple.com/watch/close-your-rings/",
+    "type": "official-product",
+    "why": "Defines the public meaning of Move, Exercise, and Stand rings.",
+    "use_for": [
+      "ring semantics",
+      "goal language",
+      "habit loop"
+    ]
+  },
+  {
+    "aspect": "Activity app behavior",
+    "name": "Apple Support: Track daily activity with Apple Watch",
+    "url": "https://support.apple.com/guide/watch/track-daily-activity-apd3bf6d85a6/watchos",
+    "type": "official-support",
+    "why": "Explains the daily ring habit model: sit less, move more, get exercise, close rings.",
+    "use_for": [
+      "ring UX",
+      "watch summary",
+      "coaching copy"
+    ]
+  },
+  {
+    "aspect": "Apple Fitness app IA",
+    "name": "Apple Support: View activity, workouts, trends, and awards in Fitness",
+    "url": "https://support.apple.com/guide/iphone/view-activity-workouts-trends-awards-iph38f7f7ebe/ios",
+    "type": "official-support",
+    "why": "Documents Summary, activity rings, trends, workouts, meditations, and awards structure.",
+    "use_for": [
+      "fitness summary",
+      "awards",
+      "trend cards",
+      "goal coaching"
+    ]
+  },
+  {
+    "aspect": "HealthKit HIG and Apple Health badge",
+    "name": "Apple Human Interface Guidelines: HealthKit",
+    "url": "https://developer.apple.com/design/human-interface-guidelines/healthkit/",
+    "type": "official-design",
+    "why": "Guidance for HealthKit-related UI, Apple Health icon usage, terminology, and privacy.",
+    "use_for": [
+      "brand compliance",
+      "copy",
+      "permission UI"
+    ]
+  },
+  {
+    "aspect": "Works with Apple Health badge",
+    "name": "Apple Licensing and Trademarks: Works with Apple Health",
+    "url": "https://developer.apple.com/licensing-trademarks/works-with-apple-health/",
+    "type": "official-legal-design",
+    "why": "Rules for badge use, subordinate placement, social media restrictions, and terminology.",
+    "use_for": [
+      "marketing",
+      "legal",
+      "app store screenshots"
+    ]
+  },
+  {
+    "aspect": "Apple visual language",
+    "name": "Apple Human Interface Guidelines: Color",
+    "url": "https://developer.apple.com/design/human-interface-guidelines/color",
+    "type": "official-design",
+    "why": "System colors adapt across appearance modes and accessibility settings.",
+    "use_for": [
+      "dark mode",
+      "semantic color tokens",
+      "accessibility"
+    ]
+  },
+  {
+    "aspect": "Apple visual language",
+    "name": "Apple Human Interface Guidelines: Typography",
+    "url": "https://developer.apple.com/design/human-interface-guidelines/typography",
+    "type": "official-design",
+    "why": "System type, legibility, hierarchy, and Dynamic Type guidance.",
+    "use_for": [
+      "metric hierarchy",
+      "large numbers",
+      "labels"
+    ]
+  },
+  {
+    "aspect": "Apple symbols",
+    "name": "SF Symbols",
+    "url": "https://developer.apple.com/sf-symbols/",
+    "type": "official-design-tool",
+    "why": "Native symbol system aligned with San Francisco; use through platform APIs, do not bundle Apple font files.",
+    "use_for": [
+      "icons",
+      "watch glyphs",
+      "accessibility",
+      "symbol animations"
+    ]
+  },
+  {
+    "aspect": "Modern React Native HealthKit",
+    "name": "kingstinct/react-native-healthkit",
+    "url": "https://github.com/kingstinct/react-native-healthkit",
+    "type": "open-source-library",
+    "why": "Modern, TypeScript-first HealthKit bindings with Promise API, Nitro Modules, hooks, and Expo plugin.",
+    "use_for": [
+      "primary HealthKit bridge",
+      "new architecture",
+      "Expo iOS"
+    ]
+  },
+  {
+    "aspect": "Established React Native HealthKit",
+    "name": "agencyenterprise/react-native-health",
+    "url": "https://github.com/agencyenterprise/react-native-health",
+    "type": "open-source-library",
+    "why": "Established React Native HealthKit package with large community footprint and many examples; use as compatibility reference.",
+    "use_for": [
+      "legacy projects",
+      "permission caveats",
+      "method surface",
+      "migration comparison"
+    ]
+  },
+  {
+    "aspect": "Expo HealthKit sample",
+    "name": "Haider-Mukhtar/ReactNative-Apple-Health-IOS",
+    "url": "https://github.com/Haider-Mukhtar/ReactNative-Apple-Health-IOS",
+    "type": "open-source-sample-app",
+    "why": "Expo + TypeScript sample using react-native-health for common metrics and hook-based data fetching.",
+    "use_for": [
+      "sample wiring",
+      "developer onboarding",
+      "Expo dev client"
+    ]
+  },
+  {
+    "aspect": "Apple Watch bridge from React Native",
+    "name": "watch-connectivity/react-native-watch-connectivity",
+    "url": "https://github.com/watch-connectivity/react-native-watch-connectivity",
+    "type": "open-source-library",
+    "why": "Best reference for React Native iPhone app communicating with a native Swift/Objective-C Watch app via WatchConnectivity.",
+    "use_for": [
+      "WatchConnectivity bridge",
+      "application context",
+      "messages",
+      "transfers"
+    ]
+  },
+  {
+    "aspect": "Apple Watch bridge alternative",
+    "name": "CRIIPI11/rn-watch-connect",
+    "url": "https://github.com/CRIIPI11/rn-watch-connect",
+    "type": "open-source-library",
+    "why": "Modern alternative for communicating with paired Apple Watch, still assumes the watch app is Swift/SwiftUI.",
+    "use_for": [
+      "watch bridge fallback",
+      "connectivity monitoring",
+      "file transfer"
+    ]
+  },
+  {
+    "aspect": "Native iOS/watchOS workout architecture",
+    "name": "msimms/OpenWorkoutTracker",
+    "url": "https://github.com/msimms/OpenWorkoutTracker",
+    "type": "open-source-app",
+    "why": "Native iOS/watchOS workout tracker; useful for watch-specific data flow, workout session architecture, and SwiftUI patterns.",
+    "use_for": [
+      "watch architecture",
+      "workout state",
+      "native HealthKit patterns"
+    ]
+  },
+  {
+    "aspect": "Modern open-source RN health app",
+    "name": "skulptapp/skulpt",
+    "url": "https://github.com/skulptapp/skulpt",
+    "type": "open-source-app",
+    "why": "Modern local-first workout tracker using React Native, Expo, SQLite, HealthKit, Health Connect, Apple Watch, and Live Activity support.",
+    "use_for": [
+      "end-to-end app architecture",
+      "offline-first",
+      "iOS+Android parity",
+      "watch/live activity reference"
+    ]
+  },
+  {
+    "aspect": "Apple Health analytics / insights",
+    "name": "RuochenLyu/apple-health-analyst",
+    "url": "https://github.com/RuochenLyu/apple-health-analyst",
+    "type": "open-source-app",
+    "why": "Privacy-first Apple Health analyzer emphasizing cross-metric insights, trends, reports, and agent-driven health analysis.",
+    "use_for": [
+      "insights",
+      "recommendations",
+      "reporting",
+      "cross-metric summaries"
+    ]
+  },
+  {
+    "aspect": "WorkoutKit from React Native",
+    "name": "Janjiran/react-native-workouts",
+    "url": "https://github.com/Janjiran/react-native-workouts",
+    "type": "open-source-library",
+    "why": "Experimental Expo module for Apple WorkoutKit to create, preview, and sync workouts to Apple Watch/Fitness app.",
+    "use_for": [
+      "WorkoutKit spike",
+      "custom workout plans",
+      "Swift bridge patterns"
+    ]
+  },
+  {
+    "aspect": "Activity rings component reference",
+    "name": "thecodehunter/react-native-activity-rings",
+    "url": "https://github.com/thecodehunter/react-native-activity-rings",
+    "type": "open-source-ui-component",
+    "why": "React Native activity ring component useful for API shape and theming ideas; not enough for full Apple-style >100% ring behavior.",
+    "use_for": [
+      "ring component study",
+      "props API",
+      "baseline UI"
+    ]
+  },
+  {
+    "aspect": "Charts for React Native health UI",
+    "name": "FormidableLabs/victory-native-xl",
+    "url": "https://github.com/FormidableLabs/victory-native-xl",
+    "type": "open-source-library",
+    "why": "High-performance React Native charting powered by D3, Skia, and Reanimated; strong fit for trends and health metric charts.",
+    "use_for": [
+      "line charts",
+      "bar charts",
+      "press gestures",
+      "trend cards"
+    ]
+  },
+  {
+    "aspect": "Custom rings and advanced visuals",
+    "name": "Shopify React Native Skia",
+    "url": "https://shopify.github.io/react-native-skia/",
+    "type": "open-source-library-docs",
+    "why": "2D graphics primitives for custom arcs, gradients, shaders, chart overlays, and animated ring details.",
+    "use_for": [
+      "custom ring renderer",
+      "gradients",
+      "motion",
+      "GPU visuals"
+    ]
+  },
+  {
+    "aspect": "Animation system",
+    "name": "React Native Reanimated",
+    "url": "https://docs.swmansion.com/react-native-reanimated/",
+    "type": "open-source-library-docs",
+    "why": "Modern animation engine for RN; use for ring interpolation, number rolls, card expansion, and gesture-linked motion.",
+    "use_for": [
+      "animation",
+      "shared values",
+      "gesture-linked transitions"
+    ]
+  },
+  {
+    "aspect": "React Native app navigation",
+    "name": "Expo Router Native Tabs",
+    "url": "https://docs.expo.dev/router/advanced/native-tabs/",
+    "type": "official-docs",
+    "why": "Native tab bars on Android and iOS; useful for iOS-feeling tab navigation while keeping RN app structure.",
+    "use_for": [
+      "tab shell",
+      "mobile-native navigation",
+      "Expo architecture"
+    ]
+  },
+  {
+    "aspect": "Android parity",
+    "name": "matinzd/react-native-health-connect",
+    "url": "https://github.com/matinzd/react-native-health-connect",
+    "type": "open-source-library",
+    "why": "React Native wrapper around Android Health Connect, the Android equivalent integration path for health data.",
+    "use_for": [
+      "Android parity",
+      "data adapter abstraction",
+      "Google Play declaration"
+    ]
+  },
+  {
+    "aspect": "Wearable backend normalization",
+    "name": "the-momentum/open-wearables",
+    "url": "https://github.com/the-momentum/open-wearables",
+    "type": "open-source-platform",
+    "why": "Self-hosted unified wearable API reference for normalizing multiple providers beyond HealthKit and Health Connect.",
+    "use_for": [
+      "future backend",
+      "source normalization",
+      "multi-provider sync"
+    ]
+  },
+  {
+    "aspect": "Achievement-style app UI",
+    "name": "JanSzewczyk/workout-tracker",
+    "url": "https://github.com/JanSzewczyk/workout-tracker",
+    "type": "open-source-app",
+    "why": "React Native/Expo workout app with dashboard, progress, achievements, offline/private positioning; useful for gamification UI.",
+    "use_for": [
+      "badges",
+      "progress UI",
+      "offline data",
+      "achievement model"
+    ]
+  }
+]

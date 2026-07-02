@@ -93,7 +93,7 @@ priority than Codex; listed for completeness.
 
 - **Cursor file (offset) tracking** per transcript so we only parse new lines.
 - **Watch mode**: optionally watch the harness directories (fs events) to keep
-  the store warm, so a "dream now" is instant. MVP can simply scan-on-dream.
+  the store warm, so a "run health review" is instant. MVP can simply scan-on-review.
 - **Backfill**: on first run, ingest history (bounded by retention setting) to
   seed baselines.
 
@@ -113,5 +113,5 @@ priority than Codex; listed for completeness.
 Ingestion derives metrics and **pointers**, not copies of secret-bearing bodies,
 by default. Whether raw message text is retained locally (for evidence display
 and chat) is a user setting. Nothing leaves the machine at ingestion time —
-cloud calls happen only in REM, on redacted excerpts, with opt-in. See
+cloud calls happen only in Insight, on redacted excerpts, with opt-in. See
 [20-privacy-and-security.md](20-privacy-and-security.md).

@@ -1,0 +1,6 @@
+README.md
+rules/**
+
+# OS metadata
+.DS_Store
+**/.DS_Store

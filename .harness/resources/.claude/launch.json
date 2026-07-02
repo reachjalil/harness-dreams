@@ -1,0 +1,53 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "site",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@harness-health/site",
+        "exec",
+        "astro",
+        "dev",
+        "--port",
+        "4339"
+      ],
+      "port": 4339,
+      "autoPort": false
+    },
+    {
+      "name": "desktop-dash",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@harness-health/desktop",
+        "exec",
+        "vite",
+        "--config",
+        "vite.renderer.config.ts",
+        "--port",
+        "5599",
+        "--strictPort"
+      ],
+      "port": 5599,
+      "autoPort": false
+    },
+    {
+      "name": "site-worker",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@harness-health/site",
+        "exec",
+        "wrangler",
+        "dev",
+        "--port",
+        "8799",
+        "--local"
+      ],
+      "port": 8799,
+      "autoPort": false
+    }
+  ]
+}

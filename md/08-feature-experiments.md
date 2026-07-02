@@ -11,15 +11,15 @@ are in
 
 ## The core idea
 
-After reviewing a dream, the user is offered a small set of **suggested
+After reviewing a review, the user is offered a small set of **suggested
 improvements** — concrete, testable changes to how they (or the harness)
 operate. The user **tracks** the ones they like. The change takes effect in
-subsequent sessions. The **next dream** measures the effect and returns a
+subsequent sessions. The **next review** measures the effect and returns a
 reflection.
 
 > Example: *"When building user interfaces, try **medium** thinking effort."*
 > → track → over the next few UI sessions, effort is nudged to medium →
-> next dream: *"You used medium effort on 6 UI tasks. Result: 22% fewer
+> next review: *"You used medium effort on 6 UI tasks. Result: 22% fewer
 > follow-up prompts and similar accept rate — **keep it.**"* or
 > *"…but you asked for more follow-ups — **medium may be too low here, revert.**"*
 
@@ -39,7 +39,7 @@ SuggestedImprovement
 ├── guardrails[]       # auto-stop conditions ("if correction rate +25%, flag")
 ├── duration           # N sessions or D days (whichever first)
 ├── status             # proposed | enabled | running | concluded | adopted | rejected
-└── result             # filled by the grading dream: verdict + evidence + deltas
+└── result             # filled by the grading review: verdict + evidence + deltas
 ```
 
 ## Lifecycle
@@ -50,18 +50,18 @@ SuggestedImprovement
      └─ user declines      └─ guardrail trips → flagged early
 ```
 
-- **Suggested**: surfaced at the end of a dream (≤2–3 per report).
+- **Suggested**: surfaced at the end of a review (≤2–3 per report).
 - **Tracked**: user opts in; intervention becomes active.
 - **Measuring**: in effect; the app tracks which sessions fall in/out of scope
   (the "treated" set).
-- **Concluded**: enough data (duration reached) → the next/relevant dream grades
+- **Concluded**: enough data (duration reached) → the next/relevant review grades
   it.
 - **Adopted**: the change is made permanent (e.g. baked into AGENTS.md).
 - **Rejected**: reverted cleanly; recorded so we don't re-propose it blindly.
 
 ## How suggested improvements are reflected on
 
-The grading dream compares **treated** vs **untreated** work (or pre/post) on the
+The grading review compares **treated** vs **untreated** work (or pre/post) on the
 improvement's success metrics, accounting for small samples, and produces a
 plain-language reflection with the numbers behind it. It explicitly
 distinguishes:

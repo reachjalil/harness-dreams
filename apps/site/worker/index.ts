@@ -1,5 +1,5 @@
 /**
- * Harness Dreams — Cloudflare Worker
+ * Harness Health — Cloudflare Worker
  *
  * Serves the static Astro site (via the ASSETS binding) and handles the
  * waitlist API. First-party, no third parties — fits the privacy-first brand.

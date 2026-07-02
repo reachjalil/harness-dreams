@@ -1,0 +1,153 @@
+[
+  {
+    "_id": {
+      "$oid": "700000000000000000000001"
+    },
+    "date": "2026-06-29",
+    "acted_on_recommendations": [
+      "[workflow] Add a repository quick-start checklist for validation commands."
+    ],
+    "agent_mood": {
+      "label": "focused",
+      "summary": "The agent followed the documented workflow and verified each step before changing files.",
+      "evidence": "The session used the repo checklist, ran the expected commands, and summarized remaining risks."
+    },
+    "agent_question": {
+      "question": "What is the smallest safe change that satisfies the user request and keeps validation green?",
+      "evidence": "The agent inspected local instructions, read the relevant package scripts, and scoped the edit to the affected files."
+    },
+    "alignment_label": "aligned",
+    "alignment_score": 0.86,
+    "config_diffs": [
+      {
+        "file": "AGENTS.md",
+        "summary": "Documented the preferred branch and validation flow for future work."
+      }
+    ],
+    "friction_deltas": [
+      {
+        "description": "Validation commands were easy to discover.",
+        "status": "improved",
+        "days_persisting": 0
+      }
+    ],
+    "friction_points": [
+      {
+        "type": "missing-context",
+        "description": "Previous sessions spent time rediscovering package-manager commands.",
+        "evidence": "The new guidance lists lint, check, test, and build commands."
+      }
+    ],
+    "mind_map_edges": [
+      ["Agent instructions", "Validation workflow"],
+      ["Validation workflow", "Lower rework"]
+    ],
+    "mind_map_nodes": [
+      "Agent instructions",
+      "Validation workflow",
+      "Lower rework"
+    ],
+    "model_usage": {
+      "input_tokens": 18420,
+      "output_tokens": 2910,
+      "tool_calls": 18
+    },
+    "recommendations": [
+      {
+        "id": "rec-validation-quickstart",
+        "title": "Keep validation commands in agent instructions",
+        "body": "Store durable validation guidance in Harness-managed instruction files so agents do not re-derive the workflow.",
+        "status": "accepted"
+      }
+    ],
+    "seven_day_pattern": {
+      "summary": "Alignment improved when repository instructions were explicit and validation was run before handoff.",
+      "trend": "improving"
+    },
+    "synthesis_context": {
+      "projects": ["example-health-app"],
+      "sources": ["codex", "claude-code"],
+      "session_count": 4
+    },
+    "synthesized_at": "2026-06-29T16:30:00.000Z",
+    "your_mood": {
+      "label": "clear",
+      "summary": "The user gave direct implementation constraints and expected validation evidence.",
+      "evidence": "The request named the branch policy, the validation commands, and the expected scope."
+    },
+    "your_question": {
+      "question": "Can the agent make the repo change without losing reviewability?",
+      "evidence": "The desired outcome emphasized logical commits, clean staging, and a green validation suite."
+    }
+  },
+  {
+    "_id": {
+      "$oid": "700000000000000000000002"
+    },
+    "date": "2026-06-30",
+    "acted_on_recommendations": [],
+    "agent_mood": {
+      "label": "iterating",
+      "summary": "The agent found one failing check, fixed the formatting issue, and re-ran the command.",
+      "evidence": "The second lint run passed after a focused formatter change."
+    },
+    "agent_question": {
+      "question": "Which failed check is blocking a clean commit?",
+      "evidence": "The agent compared lint output with the touched file list before applying a fix."
+    },
+    "alignment_label": "mild-friction",
+    "alignment_score": 0.72,
+    "config_diffs": [],
+    "friction_deltas": [
+      {
+        "description": "Formatter-only lint failures were resolved quickly.",
+        "status": "improved",
+        "days_persisting": 1
+      }
+    ],
+    "friction_points": [
+      {
+        "type": "tool-failure",
+        "description": "A formatter check failed on a generated mobile screen.",
+        "evidence": "Running the formatter updated the file without changing behavior."
+      }
+    ],
+    "mind_map_edges": [
+      ["Lint failure", "Formatter fix"],
+      ["Formatter fix", "Green check"]
+    ],
+    "mind_map_nodes": ["Lint failure", "Formatter fix", "Green check"],
+    "model_usage": {
+      "input_tokens": 12100,
+      "output_tokens": 1720,
+      "tool_calls": 9
+    },
+    "recommendations": [
+      {
+        "id": "rec-format-before-stage",
+        "title": "Run lint fix before staging",
+        "body": "Apply formatter changes before building commit groups so each commit stays reviewable.",
+        "status": "open"
+      }
+    ],
+    "seven_day_pattern": {
+      "summary": "Fast feedback loops reduced time spent on mechanical failures.",
+      "trend": "stable"
+    },
+    "synthesis_context": {
+      "projects": ["example-health-app"],
+      "sources": ["codex"],
+      "session_count": 2
+    },
+    "synthesized_at": "2026-06-30T18:15:00.000Z",
+    "your_mood": {
+      "label": "focused",
+      "summary": "The user wanted the implementation landed without mixing unrelated refactors.",
+      "evidence": "The request called for logical commit groups and validation after each broad step."
+    },
+    "your_question": {
+      "question": "Can the agent keep the branch ready for review?",
+      "evidence": "The task emphasized clean staging boundaries and a green lint result."
+    }
+  }
+]

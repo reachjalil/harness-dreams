@@ -10,7 +10,7 @@ Turborepo + Biome + TypeScript monorepo (see the root `README.md`,
 ## Target layout
 
 ```
-harness-dreams/
+harness-health/
 ├── packages/
 │   ├── core/            # shared types + domain model + utils  (exists; repurpose)
 │   ├── store/           # SQLite schema + repositories
@@ -18,17 +18,17 @@ harness-dreams/
 │   ├── ingest/          # raw → normalized Event/Session pipeline
 │   ├── metrics/         # vitals, baselines, deltas, classifiers
 │   ├── llm/             # Claude API client, prompt library, redaction, budgets
-│   ├── dream-engine/    # Deep Sleep + REM + assemble → DreamReport
+│   ├── review-engine/    # Deterministic Vitals + Insight + assemble → HealthReport
 │   ├── experiments/     # enablement, attribution, grading
 │   └── config/          # read/diff/write AGENTS.md, skills, mcp, memory
 ├── apps/
 │   ├── desktop/         # Tauri v2 menu-bar app + React/TS UI
-│   └── cli/             # headless dream runner (CI, automation, testing)
+│   └── cli/             # headless review runner (CI, automation, testing)
 └── md/                  # this documentation set
 ```
 
-All packages are `@harness-dreams/<name>` (matching the existing
-`@harness-dreams/core`).
+All packages are `@harness-health/<name>` (matching the existing
+`@harness-health/core`).
 
 ## Package responsibilities & dependencies
 
@@ -40,13 +40,13 @@ All packages are `@harness-dreams/<name>` (matching the existing
 | `ingest` | `core`, `connectors`, `store` | `ingest(window)` → normalized rows |
 | `metrics` | `core`, `store` | `computeVitals(window, scope)`, classifiers |
 | `llm` | `core` | Claude client, prompt templates, redaction, budget guard |
-| `dream-engine` | `core`, `store`, `metrics`, `llm` | `runDream(window)` → `DreamReport` |
+| `review-engine` | `core`, `store`, `metrics`, `llm` | `runHealthReview(window)` → `HealthReport` |
 | `experiments` | `core`, `store`, `config`, `metrics` | enable/attribute/grade |
 | `config` | `core`, `store` | read/diff/apply config + memory changes (consent) |
 | `apps/desktop` | all packages | the app shell + UI |
-| `apps/cli` | `dream-engine`, `ingest`, `store`, `experiments` | `harness-dreams dream` etc. |
+| `apps/cli` | `review-engine`, `ingest`, `store`, `experiments` | `harness-health review` etc. |
 
-Dependency direction stays acyclic: `core` at the bottom, `dream-engine`
+Dependency direction stays acyclic: `core` at the bottom, `review-engine`
 orchestrates, apps sit on top.
 
 ## Why this maps cleanly to the existing repo
@@ -54,11 +54,11 @@ orchestrates, apps sit on top.
 - The repo already uses **pnpm workspaces + catalogs**, **Turborepo** tasks
   (`build`/`check`/`test`/`dev`), **Biome**, **Changesets**, and TS project
   references — exactly the toolchain this layout wants. New packages just follow
-  the existing `packages/core` template (`package.json` with `@harness-dreams/`
+  the existing `packages/core` template (`package.json` with `@harness-health/`
   scope, `tsconfig.json` extending `tsconfig.base.json`, `src/`).
 - The existing `core` package is the seed; the rest are added the same way.
 - `apps/cli` lets the **entire engine run headless** — critical for testing the
-  dream pipeline in CI without the desktop shell (the existing CI workflow runs
+  review pipeline in CI without the desktop shell (the existing CI workflow runs
   `lint`/`check`/`build`/`test` across the workspace).
 
 ## The Tauri app within the monorepo
@@ -80,7 +80,7 @@ orchestrates, apps sit on top.
 
 - **Catalogs** for shared dep versions (`zod`, `typescript`, `vitest`, etc.) in
   `pnpm-workspace.yaml`.
-- **Turbo** task graph: `dream-engine` `build` depends on `^build`, etc.
+- **Turbo** task graph: `review-engine` `build` depends on `^build`, etc.
 - **Biome** for lint/format (config already present).
 - **Changesets** for versioning shared packages.
 - **Vitest** for unit tests; fixture transcripts under each package's `src`.
@@ -88,7 +88,7 @@ orchestrates, apps sit on top.
 ## Build/run targets
 
 - `pnpm dev` — run desktop app in dev (Tauri dev) + watch packages.
-- `pnpm --filter @harness-dreams/cli dev -- dream --since=yesterday` — headless
-  dream for testing.
+- `pnpm --filter @harness-health/cli dev -- review --since=yesterday` — headless
+  review for testing.
 - `pnpm test` — workspace tests (engine fixtures + redaction + metrics).
 - `pnpm build` — build packages + desktop app bundle.

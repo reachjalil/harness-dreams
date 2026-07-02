@@ -1,0 +1,312 @@
+---
+import Rings from "./Rings.astro";
+/**
+ * Hero product shot: the actual Harness Health macOS menu-bar app, rendered in
+ * its "night" treatment (the same palette/cards as apps/desktop). Sample data,
+ * framed as a preview. Sitting dark-on-light ties the site to the app.
+ */
+---
+
+<div class="appwin" aria-label="The Harness Health app">
+  <div class="titlebar">
+    <span class="lights" aria-hidden="true">
+      <i style="background:#ff5f57"></i>
+      <i style="background:#febc2e"></i>
+      <i style="background:#28c840"></i>
+    </span>
+    <span class="win-title mono">Harness Health</span>
+    <span class="preview-pill mono">Preview</span>
+  </div>
+
+  <div class="appbody">
+    <div class="hero-head">
+      <div>
+        <div class="eyebrow-app">Good morning</div>
+        <div class="meta">Last night's review · 3 projects · 14 sessions</div>
+      </div>
+    </div>
+
+    <div class="vitals">
+      <Rings
+        efficiency={82}
+        effectiveness={74}
+        alignment={91}
+        size={118}
+        track="rgba(255,255,255,0.08)"
+        colors={["#4a6cf7", "#a7dad3", "#f0b07a"]}
+      />
+      <ul class="legend">
+        <li>
+          <span class="swatch" style="background:#4a6cf7"></span>
+          Efficiency <b>82</b><span class="delta up">↓12%</span>
+        </li>
+        <li>
+          <span class="swatch" style="background:#a7dad3"></span>
+          Effectiveness <b>74</b><span class="delta up">re-asks ↓</span>
+        </li>
+        <li>
+          <span class="swatch" style="background:#f0b07a"></span>
+          Alignment <b>91</b><span class="delta flat">steady</span>
+        </li>
+      </ul>
+    </div>
+
+    <p class="digest">
+      Solid night. Tokens-per-change dropped <b>12%</b> vs your 2-week median,
+      mostly in <span class="repo">agent-fleet</span>.
+    </p>
+
+    <div class="finding win">
+      <span class="fi" aria-hidden="true">✓</span>
+      <div class="fbody">
+        <div class="ftitle">
+          The <code>verify</code> skill correlates with 18% fewer re-asks.
+        </div>
+        <div class="factions">
+          <button class="mini primary" type="button">Accept</button>
+          <button class="mini" type="button">Snooze</button>
+          <span class="evi mono">6 sessions</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="finding exp">
+      <span class="fi warm" aria-hidden="true">+</span>
+      <div class="fbody">
+        <div class="ftitle">
+          Suggested improvement: try <b>medium</b> effort for UI tasks.
+        </div>
+        <div class="factions">
+          <button class="mini warm" type="button">Track</button>
+          <span class="evi mono">Reflect next report</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Self-contained "night" palette — mirrors apps/desktop styles.css. */
+  .appwin {
+    --bg: #0d1b2a;
+    --panel: #16273a;
+    --panel-2: #102032;
+    --txt: #f4f6f8;
+    --mut: #9fb0c4;
+    --fnt: #6b7888;
+    --acc: #4a6cf7;
+    --vio: #a78bfa;
+    --good: #5bb5a6;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-2: rgba(255, 255, 255, 0.16);
+
+    width: min(100%, 24rem);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    background:
+      radial-gradient(
+        900px 420px at 50% -18%,
+        rgba(167, 139, 250, 0.32) 0%,
+        rgba(74, 108, 247, 0.16) 34%,
+        rgba(13, 27, 42, 0.9) 62%
+      ),
+      var(--bg);
+    color: var(--txt);
+    box-shadow:
+      0 40px 80px -30px rgba(13, 27, 42, 0.55),
+      0 0 60px -20px rgba(167, 139, 250, 0.45);
+    font-size: 13px;
+  }
+
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .lights {
+    display: inline-flex;
+    gap: 6px;
+  }
+  .lights i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    display: block;
+  }
+  .win-title {
+    color: var(--mut);
+    font-size: 0.66rem;
+    margin-inline: auto;
+  }
+  .preview-pill {
+    color: var(--fnt);
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.6rem;
+  }
+
+  .appbody {
+    padding: 0.9rem 1rem 1.1rem;
+    display: grid;
+    gap: 0.85rem;
+  }
+  .eyebrow-app {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--vio);
+  }
+  .meta {
+    color: var(--mut);
+    margin-top: 0.15rem;
+    font-size: 0.86rem;
+  }
+
+  .vitals {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.84rem;
+    color: var(--mut);
+    flex: 1 1 auto;
+  }
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .legend b {
+    color: var(--txt);
+    margin-left: auto;
+  }
+  .swatch {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: none;
+  }
+  .delta {
+    font-size: 0.72rem;
+    flex: none;
+  }
+  .delta.up {
+    color: var(--good);
+  }
+  .delta.flat {
+    color: var(--fnt);
+  }
+
+  .digest {
+    color: var(--mut);
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+  .digest b {
+    color: var(--txt);
+  }
+  .repo {
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    color: var(--vio);
+  }
+
+  .finding {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.7rem 0.75rem;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--good);
+    border-radius: 9px;
+    background: var(--panel-2);
+  }
+  .finding.exp {
+    border-left-color: #f0b07a;
+  }
+  .fi {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex: none;
+    display: grid;
+    place-items: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: var(--good);
+    color: #04222a;
+  }
+  .fi.warm {
+    background: transparent;
+    font-size: 0.85rem;
+  }
+  .fbody {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .ftitle {
+    font-size: 0.85rem;
+    line-height: 1.35;
+    color: var(--txt);
+  }
+  .ftitle code {
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    padding: 0.03rem 0.28rem;
+    border-radius: 5px;
+    background: rgba(74, 108, 247, 0.2);
+    color: #b9c6ff;
+  }
+  .factions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .mini {
+    padding: 0.3rem 0.65rem;
+    border-radius: 7px;
+    border: 1px solid var(--line-2);
+    background: transparent;
+    color: var(--txt);
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 550;
+    cursor: pointer;
+  }
+  .mini.primary {
+    background: var(--acc);
+    border-color: transparent;
+    color: #fff;
+  }
+  .mini.warm {
+    background: #f0b07a;
+    border-color: transparent;
+    color: #3a1c0e;
+  }
+  .evi {
+    color: var(--fnt);
+    margin-left: auto;
+    font-size: 0.7rem;
+  }
+
+  @media (max-width: 420px) {
+    .vitals {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .legend b {
+      margin-left: 0.3rem;
+    }
+  }
+</style>

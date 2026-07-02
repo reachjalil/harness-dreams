@@ -130,7 +130,7 @@ def main() -> None:
     y = draw_wrapped(
         draw,
         (x, y),
-        "Cloud Sync brings your coding-agent sleep cycle to iPhone and Apple Watch for $5/month.",
+        "Connect your local Mac health review to iPhone and Apple Watch with a 2-week trial.",
         subtitle,
         soft,
         1000,
@@ -139,7 +139,7 @@ def main() -> None:
 
     y += 58
     offset = 0
-    for label in ("Mac stays local", "Scores · Findings · Goals", "$5/month"):
+    for label in ("Mac stays local", "Scores · Findings · Goals", "2-week trial"):
         offset += pill(
             draw,
             (x + offset, y),
@@ -156,15 +156,15 @@ def main() -> None:
     draw_wrapped(
         draw,
         (x + 42, footer_y + 94),
-        "Cloud Sync mirrors only the cycle signal: scores, findings, and goals.",
+        "The companion connection mirrors only the review signal: scores, findings, and goals.",
         small,
         soft,
         940,
         8,
     )
 
-    draw.text((x, H - 104), "harnessdreams.com", font=small, fill=(255, 255, 255, 214))
-    draw.text((W - 560, H - 104), "Optional Cloud Sync", font=small, fill=(255, 255, 255, 196))
+    draw.text((x, H - 104), "harnesshealth.com", font=small, fill=(255, 255, 255, 214))
+    draw.text((W - 560, H - 104), "Optional companion connection", font=small, fill=(255, 255, 255, 196))
 
     canvas.convert("RGB").save(OUT, quality=96, dpi=(300, 300))
     print(OUT)

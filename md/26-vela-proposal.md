@@ -1,4 +1,4 @@
-# Dream — Hackathon Proposal
+# Review — Hackathon Proposal
 
 > *You wake up. Open it. See how you and your agents were thinking yesterday — and how aligned you actually were.*
 
@@ -20,9 +20,9 @@ These aren't model failures. They're alignment failures. And nothing surfaces th
 
 ## The Product
 
-**Dream** is a personal AI that watches both sides of your coding sessions — your thinking and your agents' thinking — synthesizes the alignment between them overnight, and every morning shows you where you collaborated and where you fought. Then you can talk to it.
+**Review** is a personal AI that watches both sides of your coding sessions — your thinking and your agents' thinking — synthesizes the alignment between them overnight, and every morning shows you where you collaborated and where you fought. Then you can talk to it.
 
-A coding session is a collaboration. Dream measures how good that collaboration was.
+A coding session is a collaboration. Review measures how good that collaboration was.
 
 ---
 
@@ -80,7 +80,7 @@ AI builders who use coding agents daily and want to get better at directing them
 │  Wed  55% Friction        Sat  ──  Rest                             │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│   🎙️  [Talk to Dream]   "Ask me anything about yesterday"          │
+│   🎙️  [Talk to Review]   "Ask me anything about yesterday"          │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -105,7 +105,7 @@ AI builders who use coding agents daily and want to get better at directing them
 
 ## The Voice Session
 
-Click **Talk to Dream** and the dashboard becomes a conversation. Dream has the full synthesis loaded — your mood, your question, your agents' mood, their question, the friction points, the recommendations. You ask:
+Click **Talk to Review** and the dashboard becomes a conversation. Review has the full synthesis loaded — your mood, your question, your agents' mood, their question, the friction points, the recommendations. You ask:
 
 - *"Why was my alignment score so low on Wednesday?"*
 - *"What should I change in my CLAUDE.md first?"*
@@ -115,9 +115,9 @@ It answers from your real sessions — specific, grounded, actionable. The goal 
 
 ---
 
-## What Dream Watches
+## What Review Watches
 
-Dream ingests both sides of the collaboration:
+Review ingests both sides of the collaboration:
 
 **Your side:**
 - Claude Code, Cursor, Codex session histories — your prompts, your follow-ups, your rejections
@@ -173,7 +173,7 @@ All sources flow into MongoDB. Raw docs for synthesis. Vector embeddings for sem
 │  → reads dream_log from MongoDB                             │
 │  → renders mind map, metrics, pattern                       │
 │                                                             │
-│  [Talk to Dream] button                                     │
+│  [Talk to Review] button                                     │
 │  → LiveKit (audio pipeline)                                 │
 │  → Gemini Live API (real-time voice)                        │
 │  → dream_log injected as system context                     │
@@ -186,7 +186,7 @@ All sources flow into MongoDB. Raw docs for synthesis. Vector embeddings for sem
 |---|---|---|
 | **Agent framework** | Pydantic AI | Structured output validation, tool calling, MongoDB wiring, retries — all typed |
 | **Synthesis model** | Gemini 2.5 Flash (via Pydantic AI) | 1M token context window; handles a full day of sessions in one call |
-| **Storage** | MongoDB Atlas | Unified: vector embeddings + operational dream logs + raw session docs in one platform |
+| **Storage** | MongoDB Atlas | Unified: vector embeddings + operational review logs + raw session docs in one platform |
 | **Vector search** | MongoDB Atlas Vector Search | Semantic clustering for mind map, finding related past learnings |
 | **Voice** | Gemini Live API | Real-time low-latency voice for morning session — WebSocket, not a standard LLM call |
 | **Audio pipeline** | LiveKit | WebRTC infrastructure connecting browser to Gemini Live API |
@@ -200,7 +200,7 @@ Synthesis pipeline  →  Pydantic AI agent  →  Gemini 2.5 Flash  →  MongoDB
 Morning voice       →  Gemini Live API  ↔  LiveKit  ↔  Browser
 ```
 
-Pydantic AI owns the overnight synthesis: it calls Gemini, validates the structured `DreamLog` output, retries on failure, and writes to MongoDB via tools. Gemini Live API owns the morning voice session — it's a WebSocket audio stream, outside Pydantic AI's scope.
+Pydantic AI owns the overnight synthesis: it calls Gemini, validates the structured `HealthLog` output, retries on failure, and writes to MongoDB via tools. Gemini Live API owns the morning voice session — it's a WebSocket audio stream, outside Pydantic AI's scope.
 
 ### Pydantic AI Agent Structure
 
@@ -250,7 +250,7 @@ class Recommendation(BaseModel):
     action: str
     reason: str
 
-class DreamLog(BaseModel):
+class HealthLog(BaseModel):
     mind_map: MindMap
 
     # your side
@@ -273,7 +273,7 @@ class DreamLog(BaseModel):
 
 dream_agent = Agent(
     'google-gla:gemini-2.5-flash',
-    output_type=DreamLog,
+    output_type=HealthLog,
     deps_type=DreamDeps,
     instructions=SYNTHESIS_PROMPT,
     retries=2,
@@ -284,7 +284,7 @@ dream_agent = Agent(
 @dream_agent.tool
 async def get_today_sessions(ctx: RunContext[DreamDeps]) -> list[dict]:
     """Fetch all coding agent sessions ingested today — both user prompts and agent responses."""
-    return await ctx.deps.mongo.dream.sessions.find({
+    return await ctx.deps.mongo.review.sessions.find({
         "user_id": ctx.deps.user_id,
         "date": ctx.deps.date
     }).to_list(None)
@@ -292,7 +292,7 @@ async def get_today_sessions(ctx: RunContext[DreamDeps]) -> list[dict]:
 @dream_agent.tool
 async def get_agent_configs(ctx: RunContext[DreamDeps]) -> list[dict]:
     """Fetch current agent config files — CLAUDE.md, .cursorrules, skills."""
-    return await ctx.deps.mongo.dream.agent_configs.find({
+    return await ctx.deps.mongo.review.agent_configs.find({
         "user_id": ctx.deps.user_id,
         "date": ctx.deps.date
     }).to_list(None)
@@ -300,7 +300,7 @@ async def get_agent_configs(ctx: RunContext[DreamDeps]) -> list[dict]:
 @dream_agent.tool
 async def search_past_sessions(ctx: RunContext[DreamDeps], topic: str) -> list[dict]:
     """Vector search historical sessions to determine if a topic is new."""
-    return await ctx.deps.mongo.dream.sessions.aggregate([{
+    return await ctx.deps.mongo.review.sessions.aggregate([{
         "$vectorSearch": {
             "queryVector": await embed(topic),
             "path": "embedding",
@@ -311,9 +311,9 @@ async def search_past_sessions(ctx: RunContext[DreamDeps], topic: str) -> list[d
     }]).to_list(None)
 
 @dream_agent.tool
-async def save_dream_log(ctx: RunContext[DreamDeps], log: dict) -> str:
+async def save_health_log(ctx: RunContext[DreamDeps], log: dict) -> str:
     """Save the completed dream_log to MongoDB."""
-    await ctx.deps.mongo.dream.dream_logs.insert_one(log)
+    await ctx.deps.mongo.review.health_logs.insert_one(log)
     return "saved"
 
 # --- Run (nightly cron) ---
@@ -321,7 +321,7 @@ async def save_dream_log(ctx: RunContext[DreamDeps], log: dict) -> str:
 async def run_synthesis(user_id: str, date: str):
     deps = DreamDeps(mongo=AsyncIOMotorClient(MONGO_URI), user_id=user_id, date=date)
     result = await dream_agent.run("Synthesize today.", deps=deps)
-    return result.output  # fully typed, validated DreamLog
+    return result.output  # fully typed, validated HealthLog
 ```
 
 ### MongoDB Schema
@@ -360,7 +360,7 @@ async def run_synthesis(user_id: str, date: str):
   instructions: [String],       // key directives extracted
 }
 
-// dream_logs collection — nightly synthesis
+// health_logs collection — nightly synthesis
 {
   _id: ObjectId,
   date: ISODate,
@@ -414,7 +414,7 @@ async def run_synthesis(user_id: str, date: str):
 ### Synthesis Prompt (Gemini 3.5 Flash)
 
 ```
-You are Dream — a personal AI that analyzes the collaboration between 
+You are Review — a personal AI that analyzes the collaboration between 
 a builder and their coding agents.
 
 You have access to today's sessions — both sides:
@@ -490,13 +490,13 @@ No encouragement. No generic advice. Name the actual conflict.
 
 ## Demo Flow (2 minutes)
 
-**Setup:** pre-load the learnings folder + past sessions into MongoDB. Run synthesis. Have a dream log ready.
+**Setup:** pre-load the learnings folder + past sessions into MongoDB. Run synthesis. Have a review log ready.
 
 **Act 1 — The Data (20s)**
 Show the ingestion: "Here's a week of my Claude Code sessions, my Cursor chats, my learnings folder." Just a file list. Make it feel real.
 
 **Act 2 — The Dashboard (50s)**
-Open Dream. Walk through the sections:
+Open Review. Walk through the sections:
 - Alignment score: *"62% — Friction. We were pulling in different directions."*
 - Your mood vs agent mood: *"I was deep focus. My agents were uncertain — lots of clarifying questions."*
 - Your question vs agent question: *"I was asking 'can I make eval feed back into behavior?' They were asking 'what does this user actually want?'"*
@@ -504,11 +504,11 @@ Open Dream. Walk through the sections:
 - Recommendations: *"One line change to CLAUDE.md fixes the top friction point."*
 
 **Act 3 — The Voice (40s)**
-Click Talk to Dream. Ask live: *"What's the one change that would have made today a 90% alignment day?"*
-Dream answers with the specific CLAUDE.md edit, grounded in the actual sessions.
+Click Talk to Review. Ask live: *"What's the one change that would have made today a 90% alignment day?"*
+Review answers with the specific CLAUDE.md edit, grounded in the actual sessions.
 
 **Act 4 — The Pitch (10s)**
-*"A coding session is a collaboration. Dream measures how good that collaboration was — and tells you exactly what to change."*
+*"A coding session is a collaboration. Review measures how good that collaboration was — and tells you exactly what to change."*
 
 ---
 
@@ -516,18 +516,18 @@ Dream answers with the specific CLAUDE.md edit, grounded in the actual sessions.
 
 | Priority | Task | Time |
 |---|---|---|
-| 1 | Pydantic AI agent + `DreamLog` schema + Gemini wired up | 2h |
+| 1 | Pydantic AI agent + `HealthLog` schema + Gemini wired up | 2h |
 | 2 | MongoDB schema + vector index + agent tools (`get_sessions`, `search_past`, `save_log`) | 2h |
 | 3 | Ingestion script — learnings folder + git log → MongoDB | 2h |
-| 4 | Dashboard UI — hardcoded `DreamLog` first, wire MongoDB second | 3h |
-| 5 | Gemini Live API voice session — WebSocket server + dream context injected | 4h |
+| 4 | Dashboard UI — hardcoded `HealthLog` first, wire MongoDB second | 3h |
+| 5 | Gemini Live API voice session — WebSocket server + review context injected | 4h |
 | 6 | LiveKit integration — browser audio ↔ Gemini Live API | 2h |
 | 7 | Ingestion for Claude Code / Cursor / Codex chat history files | 2h |
 | 8 | Polish + pre-load real demo data | 1h |
 
 **Total: ~18h.** Build 1-4 first — that's the full demo. 5-6 is the wow moment. 7-8 if time allows.
 
-**Start here:** get the Pydantic AI agent returning a valid `DreamLog` from your real learnings folder. Once that JSON is right, everything else is display and delivery.
+**Start here:** get the Pydantic AI agent returning a valid `HealthLog` from your real learnings folder. Once that JSON is right, everything else is display and delivery.
 
 ---
 
@@ -544,7 +544,7 @@ Dream answers with the specific CLAUDE.md edit, grounded in the actual sessions.
 
 ---
 
-# Implementation Plan — Ingestion → Dream Synthesis
+# Implementation Plan — Ingestion → Review Synthesis
 
 > Scope: Python backend only. Frontend/dashboard handled separately.
 > Timeline: 2–3 days.
@@ -563,13 +563,13 @@ Normalizer (unified session format)
 MongoDB (sessions + agent_configs + learnings)
     │
     ▼
-Pydantic AI Agent + Gemini 2.5 Flash (dream synthesis)
+Pydantic AI Agent + Gemini 2.5 Flash (review synthesis)
     │
     ▼
-MongoDB dream_logs (read by frontend via FastAPI)
+MongoDB health_logs (read by frontend via FastAPI)
 ```
 
-FastAPI serves both the ingestion triggers and the dream log results. The frontend calls it.
+FastAPI serves both the ingestion triggers and the review log results. The frontend calls it.
 
 ---
 
@@ -590,7 +590,7 @@ apps/api/
 │   ├── opencode.py            # opencode.db (SQLite)
 │   ├── learnings_folder.py    # markdown notes folder
 │   ├── agent_configs.py       # CLAUDE.md + .cursorrules reader
-│   └── generic_export.py      # ~/.dream/exports/ drop folder
+│   └── generic_export.py      # ~/.review/exports/ drop folder
 │
 ├── ingestion/
 │   ├── __init__.py
@@ -600,7 +600,7 @@ apps/api/
 │
 └── synthesis/
     ├── __init__.py
-    ├── schema.py              # Pydantic DreamLog + all sub-models
+    ├── schema.py              # Pydantic HealthLog + all sub-models
     ├── agent.py               # Pydantic AI agent definition + tools
     └── prompt.py              # SYNTHESIS_PROMPT constant
 ```
@@ -616,7 +616,7 @@ apps/api/
 | Learnings folder | `/Users/vela/Developer/learnings/**/*.md` + any configured notes path | Markdown | P1 — rich demo data |
 | opencode | `~/Library/Application Support/opencode/opencode.db` | SQLite | P2 |
 | Cursor | `~/Library/Application Support/Cursor/User/workspaceStorage/[id]/state.vscdb` | SQLite | P2 |
-| Generic export | `~/.dream/exports/` | JSON or Markdown drop folder | P3 — fallback for Pi, ChatGPT, etc. |
+| Generic export | `~/.review/exports/` | JSON or Markdown drop folder | P3 — fallback for Pi, ChatGPT, etc. |
 
 ---
 
@@ -722,7 +722,7 @@ Index: `{ date: 1, source: 1 }`, `{ session_id: 1 }` (unique), vector index on `
 }
 ```
 
-### `dream_logs` collection
+### `health_logs` collection
 
 ```javascript
 {
@@ -829,7 +829,7 @@ Key to look for: "aichat.workspaceState.chat" or similar JSON blob.
 ### Generic Export (`connectors/generic_export.py`)
 
 ```
-Watch folder: ~/.dream/exports/
+Watch folder: ~/.review/exports/
 Supported formats:
   - *.md files → treat as a single-turn note
   - *.json files → expect { source, turns: [{role, content, timestamp}] }
@@ -858,11 +858,11 @@ POST /synthesize
   response: { job_id, status: "queued" }
   → runs synthesis agent in background
 
-GET /dreams
+GET /reviews
   response: [{ date, alignment_score, alignment_label, created_at }]
 
-GET /dreams/{date}
-  response: DreamLog (full document)
+GET /reviews/{date}
+  response: HealthLog (full document)
 
 GET /sessions
   query: date?, source?, project?
@@ -915,7 +915,7 @@ class DayPattern(BaseModel):
     alignment_score: float
     alignment_label: str
 
-class DreamLog(BaseModel):
+class HealthLog(BaseModel):
     mind_map_nodes: list[MindMapNode]
     mind_map_edges: list[tuple[str, str]]
 
@@ -948,7 +948,7 @@ class SynthesisDeps:
 
 dream_agent = Agent(
     "google-gla:gemini-2.5-flash",
-    output_type=DreamLog,
+    output_type=HealthLog,
     deps_type=SynthesisDeps,
     instructions=SYNTHESIS_PROMPT,
     retries=2,
@@ -985,19 +985,19 @@ async def search_past_sessions(ctx: RunContext[SynthesisDeps], topic: str) -> li
 
 @dream_agent.tool
 async def get_seven_day_pattern(ctx: RunContext[SynthesisDeps]) -> list[dict]:
-    """Fetch alignment scores from the past 7 dream logs."""
-    logs = await ctx.deps.db.dream_logs.find(
+    """Fetch alignment scores from the past 7 review logs."""
+    logs = await ctx.deps.db.health_logs.find(
         {}, sort=[("date", -1)], limit=7
     ).to_list(None)
     return [{ "date": l["date"], "alignment_score": l["alignment_score"],
                "alignment_label": l["alignment_label"] } for l in logs]
 
 @dream_agent.tool  
-async def save_dream_log(ctx: RunContext[SynthesisDeps], log: dict) -> str:
-    """Persist the completed dream log to MongoDB."""
+async def save_health_log(ctx: RunContext[SynthesisDeps], log: dict) -> str:
+    """Persist the completed review log to MongoDB."""
     log["date"] = ctx.deps.date
     log["created_at"] = datetime.utcnow()
-    await ctx.deps.db.dream_logs.replace_one(
+    await ctx.deps.db.health_logs.replace_one(
         {"date": ctx.deps.date}, log, upsert=True
     )
     return "saved"
@@ -1024,18 +1024,18 @@ async def save_dream_log(ctx: RunContext[SynthesisDeps], log: dict) -> str:
 [ ] Verify: sessions appear in MongoDB with correct shape
 ```
 
-### Day 2 — Dream Synthesis
+### Day 2 — Review Synthesis
 
-**Goal: POST /synthesize returns a valid DreamLog from real session data.**
+**Goal: POST /synthesize returns a valid HealthLog from real session data.**
 
 ```
-[ ] synthesis/schema.py — full DreamLog Pydantic models
+[ ] synthesis/schema.py — full HealthLog Pydantic models
 [ ] synthesis/prompt.py — SYNTHESIS_PROMPT (from proposal)
 [ ] synthesis/agent.py — Pydantic AI agent + 5 tools
 [ ] embedder.py — Gemini text-embedding-004 helper
 [ ] MongoDB vector index — create on sessions.embedding
-[ ] POST /synthesize + GET /dreams/{date} endpoints
-[ ] Test: run synthesis on Day 1 data, check DreamLog shape
+[ ] POST /synthesize + GET /reviews/{date} endpoints
+[ ] Test: run synthesis on Day 1 data, check HealthLog shape
 [ ] Iterate prompt until alignment_score + friction_points feel real
 [ ] connectors/opencode.py — SQLite reader (opencode.db)
 [ ] connectors/cursor.py — SQLite reader (state.vscdb)
@@ -1046,14 +1046,14 @@ async def save_dream_log(ctx: RunContext[SynthesisDeps], log: dict) -> str:
 **Goal: API is stable, demo data is pre-loaded, frontend team can integrate.**
 
 ```
-[ ] connectors/generic_export.py — ~/.dream/exports/ drop folder
+[ ] connectors/generic_export.py — ~/.review/exports/ drop folder
 [ ] GET /sessions + GET /sessions/{id} endpoints
 [ ] GET /health endpoint  
 [ ] Pre-load your full learnings folder + recent Claude Code sessions
-[ ] Run synthesis on demo data — iterate until DreamLog reads well
-[ ] Write README for frontend team (endpoint contracts, DreamLog shape)
+[ ] Run synthesis on demo data — iterate until HealthLog reads well
+[ ] Write README for frontend team (endpoint contracts, HealthLog shape)
 [ ] .env.example with all required keys
-[ ] Test full pipeline end-to-end: ingest → synthesize → GET /dreams/today
+[ ] Test full pipeline end-to-end: ingest → synthesize → GET /reviews/today
 ```
 
 ---
@@ -1063,15 +1063,15 @@ async def save_dream_log(ctx: RunContext[SynthesisDeps], log: dict) -> str:
 ```bash
 # .env.example
 MONGODB_URI=mongodb+srv://...
-MONGODB_DB=dream
+MONGODB_DB=review
 
 GEMINI_API_KEY=...
 
 # Optional: notes folder (defaults to ~/Developer/learnings)
 NOTES_FOLDER=/Users/vela/Developer/learnings
 
-# Optional: generic export drop folder (defaults to ~/.dream/exports)
-EXPORT_FOLDER=~/.dream/exports
+# Optional: generic export drop folder (defaults to ~/.review/exports)
+EXPORT_FOLDER=~/.review/exports
 ```
 
 ---

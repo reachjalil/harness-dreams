@@ -1,13 +1,13 @@
-# Dream Agent — Step 2: Synthesis
+# Review Agent — Step 2: Synthesis
 
 ## What This Step Does
 
 Synthesis is where raw ingestion data becomes insight. It runs after `ingest_all()` and produces
-a `DreamLog` — the only document ever written to MongoDB. Everything else (sessions, configs,
+a `HealthLog` — the only document ever written to MongoDB. Everything else (sessions, configs,
 chat content) stays local.
 
 The core design principle: **this is a continuous learning loop, not a daily summary tool.**
-Yesterday's DreamLog is the baseline the agent compares against today. Over time the agent tracks
+Yesterday's HealthLog is the baseline the agent compares against today. Over time the agent tracks
 whether friction is resolving, whether recommendations are being followed, and whether alignment
 is improving or declining.
 
@@ -33,7 +33,7 @@ is improving or declining.
                                     │
                         ┌───────────▼────────────┐
                         │     MongoDB lookup      │
-                        │  yesterday's DreamLog   │◄── alignment_score
+                        │  yesterday's HealthLog   │◄── alignment_score
                         │  (full document)        │    friction_points
                         └───────────┬────────────┘    recommendations
                                     │                  model_usage
@@ -44,7 +44,7 @@ is improving or declining.
                     │       output: DayObservation        │
                     │                                     │
                     │  reads: sessions + configs +        │
-                    │         yesterday's DreamLog        │
+                    │         yesterday's HealthLog        │
                     │                                     │
                     │  observes:                          │
                     │  • user prompt patterns (mood)      │
@@ -63,14 +63,14 @@ is improving or declining.
                                     │
                     ┌───────────────▼────────────────────┐
                     │       MongoDB lookup (again)        │
-                    │   past 7 DreamLogs (lightweight)   │◄── date
+                    │   past 7 HealthLogs (lightweight)   │◄── date
                     │   for seven_day_pattern + trends   │    alignment_score
                     └───────────────┬────────────────────┘    alignment_label
                                     │
                     ┌───────────────▼────────────────────┐
                     │        STAGE 2: Synthesizer         │
                     │       model: gemini-2.5-flash       │
-                    │       output: DreamLog (typed)      │
+                    │       output: HealthLog (typed)      │
                     │                                     │
                     │  reads: DayObservation +            │
                     │         yesterday's recs +          │
@@ -91,20 +91,20 @@ is improving or declining.
                     │  • synthesis_context (voice brief)  │
                     └───────────────┬────────────────────┘
                                     │
-                                 DreamLog
+                                 HealthLog
                            (Pydantic validated,
                             auto-retry on schema fail)
                                     │
                     ┌───────────────▼────────────────────┐
                     │             MongoDB                 │
-                    │   dream_logs.update_one(upsert)    │
+                    │   health_logs.update_one(upsert)    │
                     │   unique index on date             │
                     └───────────────┬────────────────────┘
                                     │
                         ┌───────────┴──────────────┐
                         │                          │
                         ▼                          ▼
-              GET /dreams/{date}          synthesis_context
+              GET /reviews/{date}          synthesis_context
               (FastAPI endpoint)       (loaded into voice session
                                         for morning briefing)
 ```
@@ -122,11 +122,11 @@ observe          ┌── compare          ┌── compare
   commits        │                    │
      │           │   friction         │   friction
      ▼           │   persisting? ─────┼── still there?
-  DreamLog ──────┘   resolved?        │   escalating?
+  HealthLog ──────┘   resolved?        │   escalating?
   saved to           new?             │
   MongoDB                │            │   recs followed?
                          ▼            │   configs updated?
-                      DreamLog ───────┘
+                      HealthLog ───────┘
                       saved to
                       MongoDB
 ```
@@ -141,25 +141,25 @@ observe          ┌── compare          ┌── compare
 
 ## Neuroscience Foundation
 
-The two-stage design is grounded in how human dreaming actually works — specifically the
-distinction between NREM and REM sleep, and what each pass does to the day's memories.
+The two-stage design is grounded in how human reviewing actually works — specifically the
+distinction between deterministic observation and Insight idle, and what each pass does to the day's memories.
 
-### NREM sleep → Stage 1 (Observer)
-During NREM, the hippocampus replays the day's events in compressed bursts to the neocortex.
+### deterministic observation idle → Stage 1 (Observer)
+During deterministic observation, the hippocampus replays the day's events in compressed bursts to the neocortex.
 This is brute-force consolidation: extract what happened, transfer it from short-term to
 long-term storage. No synthesis yet. Just observation and extraction.
 
 The Observer mirrors this: read everything, take exhaustive notes, extract emotionally charged
 moments as `key_moments`. No schema pressure. No synthesis.
 
-### REM sleep → Stage 2 (Synthesizer)
-REM runs on acetylcholine instead of serotonin. The prefrontal cortex (logical filtering) goes
+### Insight idle → Stage 2 (Synthesizer)
+Insight runs on acetylcholine instead of serotonin. The prefrontal cortex (logical filtering) goes
 offline. The amygdala (emotional significance) stays on. This produces two things waking review
 can't match:
 1. **Cross-domain association**: weak links between unrelated memories become active that would
    be filtered awake — this is why the unexpected insight arrives in the morning.
 2. **Emotional defusion**: the brain replays emotionally charged events and gradually strips the
-   charge — dreams don't amplify friction, they metabolize it.
+   charge — reviews don't amplify friction, they metabolize it.
 
 The Synthesizer mirrors this: weight topics by emotional signal intensity (not time spent),
 find cross-day patterns, name friction neutrally. Open the morning briefing with the sharpest
@@ -170,13 +170,13 @@ non-obvious insight, close with one question — not an action list.
 | Finding | Applied in |
 |---|---|
 | Brain weights memories by emotional salience, not duration | Observer weights `key_moments` by rephrase count, rejections, hedge density — not turn count |
-| REM finds cross-domain connections (emotional rhyming across unrelated topics) | Synthesizer explicitly looks for friction that rhymes emotionally across days/domains |
-| Dreams defuse emotional charge — don't amplify it | synthesis_context tone: neutral coach, not postmortem |
+| Insight finds cross-domain connections (emotional rhyming across unrelated topics) | Synthesizer explicitly looks for friction that rhymes emotionally across days/domains |
+| Reviews defuse emotional charge — don't amplify it | synthesis_context tone: neutral coach, not postmortem |
 | Morning hypnopompic window primes the day's cognitive frame | synthesis_context structure: sharpest insight first, one question last |
-| Continuity hypothesis: dreams reflect unresolved waking concerns | Delta layer tracks recommendations that persist unacted-on across days |
+| Continuity hypothesis: reviews reflect unresolved waking concerns | Delta layer tracks recommendations that persist unacted-on across days |
 
-Sources: Stickgold (memory consolidation), Walker (REM/NREM roles), Cartwright 2024 (emotional
-defusion), Revonsuo (threat simulation), default mode network fMRI studies (REM brain imaging).
+Sources: Stickgold (memory consolidation), Walker (Insight/deterministic observation roles), Cartwright 2024 (emotional
+defusion), Revonsuo (threat simulation), default mode network fMRI studies (Insight brain imaging).
 
 ---
 
@@ -184,7 +184,7 @@ defusion), Revonsuo (threat simulation), default mode network fMRI studies (REM 
 
 | Concern | Single-shot | Two-stage |
 |---|---|---|
-| Schema pressure | Agent fills fields fast, skips deep reading | Observer reads freely (NREM-like), no schema constraint |
+| Schema pressure | Agent fills fields fast, skips deep reading | Observer reads freely (deterministic observation-like), no schema constraint |
 | Evidence quality | Generic observations | Observer extracts specific quotes as `key_moments` |
 | Emotional weighting | Topics weighted by time spent | Topics weighted by emotional signal intensity |
 | Cross-day patterns | Each day treated independently | Synthesizer connects today's friction to prior days |
@@ -198,19 +198,19 @@ defusion), Revonsuo (threat simulation), default mode network fMRI studies (REM 
 
 | File | Role |
 |---|---|
-| `synthesis/schema.py` | All Pydantic models: `DayObservation`, `DreamLog`, delta sub-models |
+| `synthesis/schema.py` | All Pydantic models: `DayObservation`, `HealthLog`, delta sub-models |
 | `synthesis/prompt.py` | `OBSERVER_PROMPT` + `SYNTHESIZER_PROMPT` |
-| `synthesis/agent.py` | Two-stage pipeline: `synthesize(result, date) → DreamLog` |
+| `synthesis/agent.py` | Two-stage pipeline: `synthesize(result, date) → HealthLog` |
 | `synthesis/__init__.py` | Package init |
-| `main.py` | FastAPI: `POST /synthesize`, `GET /dreams/{date}`, `GET /health` |
+| `main.py` | FastAPI: `POST /synthesize`, `GET /reviews/{date}`, `GET /health` |
 | `test_synthesis.py` | End-to-end test: ingest → synthesize → print |
 
 ---
 
-## DreamLog Schema (what gets saved to MongoDB)
+## HealthLog Schema (what gets saved to MongoDB)
 
 ```
-DreamLog
+HealthLog
 ├── date                        YYYY-MM-DD
 │
 ├── Mind map
@@ -263,7 +263,7 @@ curl -X POST http://localhost:8000/synthesize \
 curl http://localhost:8000/synthesize/{job_id}
 
 # Read the result
-curl http://localhost:8000/dreams/2026-06-26
+curl http://localhost:8000/reviews/2026-06-26
 ```
 
 ---
@@ -271,7 +271,7 @@ curl http://localhost:8000/dreams/2026-06-26
 ## synthesis_context Structure (Morning Briefing)
 
 The voice briefing follows a neurologically-grounded structure based on the hypnopompic window —
-the transition from sleep to waking when the brain is most receptive to framing.
+the transition from idle to waking when the brain is most receptive to framing.
 
 ```
 Paragraph 1 — The sharpest non-obvious insight

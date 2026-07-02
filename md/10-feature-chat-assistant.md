@@ -28,9 +28,9 @@ The assistant is **retrieval-grounded on the local store**, not a generic chat:
 - It cites the same evidence findings do — sessions, events, diffs.
 - It can **propose actions** (config diffs, new experiments) inline, which the
   user approves with the same diff-and-confirm flow as everywhere else.
-- It respects the same redaction/privacy boundary as REM (see `20`).
+- It respects the same redaction/privacy boundary as Insight (see `20`).
 
-Conceptually: the chat assistant is REM-on-demand, scoped to a question, with the
+Conceptually: the chat assistant is Insight-on-demand, scoped to a question, with the
 ability to act (with consent).
 
 ## Capabilities
@@ -59,7 +59,7 @@ ability to act (with consent).
   rather than speculating.
 - **No write without confirm.** Same as findings/experiments.
 - **Cost-aware.** Chat uses the LLM budget; long explorations warn the user.
-- **Private.** Same local-first / redaction rules as the dream engine.
+- **Private.** Same local-first / redaction rules as the health review engine.
 
 ## Why it's not in MVP
 

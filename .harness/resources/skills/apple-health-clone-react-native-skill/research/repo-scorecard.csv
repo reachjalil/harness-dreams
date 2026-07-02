@@ -1,0 +1,17 @@
+aspect,source,type,recommendation,confidence,caution,url
+HealthKit RN bridge,kingstinct/react-native-healthkit,library,Primary for new app,High,Validate Nitro/RN/Expo/Xcode versions,https://github.com/kingstinct/react-native-healthkit
+HealthKit RN bridge,agencyenterprise/react-native-health,library,Fallback/reference,Medium,Older bridge patterns and open issues; verify New Architecture,https://github.com/agencyenterprise/react-native-health
+Expo sample,Haider-Mukhtar/ReactNative-Apple-Health-IOS,sample app,Onboarding reference,Medium,Small sample; not production architecture,https://github.com/Haider-Mukhtar/ReactNative-Apple-Health-IOS
+WatchConnectivity,watch-connectivity/react-native-watch-connectivity,library,Primary RN phone to Swift watch bridge,High,Watch app still native Swift/SwiftUI,https://github.com/watch-connectivity/react-native-watch-connectivity
+WatchConnectivity alternative,CRIIPI11/rn-watch-connect,library,Alternative to evaluate,Medium,Validate maturity and API fit,https://github.com/CRIIPI11/rn-watch-connect
+Full app architecture,skulptapp/skulpt,app,Best modern full app reference,High,Do not copy UI; inspect license and actual implementation,https://github.com/skulptapp/skulpt
+Native watch/workout,msimms/OpenWorkoutTracker,app,Native iOS/watchOS workout architecture,Medium,"Native codebase, not RN",https://github.com/msimms/OpenWorkoutTracker
+WorkoutKit,Janjiran/react-native-workouts,library,Experimental WorkoutKit spike,Low/Medium,Small project; validate before production,https://github.com/Janjiran/react-native-workouts
+Rings UI,thecodehunter/react-native-activity-rings,component,Prototype/reference only,Medium,Insufficient for Apple-style overflow/polish,https://github.com/thecodehunter/react-native-activity-rings
+Charts,FormidableLabs/victory-native-xl,library,Primary charts,High,Layout/perf testing required,https://github.com/FormidableLabs/victory-native-xl
+Custom visuals,React Native Skia,library,Primary custom ring renderer,High,Requires graphics implementation,https://shopify.github.io/react-native-skia/
+Animations,React Native Reanimated,library,Primary animation engine,High,Shared element transitions need production validation,https://docs.swmansion.com/react-native-reanimated/
+Android parity,matinzd/react-native-health-connect,library,Primary Android health adapter,High,Google Play declaration and device/version caveats,https://github.com/matinzd/react-native-health-connect
+Wearable backend,the-momentum/open-wearables,platform,Future multi-provider normalization,Medium,Backend/data ops complexity,https://github.com/the-momentum/open-wearables
+Achievements UI,JanSzewczyk/workout-tracker,app,Gamification/progress inspiration,Medium,Not a HealthKit clone,https://github.com/JanSzewczyk/workout-tracker
+Health insights,RuochenLyu/apple-health-analyst,app,Insights/reporting inspiration,Medium,Validate privacy model and scope,https://github.com/RuochenLyu/apple-health-analyst

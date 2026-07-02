@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none" role="img" aria-labelledby="title">
-  <title id="title">Harness Dreams Open Graph image</title>
+  <title id="title">Harness Health Open Graph image</title>
   <defs>
     <radialGradient id="wash" cx="0" cy="0" r="1" gradientTransform="translate(1080 60) rotate(140) scale(640)" gradientUnits="userSpaceOnUse">
       <stop stop-color="#a7dad3" stop-opacity="0.45"/>
@@ -32,7 +32,7 @@
       <circle cx="47" cy="18" r="3.4" fill="#3aab9c"/>
     </g>
   </g>
-  <text x="164" y="118" font-family="-apple-system, BlinkMacSystemFont, SF Pro Display, Segoe UI, sans-serif" font-size="32" font-weight="500" fill="#0d1b2a">Harness Dreams</text>
+  <text x="164" y="118" font-family="-apple-system, BlinkMacSystemFont, SF Pro Display, Segoe UI, sans-serif" font-size="32" font-weight="500" fill="#0d1b2a">Harness Health</text>
 
   <!-- headline -->
   <text x="80" y="318" font-family="-apple-system, BlinkMacSystemFont, SF Pro Display, Segoe UI, sans-serif" font-size="76" font-weight="800" letter-spacing="0" fill="#0d1b2a">Meaningful insights.</text>

@@ -18,7 +18,7 @@ These are the tie-breakers. When a decision is unclear, these decide.
 3. **The human is always in control.** Nothing is applied to your config,
    memory, or harness without explicit consent and a visible diff.
 4. **Non-intrusive.** Zero latency or token tax on live coding. Work happens at
-   sleep, in the background.
+   idle, in the background.
 5. **Worth the 90 seconds.** The morning ritual must earn its place. Bias to a
    few high-confidence items over an exhausting wall of analysis.
 6. **Compounding, not one-shot.** Features that build the flywheel (experiments,
@@ -29,7 +29,7 @@ These are the tie-breakers. When a decision is unclear, these decide.
 ## In scope (the full product)
 
 - Ingestion connectors for major harnesses (Claude Code, Codex, Cursor).
-- Overnight + on-demand dream sessions with a Health-app-style report.
+- Overnight + on-demand health reviews with a Health-app-style report.
 - A vitals/metrics engine with trends and baselines.
 - Findings (wins, mistakes, risks, opportunities) with accept/reject and
   evidence.
@@ -63,14 +63,14 @@ Power Builder using Claude Code on macOS.
 
 **MVP includes:**
 - Claude Code connector only (ingest `~/.claude/projects/**` + settings/skills).
-- On-demand dream + nightly scheduled dream.
-- Deterministic Deep Sleep vitals (tokens, cost, sessions, model mix, tool
+- On-demand review + nightly scheduled review.
+- Deterministic Deterministic Vitals vitals (tokens, cost, sessions, model mix, tool
   success, re-ask rate) with 7/30-day trends.
-- REM findings (wins/mistakes/opportunities) with evidence and accept/reject.
+- Insight findings (wins/mistakes/opportunities) with evidence and accept/reject.
 - The experiments engine for **one** enablement mechanism (AGENTS.md /
-  instruction injection — the lowest-risk lever) with grading next dream.
-- Menu-bar app with: start dream, view latest report, history, basic settings.
-- Local SQLite storage; Claude API for REM with redaction + explicit opt-in.
+  instruction injection — the lowest-risk lever) with grading next review.
+- Menu-bar app with: start review, view latest report, history, basic settings.
+- Local SQLite storage; Claude API for Insight with redaction + explicit opt-in.
 
 **MVP excludes (fast-follow):**
 - Codex/Cursor connectors.
@@ -102,7 +102,7 @@ breakdown and definition of done per phase.
 
 ## Definition of "done" for MVP
 
-A real user (the owner of this machine) runs Harness Dreams for two weeks and:
+A real user (the owner of this machine) runs Harness Health for two weeks and:
 - opens the morning report on the majority of days,
 - accepts at least some findings,
 - enables and grades at least one experiment end-to-end,

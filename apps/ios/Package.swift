@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "HarnessDreamsMobileCore",
+    name: "HarnessHealthMobileCore",
     platforms: [
         .iOS(.v17),
         .watchOS(.v10),
@@ -11,19 +11,19 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "HarnessDreamsMobileCore",
-            targets: ["HarnessDreamsMobileCore"]
+            name: "HarnessHealthMobileCore",
+            targets: ["HarnessHealthMobileCore"]
         )
     ],
     targets: [
         .target(
-            name: "HarnessDreamsMobileCore",
+            name: "HarnessHealthMobileCore",
             path: "Shared"
         ),
         .testTarget(
-            name: "HarnessDreamsMobileCoreTests",
-            dependencies: ["HarnessDreamsMobileCore"],
-            path: "Tests/HarnessDreamsMobileCoreTests"
+            name: "HarnessHealthMobileCoreTests",
+            dependencies: ["HarnessHealthMobileCore"],
+            path: "Tests/HarnessHealthMobileCoreTests"
         )
     ]
 )

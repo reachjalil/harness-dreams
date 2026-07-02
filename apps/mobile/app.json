@@ -1,20 +1,20 @@
 {
   "expo": {
-    "name": "Harness Dreams",
-    "slug": "harness-dreams",
-    "scheme": "harnessdreams",
+    "name": "Harness Health",
+    "slug": "harness-health",
+    "scheme": "harnesshealth",
     "version": "0.1.0",
     "orientation": "portrait",
     "newArchEnabled": true,
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.harnessdreams.mobile",
+      "bundleIdentifier": "com.harnesshealth.mobile",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
         },
-        "NSCameraUsageDescription": "Scan the Harness Dreams desktop pairing QR code."
+        "NSCameraUsageDescription": "Scan the Harness Health desktop pairing QR code."
       }
     },
     "plugins": [
@@ -22,7 +22,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Scan the Harness Dreams desktop pairing QR code."
+          "cameraPermission": "Scan the Harness Health desktop pairing QR code."
         }
       ],
       "expo-status-bar"

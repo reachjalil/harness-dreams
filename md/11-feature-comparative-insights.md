@@ -7,7 +7,7 @@ tool can make. Three axes of comparison.
 
 ## 1. Cross-harness (Claude Code vs Codex vs Cursor)
 
-Once ≥2 harness connectors are active, Harness Dreams can route-advise:
+Once ≥2 harness connectors are active, Harness Health can route-advise:
 
 > "You used Claude more than Codex this period. For quick refactors, Codex
 > averaged 40% lower latency and similar accept rate — consider routing those to
@@ -18,7 +18,7 @@ docs…), compare harnesses on latency, cost, accept rate, re-ask rate, and
 correction rate. Output is a **routing recommendation**, ideally instantiated as
 an experiment ("try Codex for refactors for a week").
 
-Requires a **task-type classifier** (see [15-dream-engine.md](15-dream-engine.md))
+Requires a **task-type classifier** (see [15-review-engine.md](15-review-engine.md))
 so comparisons are apples-to-apples.
 
 ## 2. Cross-model (within a harness)
@@ -46,7 +46,7 @@ The most novel axis: relate work across **unrelated repos**.
 - **Habit detection:** "You consistently burn tokens re-explaining your stack at
   the start of sessions — a shared user-level instruction would fix this once."
 
-Cross-project insight is what makes the dream more than the sum of its sessions.
+Cross-project insight is what makes the review more than the sum of its sessions.
 
 ## How comparisons stay honest
 

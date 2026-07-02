@@ -14,7 +14,12 @@
       "!**/build",
       "!**/.build",
       "!**/.turbo",
-      "!**/coverage"
+      "!**/coverage",
+      "!.harness/resources/skills",
+      "!.agents/skills",
+      "!.claude/skills",
+      "!apps/mobile/ios/Pods",
+      "!apps/api/.venv"
     ]
   },
   "formatter": {

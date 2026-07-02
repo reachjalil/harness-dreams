@@ -1,11 +1,11 @@
 {
-  "name": "@harness-dreams/site",
+  "name": "@harness-health/site",
   "version": "0.1.0",
   "private": true,
-  "description": "Marketing site for harnessdreams.com.",
+  "description": "Marketing site for harnesshealth.com.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://harnessdreams.com",
+  "homepage": "https://harnesshealth.com",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

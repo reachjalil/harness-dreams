@@ -9,8 +9,8 @@
   </div>
 
   <div class="splash-content">
-    <div class="splash-icon-cycle" aria-hidden="true">
-      <!-- dream — Harness Dreams mark -->
+    <div class="splash-icon-loop" aria-hidden="true">
+      <!-- review — Harness Health mark -->
       <span class="splash-icon icon-logo">
         <img src="/logo-white.png" alt="" loading="eager" decoding="async" />
       </span>
@@ -32,16 +32,16 @@
       </span>
     </div>
 
-    <p class="splash-product">Harness Dreams</p>
-    <h1>What should your harness do when it goes to sleep?</h1>
+    <p class="splash-product">Harness Health</p>
+    <h1>How healthy is your AI coding harness?</h1>
     <p
       class="splash-answer"
-      aria-label="It should dream, reflect, connect, adapt, and improve."
+      aria-label="It should review, reflect, connect, adapt, and improve."
     >
       <span aria-hidden="true">It should&nbsp;</span>
       <span class="answer-morph" aria-hidden="true">
         <span class="answer-sizer">improve.</span>
-        <span class="answer-word aw-1">dream.</span>
+        <span class="answer-word aw-1">review.</span>
         <span class="answer-word aw-2">reflect.</span>
         <span class="answer-word aw-3">connect.</span>
         <span class="answer-word aw-4">adapt.</span>
@@ -59,15 +59,15 @@
       <a class="btn hero-secondary" href="#insights">Learn more</a>
     </div>
 
-    <a class="sync-teaser" href="#cloud-sync" aria-label="Learn about Cloud Sync for iPhone and Apple Watch">
+    <a class="sync-teaser" href="#cloud-sync" aria-label="Learn about Private Device Sync for iPhone and Apple Watch">
       <span class="device-stack" aria-hidden="true">
         <span class="device-phone"></span>
         <span class="device-watch"></span>
       </span>
       <span>
-        Cloud Sync:
+        Private companion:
         <strong>iPhone &amp; Apple Watch</strong>
-        for $5/month
+        with 2-week trial
       </span>
     </a>
   </div>
@@ -174,22 +174,22 @@
     text-align: center;
   }
 
-  .splash-icon-cycle {
+  .splash-icon-loop {
     position: relative;
     width: 5.4rem;
     height: 5.4rem;
     margin-bottom: 0.35rem;
   }
 
-  .splash-icon-cycle::before,
-  .splash-icon-cycle::after {
+  .splash-icon-loop::before,
+  .splash-icon-loop::after {
     content: "";
     position: absolute;
     border-radius: 50%;
     pointer-events: none;
   }
 
-  .splash-icon-cycle::before {
+  .splash-icon-loop::before {
     inset: -0.4rem;
     background: conic-gradient(
       from 30deg,
@@ -205,7 +205,7 @@
     animation: icon-orbit 20s linear infinite;
   }
 
-  .splash-icon-cycle::after {
+  .splash-icon-loop::after {
     inset: 0.34rem;
     background: conic-gradient(
       from -70deg,
@@ -227,7 +227,7 @@
     place-items: center;
     opacity: 0;
     transform: translateY(14px) rotate(-10deg) scale(0.84);
-    animation: icon-cycle 20s linear infinite;
+    animation: icon-loop 20s linear infinite;
   }
 
   .splash-icon img {
@@ -268,7 +268,7 @@
     line-height: 1.02;
   }
 
-  /* The cycling answer to the headline — synced to the icon via icon-cycle */
+  /* The looping answer to the headline — synced to the icon via icon-loop */
   .splash-answer {
     display: flex;
     justify-content: center;
@@ -481,7 +481,7 @@
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .splash-icon-cycle,
+    .splash-icon-loop,
     .splash-product,
     h1,
     .splash-answer,
@@ -494,7 +494,7 @@
       will-change: transform, opacity, filter;
     }
 
-    .splash-icon-cycle {
+    .splash-icon-loop {
       animation-delay: 0.08s;
     }
 
@@ -778,7 +778,7 @@
 
   /* Slow logo-to-icon phase loop. The icon rotates gently as it enters so the
      motion feels like a handoff instead of a random spinner. */
-  @keyframes icon-cycle {
+  @keyframes icon-loop {
     0% {
       opacity: 0;
       transform: translateY(14px) rotate(-10deg) scale(0.84);
@@ -845,9 +845,9 @@
     .hero::after,
     .splash-shape,
     .splash-icon,
-    .splash-icon-cycle,
-    .splash-icon-cycle::before,
-    .splash-icon-cycle::after,
+    .splash-icon-loop,
+    .splash-icon-loop::before,
+    .splash-icon-loop::after,
     .splash-product,
     h1,
     .splash-answer,

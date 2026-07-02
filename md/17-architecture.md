@@ -18,7 +18,7 @@ machine, no server:
  │                                                                    │
  │  ┌────────────┐   triggers   ┌─────────────────────────────────┐  │
  │  │  Menu-bar  │ ───────────► │        Core (TS engine)         │  │
- │  │   App UI   │ ◄─────────── │  ingest · metrics · dream ·     │  │
+ │  │   App UI   │ ◄─────────── │  ingest · metrics · review ·     │  │
  │  │  (webview) │   reports    │  experiments · config · store   │  │
  │  └────────────┘              └───────────────┬─────────────────┘  │
  │        │                                     │                    │
@@ -29,7 +29,7 @@ machine, no server:
  │  │  (norm.    │                    │  ~/.claude/** , etc.  │      │
  │  │   store)   │                    └───────────────────────┘      │
  │  └────────────┘                                                   │
- │        │ REM only, redacted, opt-in                               │
+ │        │ Insight only, redacted, opt-in                               │
  └────────┼───────────────────────────────────────────────────────-─┘
           ▼
    Claude API (cloud)  — the only outbound call, gated by privacy settings
@@ -41,9 +41,9 @@ machine, no server:
    window, settings. Built with Tauri v2 (Rust shell) + a web UI (React/TS). See
    [18-macos-app.md](18-macos-app.md).
 2. **Core engine (logic).** Pure-TypeScript packages doing ingestion, metrics,
-   dreaming, experiments, config, and persistence. Runs in the app's
+   reviewing, experiments, config, and persistence. Runs in the app's
    Node/sidecar context and is reusable headless via the CLI.
-3. **Scheduler/daemon.** Triggers dreams on schedule/idle even when the window is
+3. **Scheduler/daemon.** Triggers reviews on schedule/idle even when the window is
    closed. Implemented as a background task within the app (kept alive as a
    menu-bar agent) and/or a `launchd` agent for reliability.
 
@@ -54,32 +54,32 @@ machine, no server:
 | Connectors | `connectors` | discover + parse harness data (read-only) |
 | Ingestion | `ingest` | normalize raw → `Event`/`Session`, incremental cursors |
 | Metrics | `metrics` | compute vitals, baselines, deltas, classifiers |
-| Dream engine | `dream-engine` | Deep Sleep + REM + assemble → `DreamReport` |
+| Review engine | `review-engine` | Deterministic Vitals + Insight + assemble → `HealthReport` |
 | Experiments | `experiments` | enablement, attribution, grading |
 | Config | `config` | read/diff/write AGENTS.md, skills, MCP, memory (consent) |
 | LLM | `llm` | Claude API client, prompt library, redaction, budgets |
 | Store | `store` | SQLite schema + repositories |
 | Core | `core` | shared types/domain model/utilities |
 | Desktop | `apps/desktop` | Tauri menu-bar app + UI |
-| CLI | `apps/cli` | headless dream runner (CI, automation, testing) |
+| CLI | `apps/cli` | headless review runner (CI, automation, testing) |
 
 ## Key data flows
 
-**Ingest → Dream → Report**
-1. Scheduler fires → Dream job starts.
+**Ingest → Review → Report**
+1. Scheduler fires → Review job starts.
 2. `ingest` pulls new events via `connectors` into `store` (incremental).
-3. `dream-engine` runs Deep Sleep (`metrics`) then REM (`llm`, redacted).
+3. `review-engine` runs Deterministic Vitals (`metrics`) then Insight (`llm`, redacted).
 4. Report persisted to `store`; UI notified; menu-bar state updated.
 
 **Reflection → Action**
 1. User accepts a finding / enables an experiment in the UI.
 2. `config`/`experiments` apply the change (diff + backup + consent) to the real
    harness files.
-3. Subsequent sessions are ingested; the next dream grades the effect.
+3. Subsequent sessions are ingested; the next review grades the effect.
 
 ## Process & isolation
 
-- **The engine never blocks the UI**: dreams run off the UI thread (sidecar
+- **The engine never blocks the UI**: reviews run off the UI thread (sidecar
   process / worker). The UI subscribes to job state.
 - **Read-only by default**: only `config`/`experiments` write, and only the
   harness's own files, only on consent, always with backups.

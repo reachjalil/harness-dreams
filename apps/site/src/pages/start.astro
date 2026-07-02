@@ -3,10 +3,10 @@ import Footer from "../components/Footer.astro";
 import Nav from "../components/Nav.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
 
-const title = "Download for macOS - Harness Dreams";
+const title = "Download for macOS - Harness Health";
 const description =
-  "Set up Harness Dreams on macOS. The signed app is being prepared with Apple notarization; optional iPhone and Apple Watch Cloud Sync is $5/month.";
-const repoUrl = "https://github.com/reachjalil/harness-dreams";
+  "Set up Harness Health on macOS. The signed app is being prepared with Apple notarization; optional iPhone and Apple Watch companion connection includes a 2-week trial.";
+const repoUrl = "https://github.com/reachjalil/harness-health";
 ---
 
 <SiteLayout title={title} description={description}>
@@ -21,7 +21,7 @@ const repoUrl = "https://github.com/reachjalil/harness-dreams";
       <div class="container setup-hero-grid">
         <div class="setup-intro">
           <span class="eyebrow">macOS developer preview</span>
-          <h1>Set up Harness Dreams locally.</h1>
+          <h1>Set up Harness Health locally.</h1>
           <p class="lead">
             The signed macOS download is in progress. For now, clone the repo,
             install dependencies, and launch the Electron app from source.
@@ -37,7 +37,7 @@ const repoUrl = "https://github.com/reachjalil/harness-dreams";
             first normal download opens cleanly through macOS Gatekeeper.
           </p>
           <a class="setup-sync-note" href="/#cloud-sync">
-            Add iPhone and Apple Watch sync as an optional $5/month upgrade.
+            Add iPhone and Apple Watch connection with a 2-week trial.
           </a>
         </div>
 
@@ -58,8 +58,8 @@ const repoUrl = "https://github.com/reachjalil/harness-dreams";
               <span class="step-index mono">01</span>
               <div>
                 <h2>Clone the repository</h2>
-                <pre><code>git clone https://github.com/reachjalil/harness-dreams.git
-cd harness-dreams</code></pre>
+                <pre><code>git clone https://github.com/reachjalil/harness-health.git
+cd harness-health</code></pre>
               </div>
             </li>
             <li>
@@ -74,7 +74,7 @@ pnpm install</code></pre>
               <span class="step-index mono">03</span>
               <div>
                 <h2>Launch the app</h2>
-                <pre><code>pnpm --filter @harness-dreams/desktop start</code></pre>
+                <pre><code>pnpm --filter @harness-health/desktop start</code></pre>
               </div>
             </li>
           </ol>
@@ -88,7 +88,7 @@ pnpm install</code></pre>
           <span class="mono">Signed app</span>
           <h2>We are getting the app ready for Apple signing.</h2>
           <p>
-            Harness Dreams is a local-first menu-bar app, so the install path
+            Harness Health is a local-first menu-bar app, so the install path
             should feel standard: signed with Developer ID, notarized by Apple,
             and accepted by Gatekeeper.
           </p>
@@ -105,10 +105,10 @@ pnpm install</code></pre>
         </article>
 
         <article class="info-block reveal" data-delay="2">
-          <span class="mono">Multi-device sync</span>
-          <h2>Cloud Sync will mirror the report, not your code.</h2>
+          <span class="mono">Companion connection</span>
+          <h2>iPhone and Apple Watch mirror the report, not your code.</h2>
           <p>
-            The companion iPhone and Apple Watch apps mirror the cycle signal:
+            The companion iPhone and Apple Watch apps mirror the health signal:
             scores, findings, and goals. Transcripts, code, and secrets stay on
             the Mac.
           </p>

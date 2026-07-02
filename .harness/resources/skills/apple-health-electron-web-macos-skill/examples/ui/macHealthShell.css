@@ -1,0 +1,61 @@
+.toolbar-title {
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-search {
+  width: min(280px, 30vw);
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--separator);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  padding: 0 10px;
+}
+
+.toolbar-button {
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--separator);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  padding: 0 12px;
+}
+
+.sidebar-nav {
+  padding: 12px;
+}
+
+.sidebar-item {
+  width: 100%;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  text-align: left;
+  padding: 0 10px;
+  font: inherit;
+}
+
+.sidebar-item:hover {
+  background: color-mix(in srgb, var(--surface-card), transparent 22%);
+  color: var(--text-primary);
+}
+
+.sidebar-item.is-active {
+  background: color-mix(in srgb, var(--accent), transparent 82%);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sidebar-item:focus-visible,
+.toolbar-button:focus-visible,
+.toolbar-search:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}

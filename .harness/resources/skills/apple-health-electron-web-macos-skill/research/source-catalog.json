@@ -1,0 +1,302 @@
+{
+  "generated": "2026-06-29",
+  "sources": [
+    {
+      "aspect": "Electron security",
+      "name": "Electron Security Checklist",
+      "url": "https://github.com/electron/electron/blob/main/docs/tutorial/security.md",
+      "type": "official docs",
+      "best_for": "Security requirements for context isolation, sandboxing, CSP, IPC validation, safe external links, and current Electron versions",
+      "confidence": "high",
+      "caution": "Apply to every Electron window, not only remote content."
+    },
+    {
+      "aspect": "Electron scaffold",
+      "name": "Electron Forge Vite + TypeScript",
+      "url": "https://www.electronforge.io/templates/vite-%2B-typescript",
+      "type": "official docs",
+      "best_for": "Official Electron + Vite + TypeScript project start",
+      "confidence": "high",
+      "caution": "Check current Forge/Vite plugin release notes before starting."
+    },
+    {
+      "aspect": "Electron Vite DX",
+      "name": "electron-vite",
+      "url": "https://electron-vite.org/",
+      "type": "open source docs",
+      "best_for": "Fast Vite workflow with main, preload, and renderer configs",
+      "confidence": "high",
+      "caution": "Own packaging and signing decisions explicitly."
+    },
+    {
+      "aspect": "React Electron starter",
+      "name": "electron-vite-react",
+      "url": "https://github.com/electron-vite/electron-vite-react",
+      "type": "open source repo",
+      "best_for": "React + Vite + Electron boilerplate ideas",
+      "confidence": "medium",
+      "caution": "Audit Node access and security posture before adopting."
+    },
+    {
+      "aspect": "Secure defaults",
+      "name": "1Password electron-secure-defaults",
+      "url": "https://github.com/1Password/electron-secure-defaults",
+      "type": "open source repo",
+      "best_for": "Concrete secure default examples aligned with Electron checklist",
+      "confidence": "high",
+      "caution": "Adapt to app needs instead of copying blindly."
+    },
+    {
+      "aspect": "Secure boilerplate",
+      "name": "vite-electron-builder",
+      "url": "https://github.com/cawa-93/vite-electron-builder",
+      "type": "open source repo",
+      "best_for": "Secure Electron app template with modern tooling",
+      "confidence": "medium",
+      "caution": "Verify dependency freshness."
+    },
+    {
+      "aspect": "Secure boilerplate",
+      "name": "secure-electron-template",
+      "url": "https://github.com/reZach/secure-electron-template",
+      "type": "open source repo",
+      "best_for": "Security-minded Electron template and learning reference",
+      "confidence": "medium",
+      "caution": "May not match preferred TS/Vite stack."
+    },
+    {
+      "aspect": "macOS window",
+      "name": "Electron Custom Title Bar",
+      "url": "https://www.electronjs.org/docs/latest/tutorial/custom-title-bar",
+      "type": "official docs",
+      "best_for": "Hidden titlebar, traffic lights, titleBarOverlay, custom toolbar regions",
+      "confidence": "high",
+      "caution": "Test draggable/no-drag regions on macOS."
+    },
+    {
+      "aspect": "macOS menus",
+      "name": "Electron Menu API",
+      "url": "https://www.electronjs.org/docs/latest/api/menu",
+      "type": "official docs",
+      "best_for": "Native app menu and roles",
+      "confidence": "high",
+      "caution": "Replace default Electron menu in production."
+    },
+    {
+      "aspect": "macOS theme",
+      "name": "Electron nativeTheme/Dark Mode",
+      "url": "https://www.electronjs.org/docs/latest/tutorial/dark-mode",
+      "type": "official docs",
+      "best_for": "System dark mode synchronization",
+      "confidence": "high",
+      "caution": "Also support CSS media queries and high contrast."
+    },
+    {
+      "aspect": "macOS secure storage",
+      "name": "Electron safeStorage",
+      "url": "https://www.electronjs.org/docs/latest/api/safe-storage",
+      "type": "official docs",
+      "best_for": "OS-backed encryption for secrets/tokens",
+      "confidence": "high",
+      "caution": "Not for bulk health samples."
+    },
+    {
+      "aspect": "macOS distribution",
+      "name": "Electron Code Signing",
+      "url": "https://www.electronjs.org/docs/latest/tutorial/code-signing",
+      "type": "official docs",
+      "best_for": "macOS signing and notarization planning",
+      "confidence": "high",
+      "caution": "Requires Apple Developer Program and macOS build environment."
+    },
+    {
+      "aspect": "Apple design",
+      "name": "Apple Human Interface Guidelines",
+      "url": "https://developer.apple.com/design/human-interface-guidelines",
+      "type": "official docs",
+      "best_for": "Apple platform design principles",
+      "confidence": "high",
+      "caution": "Do not copy Apple assets or claim affiliation."
+    },
+    {
+      "aspect": "Apple design",
+      "name": "SF Symbols",
+      "url": "https://developer.apple.com/sf-symbols/",
+      "type": "official docs",
+      "best_for": "Symbol design principles and Apple platform integration",
+      "confidence": "high",
+      "caution": "Respect license; do not redistribute Apple assets."
+    },
+    {
+      "aspect": "Health product pattern",
+      "name": "Apple Health overview",
+      "url": "https://www.apple.com/health/",
+      "type": "official product page",
+      "best_for": "Health app concepts: central secure place, charts, trend analysis",
+      "confidence": "high",
+      "caution": "Marketing copy is not implementation spec."
+    },
+    {
+      "aspect": "Health trends",
+      "name": "View your data in Health on iPhone",
+      "url": "https://support.apple.com/guide/iphone/view-your-health-data-iphe3d379c32/ios",
+      "type": "official support",
+      "best_for": "Health trends behavior and user-facing language",
+      "confidence": "high",
+      "caution": "Adapt to desktop layout."
+    },
+    {
+      "aspect": "Health export",
+      "name": "Share/export Health data in XML",
+      "url": "https://support.apple.com/guide/iphone/share-your-health-data-iph5ede58c3d/ios",
+      "type": "official support",
+      "best_for": "User export workflow for Health data",
+      "confidence": "high",
+      "caution": "XML can be large and sensitive."
+    },
+    {
+      "aspect": "Open-source health dashboard",
+      "name": "MaximeHeckel/health-dashboard",
+      "url": "https://github.com/MaximeHeckel/health-dashboard",
+      "type": "open source repo",
+      "best_for": "React web HealthKit dashboard architecture reference",
+      "confidence": "medium",
+      "caution": "Older stack; use for data/product ideas, not scaffold."
+    },
+    {
+      "aspect": "Open-source health dashboard",
+      "name": "markwk/apple-health-web-dashboard",
+      "url": "https://github.com/markwk/apple-health-web-dashboard",
+      "type": "open source repo",
+      "best_for": "Daily Apple Health data web dashboard reference",
+      "confidence": "medium",
+      "caution": "Older CRA style; modernize heavily."
+    },
+    {
+      "aspect": "Activity rings",
+      "name": "JonasDoesThings/react-activity-rings",
+      "url": "https://github.com/JonasDoesThings/react-activity-rings",
+      "type": "open source repo",
+      "best_for": "React SVG ring component reference",
+      "confidence": "medium",
+      "caution": "Build custom production ring for overflow/accessibility."
+    },
+    {
+      "aspect": "UI primitives",
+      "name": "React Aria",
+      "url": "https://react-aria.adobe.com/",
+      "type": "official docs",
+      "best_for": "Accessible native-feeling complex interactions",
+      "confidence": "high",
+      "caution": "Requires styling and composition."
+    },
+    {
+      "aspect": "UI primitives",
+      "name": "Base UI",
+      "url": "https://base-ui.com/",
+      "type": "official docs",
+      "best_for": "Unstyled accessible React components",
+      "confidence": "high",
+      "caution": "Newer ecosystem; validate component maturity."
+    },
+    {
+      "aspect": "UI primitives",
+      "name": "Radix UI",
+      "url": "https://www.radix-ui.com/",
+      "type": "official docs",
+      "best_for": "Accessible primitives and themes",
+      "confidence": "high",
+      "caution": "Retokenize for macOS/Health feel."
+    },
+    {
+      "aspect": "Copy-owned components",
+      "name": "shadcn/ui",
+      "url": "https://ui.shadcn.com/docs",
+      "type": "official docs",
+      "best_for": "Copy, own, and adapt components with AI-friendly docs",
+      "confidence": "high",
+      "caution": "Defaults are not Apple/macOS-native."
+    },
+    {
+      "aspect": "Animation",
+      "name": "Motion for React",
+      "url": "https://motion.dev/docs/react",
+      "type": "official docs",
+      "best_for": "SVG/layout/gesture animations",
+      "confidence": "high",
+      "caution": "Respect reduced motion."
+    },
+    {
+      "aspect": "Charts",
+      "name": "Recharts",
+      "url": "https://recharts.org/",
+      "type": "official docs",
+      "best_for": "Fast React dashboard charts",
+      "confidence": "high",
+      "caution": "For Health-like custom charts, use custom wrappers."
+    },
+    {
+      "aspect": "Charts",
+      "name": "visx",
+      "url": "https://github.com/airbnb/visx",
+      "type": "open source repo",
+      "best_for": "Custom React+D3 visualization primitives",
+      "confidence": "high",
+      "caution": "Requires more implementation effort."
+    },
+    {
+      "aspect": "Local DB",
+      "name": "Dexie",
+      "url": "https://dexie.org/docs",
+      "type": "official docs",
+      "best_for": "IndexedDB local-first storage across web/Electron renderer",
+      "confidence": "high",
+      "caution": "Use workers/chunking for large imports."
+    },
+    {
+      "aspect": "Local DB",
+      "name": "PGlite",
+      "url": "https://pglite.dev/",
+      "type": "official docs",
+      "best_for": "WASM Postgres for browser/Node-like local analytics",
+      "confidence": "medium-high",
+      "caution": "Validate bundle/startup/persistence."
+    },
+    {
+      "aspect": "PWA",
+      "name": "MDN Progressive Web Apps",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps",
+      "type": "official docs",
+      "best_for": "PWA concepts and installability",
+      "confidence": "high",
+      "caution": "Browser support varies."
+    },
+    {
+      "aspect": "PWA titlebar",
+      "name": "MDN Window Controls Overlay",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window_Controls_Overlay_API",
+      "type": "official docs",
+      "best_for": "Desktop PWA titlebar customization parity",
+      "confidence": "high",
+      "caution": "Use feature detection and fallbacks."
+    },
+    {
+      "aspect": "Testing",
+      "name": "Playwright Electron",
+      "url": "https://playwright.dev/docs/api/class-electron",
+      "type": "official docs",
+      "best_for": "Electron end-to-end smoke tests",
+      "confidence": "medium-high",
+      "caution": "Electron support is experimental."
+    },
+    {
+      "aspect": "Testing",
+      "name": "Vitest",
+      "url": "https://vitest.dev/",
+      "type": "official docs",
+      "best_for": "Vite-native unit/component tests",
+      "confidence": "high",
+      "caution": "Pair with manual macOS/a11y checks."
+    }
+  ]
+}

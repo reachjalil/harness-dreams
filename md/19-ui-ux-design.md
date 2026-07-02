@@ -35,15 +35,15 @@ screen-by-screen experience.
   Trends with experiment/config annotations.
 - **Cards**: findings and experiments are cards with type icon, title, evidence
   affordance, and a primary action.
-- **Motion**: subtle. A gentle "dreaming" shimmer on the icon; rings animate on
+- **Motion**: subtle. A gentle "reviewing" shimmer on the icon; rings animate on
   open; respect reduced-motion.
 
 ## Screen-by-screen
 
 ### Menu-bar glance (popover)
 - Three rings + the digest sentence.
-- Buttons: **Dream now**, **Open report**.
-- If a report is unreviewed: a "New dream ready" banner.
+- Buttons: **Run Health Review**, **Open report**.
+- If a report is unreviewed: a "New review ready" banner.
 
 ### Report — Overview tab
 - Header: date range, # sessions, harnesses, overall status.
@@ -74,18 +74,18 @@ screen-by-screen experience.
 - Actions: enable / pause / adopt / revert.
 
 ### Settings
-- **Privacy**: local-only vs cloud REM; redaction preview; raw-text retention
+- **Privacy**: local-only vs cloud Insight; redaction preview; raw-text retention
   toggle.
 - **Schedule**: nightly time, idle trigger, catch-up.
 - **Connectors**: which harnesses; paths; backfill horizon.
-- **Budget**: per-dream token/cost cap; model selection.
+- **Budget**: per-review token/cost cap; model selection.
 - **Notifications**: morning nudge on/off, Focus respect.
 
 ## Empty, loading, and error states
 
-- **First run / no data**: friendly onboarding, offer "Dream now."
-- **Dreaming**: progressive — vitals first, findings stream in (`15`).
-- **Partial dream**: clearly show "vitals ready, insights failed — retry."
+- **First run / no data**: friendly onboarding, offer "Run Health Review."
+- **Reviewing**: progressive — vitals first, findings stream in (`15`).
+- **Partial review**: clearly show "vitals ready, insights failed — retry."
 - **Low data**: "Only 3 sessions yesterday — findings are low-confidence."
 - **No findings**: a calm "Quiet night. Nothing notable — here's your trend."
   (Not every day has insights; don't manufacture them.)

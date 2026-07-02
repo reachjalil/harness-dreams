@@ -1,0 +1,21 @@
+aspect,reference,url,fit,confidence,use,caution
+Electron official scaffold,Electron Forge Vite + TypeScript,https://www.electronforge.io/templates/vite-%2B-typescript,high,high,Start desktop app with official Electron tooling,Check Forge Vite plugin status for current version
+Fast Electron Vite DX,electron-vite,https://electron-vite.org/,high,high,Main/preload/renderer Vite structure,Own packaging/signing decisions
+React Electron starter,electron-vite-react,https://github.com/electron-vite/electron-vite-react,medium-high,medium,Reference starter project layout,Audit renderer Node access before adopting
+Security defaults,1Password electron-secure-defaults,https://github.com/1Password/electron-secure-defaults,high,high,Concrete secure defaults and checklist implementation,Adapt to local windows/protocols
+Security template,cawa-93/vite-electron-builder,https://github.com/cawa-93/vite-electron-builder,medium-high,medium,Secure Vite/Electron boilerplate ideas,Verify maintenance/dependencies
+Apple Health web dashboard,MaximeHeckel/health-dashboard,https://github.com/MaximeHeckel/health-dashboard,medium,medium,HealthKit dashboard product/data reference,Older stack; not modern scaffold
+Apple Health web dashboard,markwk/apple-health-web-dashboard,https://github.com/markwk/apple-health-web-dashboard,medium,medium,Daily Health data React dashboard ideas,CRA-era; modernize heavily
+Apple Health sync backend,markwk/apple-health-sync-backend,https://github.com/markwk/apple-health-sync-backend,medium,medium,Backend sync/API reference,Mongo/Go stack may not fit
+React rings,JonasDoesThings/react-activity-rings,https://github.com/JonasDoesThings/react-activity-rings,medium,medium,SVG ring API/design reference,Need custom production implementation
+React rings,thecodehunter/react-activity-rings,https://github.com/thecodehunter/react-activity-rings,medium,medium,Ring visualization and legends,Validate maintenance
+UI primitives,React Aria,https://react-aria.adobe.com/,high,high,"Accessible interactions, keyboard/focus behavior",Requires own styling
+UI primitives,Base UI,https://base-ui.com/,high,medium-high,Unstyled accessible components,Newer ecosystem
+UI primitives,Radix UI,https://www.radix-ui.com/,high,high,Accessible primitives and themes,Retokenize for macOS feel
+Copy-owned UI,shadcn/ui,https://ui.shadcn.com/docs,medium-high,high,Copy and own components,Defaults are not macOS-native
+Charts quick,Recharts,https://recharts.org/,high,high,Dashboard charts fast,Custom accessibility wrappers needed
+Charts custom,visx,https://github.com/airbnb/visx,high,high,Custom health-style charts,More code
+Local DB browser,Dexie,https://dexie.org/docs,high,high,IndexedDB across web/Electron,Chunk large imports
+Local analytics,PGlite,https://pglite.dev/,medium-high,medium-high,WASM Postgres local analytics,Validate runtime cost
+PWA,Vite PWA,https://vite-pwa-org.netlify.app/,high,high,Service worker/manifest integration,Cache sensitive data carefully
+E2E testing,Playwright Electron,https://playwright.dev/docs/api/class-electron,medium,medium-high,Electron smoke testing,Experimental support

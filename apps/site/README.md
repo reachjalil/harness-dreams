@@ -1,22 +1,22 @@
-# @harness-dreams/site
+# @harness-health/site
 
-Marketing site for [harnessdreams.com](https://harnessdreams.com). Astro
+Marketing site for [harnesshealth.com](https://harnesshealth.com). Astro
 (static) served by a Cloudflare Worker that also hosts the waitlist API.
 
 ## Develop
 
 ```bash
-pnpm --filter @harness-dreams/site dev          # Astro dev server (UI only)
-pnpm --filter @harness-dreams/site build        # build static site -> dist/
-pnpm --filter @harness-dreams/site check        # astro type-check
+pnpm --filter @harness-health/site dev          # Astro dev server (UI only)
+pnpm --filter @harness-health/site build        # build static site -> dist/
+pnpm --filter @harness-health/site check        # astro type-check
 ```
 
 To exercise the **Worker + waitlist API** locally (Miniflare simulates KV — no
 account needed):
 
 ```bash
-pnpm --filter @harness-dreams/site build
-pnpm --filter @harness-dreams/site exec wrangler dev --local --port 8799
+pnpm --filter @harness-health/site build
+pnpm --filter @harness-health/site exec wrangler dev --local --port 8799
 # then: curl -X POST localhost:8799/api/waitlist -H 'content-type: application/json' -d '{"email":"you@example.com"}'
 ```
 
@@ -46,21 +46,21 @@ One-time: create the KV namespace and paste the ids into `wrangler.jsonc`
 (`kv_namespaces[0].id` / `.preview_id`):
 
 ```bash
-pnpm --filter @harness-dreams/site exec wrangler kv namespace create WAITLIST
-pnpm --filter @harness-dreams/site exec wrangler kv namespace create WAITLIST --preview
+pnpm --filter @harness-health/site exec wrangler kv namespace create WAITLIST
+pnpm --filter @harness-health/site exec wrangler kv namespace create WAITLIST --preview
 ```
 
 Then:
 
 ```bash
-pnpm --filter @harness-dreams/site deploy          # build + wrangler deploy
-pnpm --filter @harness-dreams/site deploy:dry-run  # validate without uploading
+pnpm --filter @harness-health/site deploy          # build + wrangler deploy
+pnpm --filter @harness-health/site deploy:dry-run  # validate without uploading
 ```
 
 Read collected emails:
 
 ```bash
-pnpm --filter @harness-dreams/site exec wrangler kv key list --binding WAITLIST
+pnpm --filter @harness-health/site exec wrangler kv key list --binding WAITLIST
 ```
 
 ## Brand font (Canela)

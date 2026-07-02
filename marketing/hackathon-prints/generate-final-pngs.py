@@ -208,9 +208,9 @@ def flow(draw: ImageDraw.ImageDraw, page: dict) -> None:
     draw.text((x0, y - 62), "The loop judges can verify", fill=COLORS["ink"], font=F["h2"])
     items = [
         ("Sessions", "Claude Code + Codex"),
-        ("Sleep Cycle", "score + friction"),
+        ("Health Review", "score + friction"),
         ("Recommendation", "AGENTS.md / skill"),
-        ("Next Cycle", "helped / worse"),
+        ("Next Review", "helped / worse"),
     ]
     card_w, gap = 284, 90
     for index, (title, body) in enumerate(items):
@@ -258,32 +258,32 @@ def draw_page(page: dict) -> Image.Image:
 PAGES = [
     {
         "slug": "01-overview",
-        "deck": "Harness Dreams",
-        "title": "A sleep cycle for coding agents",
-        "subtitle": "Harness Dreams reads real local Claude Code and Codex sessions, finds collaboration friction, and turns it into measurable repo improvements.",
+        "deck": "Harness Health",
+        "title": "A health review for coding agents",
+        "subtitle": "Harness Health reads real local Claude Code and Codex sessions, finds collaboration friction, and turns it into measurable repo improvements.",
         "accent": (59, 130, 246),
         "accent2": (34, 197, 94),
         "screen": "01-home-dashboard.png",
         "screen_caption": "Actual Home dashboard screenshot from demo mode",
         "callouts": [
             ("Local session window", "Counts the latest work window before judging anything."),
-            ("Health dashboard", "Scores efficiency, effectiveness, and alignment from reviewed cycles."),
+            ("Health dashboard", "Scores efficiency, effectiveness, and alignment from reviewed reviews."),
             ("Improvement loop", "Accepted changes, review branches, and verdicts stay visible."),
         ],
         "stats": [("7", "sessions"), ("3", "projects"), ("2", "PR links"), ("61", "alignment")],
-        "footer": "Open Home, then open the latest Sleep Cycle behind the dashboard numbers.",
+        "footer": "Open Home, then open the latest Health Review behind the dashboard numbers.",
     },
     {
-        "slug": "02-sleep-cycle-review",
-        "deck": "Sleep Cycle Review",
+        "slug": "02-health-review",
+        "deck": "Health Review Review",
         "title": "The report is grounded in actual friction",
-        "subtitle": "The Sleep Cycle review names the project window, quotes the correction, and measures whether earlier accepted guidance helped.",
+        "subtitle": "The Health Review review names the project window, quotes the correction, and measures whether earlier accepted guidance helped.",
         "accent": (239, 68, 68),
         "accent2": (245, 158, 11),
-        "screen": "03-cycle-detail.png",
+        "screen": "03-health-review-detail.png",
         "screen_y": 470,
         "callout_y": 470,
-        "screen_caption": "Actual Sleep Cycle detail screenshot",
+        "screen_caption": "Actual Health Review detail screenshot",
         "callouts": [
             ("Verbatim evidence", "Quotes the moment of friction instead of summarizing vibes."),
             ("Config gap", "Names the missing AGENTS.md, CLAUDE.md, or skill instruction."),
@@ -324,8 +324,8 @@ PAGES = [
         "second_caption": "Settings after Cloud opt-in",
         "callouts": [
             ("Local-first", "Demo mode and local mode do not call an LLM or write repos."),
-            ("No agent SDK", "Cloud REM uses the configured Claude Code or Codex CLI command."),
-            ("Redaction", "Sensitive excerpts are scrubbed before the REM payload is sent."),
+            ("No agent SDK", "Cloud Insight uses the configured Claude Code or Codex CLI command."),
+            ("Redaction", "Sensitive excerpts are scrubbed before the Insight payload is sent."),
         ],
         "stats": [("~/.claude", "connector"), ("~/.codex", "connector"), ("CLI", "runner path"), ("180s", "timeout")],
         "footer": "Toggle Cloud in Settings and point at runner command plus redacted excerpts.",
@@ -334,7 +334,7 @@ PAGES = [
         "slug": "05-demo-walkthrough",
         "deck": "Hackathon Demo",
         "title": "Three-minute judge walkthrough",
-        "subtitle": "Start with the dashboard, open the latest cycle, inspect a recommendation, then show the measured outcome.",
+        "subtitle": "Start with the dashboard, open the latest health review, inspect a recommendation, then show the measured outcome.",
         "accent": (37, 99, 235),
         "accent2": (234, 179, 8),
         "screen": "01-home-dashboard.png",
@@ -343,12 +343,12 @@ PAGES = [
         "second_caption": "Apply-ready recommendation screenshot",
         "callouts": [
             ("Home", "Show the self-improvement loop and PR-ready branch counters."),
-            ("Sleep Cycle", "Show sessions, projects, quotes, and the config gap."),
+            ("Health Review", "Show sessions, projects, quotes, and the config gap."),
             ("Accept", "Show the generated AGENTS.md block or skill scaffold."),
-            ("Outcome", "Show Helped / no-change / worse after the next cycle."),
+            ("Outcome", "Show Helped / no-change / worse after the next review."),
         ],
-        "stats": [("3", "demo cycles"), ("2", "recommendations"), ("+14", "helped delta"), ("0", "mock claims")],
-        "footer": "Close with: Harness Dreams turns agent friction into measurable repo guidance.",
+        "stats": [("3", "demo reviews"), ("2", "recommendations"), ("+14", "helped delta"), ("0", "mock claims")],
+        "footer": "Close with: Harness Health turns agent friction into measurable repo guidance.",
     },
 ]
 

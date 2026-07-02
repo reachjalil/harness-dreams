@@ -32,10 +32,10 @@ task-type, harness, file globs. Instruction injection writes a clearly-marked,
 revertible block, e.g.:
 
 ```md
-<!-- harness-dreams:experiment:exp_8f3a START -->
+<!-- harness-health:experiment:exp_8f3a START -->
 For UI tasks (components, styling, layout), prefer medium thinking effort
 unless the task is architecturally complex.
-<!-- harness-dreams:experiment:exp_8f3a END -->
+<!-- harness-health:experiment:exp_8f3a END -->
 ```
 
 Marked blocks make the change **auditable** and **cleanly removable** on
@@ -85,7 +85,7 @@ mislead. Approach:
 ## Grading flow
 
 ```
- improvement measuring ──(duration reached or enough obs)──► reflect in next dream
+ improvement measuring ──(duration reached or enough obs)──► reflect in next review
    │                                                          │
    │   compute treated vs control deltas on successMetrics    │
    │   + guardrail check + uncertainty interval               ▼
@@ -101,7 +101,7 @@ block) actions.
 - On **adopt**: convert the marked improvement block into a permanent instruction
   (drop the markers), archive the improvement with its result.
 - On **revert**: remove the marked block, restore backup, archive as rejected.
-- On **guardrail trip** mid-run: flag early in the next dream, recommend stopping.
+- On **guardrail trip** mid-run: flag early in the next review, recommend stopping.
 - **Concurrency cap**: ≤2–3 active improvements to keep attribution clean and the
   user un-overwhelmed.
 

@@ -26,7 +26,7 @@ in `~/.claude/projects`, multiple harnesses, active AGENTS.md/skills/MCP usage).
 
 Same as above but motivated primarily by **cost and efficiency**. Wants
 token/$/latency dashboards, model-mix recommendations ("Codex is faster for X"),
-and aggressive experiments. Treats Harness Dreams like a performance budget.
+and aggressive experiments. Treats Harness Health like a performance budget.
 
 ## Future persona — "The Team Lead" (post-MVP)
 
@@ -55,34 +55,34 @@ Supporting jobs:
 
 ## User stories (MVP-relevant)
 
-- As a Power Builder, I can **start a dream session on demand** from the menu bar
+- As a Power Builder, I can **start a health review on demand** from the menu bar
   and get a report within minutes.
-- As a Power Builder, I **wake up to an overnight dream** without configuring
+- As a Power Builder, I **wake up to an overnight review** without configuring
   anything beyond granting access once.
 - As a Power Builder, I can **see yesterday's vitals vs. my baseline** at a
   glance.
 - As a Power Builder, I can **read a finding, see its evidence, and accept or
   reject it.**
 - As a Power Builder, I can **enable a suggested experiment** and have the next
-  dream grade it.
+  review grade it.
 - As an Optimizer, I can **see my token/cost trend and model mix** over time.
 - As a Power Builder, I can **chat with the report** to ask "why is my re-ask
   rate up this week?"
 
 ## A day in the life (narrative)
 
-**11:40pm — Sleep.** You close your laptop after a long day across three repos.
-Harness Dreams notices the harness has gone idle. A subtle menu-bar animation
-shows it's entering a dream.
+**11:40pm — Idle.** You close your laptop after a long day across three repos.
+Harness Health notices the harness has gone idle. A subtle menu-bar animation
+shows it's entering a review.
 
-**Overnight — Dreaming.** Deep Sleep computes the day's vitals and rolls them
-into your 30-day trend. REM reads the day's transcripts: it notices you re-asked
+**Overnight — Reviewing.** Deterministic Vitals computes the day's vitals and rolls them
+into your 30-day trend. Insight reads the day's transcripts: it notices you re-asked
 the model to "actually run the tests" four times in `agent-fleet`, that your
 token usage dropped 18% on days you used the `verify` skill, and that two repos
 independently reimplemented a CSV parser. It drafts three findings and two
 experiments. Everything is redacted and processed locally per your settings.
 
-**8:15am — Reflection.** You open the menu bar to a Dream Report. Headline: a
+**8:15am — Reflection.** You open the menu bar to a Health Report. Headline: a
 green "Efficiency" ring (tokens-per-accepted-change down 12% week-over-week). You
 skim three findings:
 - ✅ *Win:* "`verify` skill correlates with fewer re-asks — keep using it."
@@ -97,7 +97,7 @@ Then two experiments:
   **Enable.**
 - 🧪 "Try **Codex** for quick refactors; we'll compare latency." → **Enable.**
 
-You spend 90 seconds, close the panel, and start coding. Tomorrow's dream will
+You spend 90 seconds, close the panel, and start coding. Tomorrow's review will
 tell you whether medium effort on UI made you ask for fewer follow-ups — or more.
 
 This 90-second ritual is the product's heartbeat. Everything in these docs

@@ -22,9 +22,9 @@ panel doesn't quit it; the scheduler keeps running.
 
 | Surface | Trigger | Contents |
 |---|---|---|
-| **Menu-bar icon** | always | state glyph (resting / dreaming / report-ready) |
-| **Glance popover** | click icon | 3 rings + digest + "Dream now" + "Open report" |
-| **Report window** | "Open report" | full Dream Report: vitals, trends, findings, experiments, memory |
+| **Menu-bar icon** | always | state glyph (resting / reviewing / report-ready) |
+| **Glance popover** | click icon | 3 rings + digest + "Run Health Review" + "Open report" |
+| **Report window** | "Open report" | full Health Report: vitals, trends, findings, experiments, memory |
 | **Lab panel** | from report | active/concluded experiments (`08`) |
 | **Settings** | menu | privacy, schedule, connectors, budgets, model |
 | **Ask box / chat** | later (`10`) | grounded conversational queries |
@@ -33,24 +33,24 @@ panel doesn't quit it; the scheduler keeps running.
 
 The icon communicates the loop at a glance:
 - **Resting** — idle, nothing to show.
-- **Dreaming** — a dream is running (subtle animation).
-- **Report ready** — a fresh dream awaits reflection (badge/dot).
+- **Reviewing** — a review is running (subtle animation).
+- **Report ready** — a fresh review awaits reflection (badge/dot).
 - **Attention** — a guardrail tripped or an experiment needs a verdict.
 
 ## Lifecycle & scheduling
 
 - On launch: start the scheduler, run catch-up detection (missed nights), warm
   the store.
-- Scheduler triggers per [05-feature-dream-sessions.md](05-feature-dream-sessions.md)
-  (scheduled/idle/manual). For reliability across reboots/sleep, back the
-  in-app scheduler with a `launchd` agent so a missed nightly dream runs on next
+- Scheduler triggers per [05-feature-review-sessions.md](05-feature-review-sessions.md)
+  (scheduled/idle/manual). For reliability across reboots/idle, back the
+  in-app scheduler with a `launchd` agent so a missed nightly review runs on next
   wake.
 - The engine runs as a **sidecar** (Node process / Rust-invoked) so heavy work
   never freezes the UI (`17`).
 
 ## OS integration
 
-- **Notifications**: "Your dream is ready" each morning (respect Focus / Do Not
+- **Notifications**: "Your review is ready" each morning (respect Focus / Do Not
   Disturb; user-configurable; never spammy). A single morning nudge, not a
   stream.
 - **Permissions**: needs read access to `~/.claude/**` (and later other harness
@@ -72,10 +72,10 @@ The icon communicates the loop at a glance:
 
 1. Welcome + the one-paragraph pitch.
 2. Grant read access to harness data (explain why; show what we read).
-3. Privacy choice: local-only vs. cloud REM (opt-in, with redaction explained —
+3. Privacy choice: local-only vs. cloud Insight (opt-in, with redaction explained —
    see `20`).
-4. Optional: backfill history to seed baselines; schedule the nightly dream.
-5. Offer an immediate "Dream now" so the user sees value in the first session.
+4. Optional: backfill history to seed baselines; schedule the nightly review.
+5. Offer an immediate "Run Health Review" so the user sees value in the first session.
 
 ## Accessibility & platform fit
 

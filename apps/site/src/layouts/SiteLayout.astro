@@ -7,10 +7,10 @@ interface Props {
 }
 
 const { title, description } = Astro.props as Props;
-const site = Astro.site ?? new URL("https://harnessdreams.com");
+const site = Astro.site ?? new URL("https://harnesshealth.com");
 const canonicalUrl = new URL(Astro.url.pathname, site);
 const ogImage = new URL("/og.svg", site);
-const siteName = "Harness Dreams";
+const siteName = "Harness Health";
 ---
 
 <!doctype html>
@@ -24,7 +24,7 @@ const siteName = "Harness Dreams";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#ffffff" />
     <meta name="color-scheme" content="light" />
-    <meta name="author" content="Harness Dreams" />
+    <meta name="author" content="Harness Health" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={siteName} />

@@ -1,21 +1,21 @@
-# harness-dreams
+# harness-health
 
 A pnpm + Turborepo monorepo centralizing work and shared IP under the
-`@harness-dreams/*` scope.
+`@harness-health/*` scope.
 
 ## Current status
 
-Harness Dreams is in active local development. There is not a signed macOS app
+Harness Health is in active local development. There is not a signed macOS app
 download or public hosted sign-up flow yet. Both are coming soon.
 
 For now, run the desktop app from source:
 
 ```bash
-git clone https://github.com/reachjalil/harness-dreams.git
-cd harness-dreams
+git clone https://github.com/reachjalil/harness-health.git
+cd harness-health
 corepack enable
 pnpm install
-pnpm --filter @harness-dreams/desktop start
+pnpm --filter @harness-health/desktop start
 ```
 
 Requirements: macOS, Node.js 22.12 or newer, and pnpm. Corepack will use the
@@ -32,7 +32,7 @@ pnpm version pinned by this repo.
 ## Layout
 
 ```
-packages/   # shared, reusable libraries (@harness-dreams/*)
+packages/   # shared, reusable libraries (@harness-health/*)
 apps/       # deployable applications and services
 ```
 
@@ -49,7 +49,7 @@ pnpm test        # run tests
 ## Adding a package
 
 Create a directory under `packages/` (library) or `apps/` (application) with a
-`package.json` named `@harness-dreams/<name>`. Pin shared dependency versions
+`package.json` named `@harness-health/<name>`. Pin shared dependency versions
 through the catalog in `pnpm-workspace.yaml` (`"dep": "catalog:"`).
 
 ## Versioning
