@@ -2,7 +2,7 @@ import path from "node:path";
 import { BrowserWindow, shell } from "electron";
 
 /**
- * Window manager. Harness Dreams has a single visible surface — the React UI
+ * Window manager. Harness Health has a single visible surface — the React UI
  * (index.html) opened from the menu bar. Closing it hides rather than quits,
  * because this is a menu-bar app.
  *
@@ -16,18 +16,27 @@ const MIN_WIDTH = 980;
 const MIN_HEIGHT = 620;
 
 let mainWin: BrowserWindow | null = null;
+let peerHostWin: BrowserWindow | null = null;
 let quitting = false;
 
 export function setQuitting(value: boolean): void {
   quitting = value;
 }
 
-function loadIndex(win: BrowserWindow): void {
+function loadIndex(
+  win: BrowserWindow,
+  query: Record<string, string> = {}
+): void {
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    void win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    const url = new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    for (const [key, value] of Object.entries(query)) {
+      url.searchParams.set(key, value);
+    }
+    void win.loadURL(url.toString());
   } else {
     void win.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
+      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
+      { query }
     );
   }
 }
@@ -57,7 +66,7 @@ export function getOrCreateMain(): BrowserWindow {
     resizable: true,
     maximizable: false,
     fullscreenable: false,
-    title: "Harness Dreams",
+    title: "Harness Health",
     // Edge-to-edge: no title bar; traffic lights float, inset into the glass
     // sidebar. The whole window is a single frosted surface.
     titleBarStyle: "hidden",
@@ -85,6 +94,32 @@ export function getOrCreateMain(): BrowserWindow {
   return mainWin;
 }
 
+export function getOrCreatePeerHost(): BrowserWindow {
+  if (peerHostWin && !peerHostWin.isDestroyed()) return peerHostWin;
+  peerHostWin = new BrowserWindow({
+    width: 320,
+    height: 240,
+    show: false,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    title: "Harness Health Peer Host",
+    backgroundColor: "#00000000",
+    webPreferences: {
+      preload: PRELOAD,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+  harden(peerHostWin);
+  loadIndex(peerHostWin, { peerHost: "1" });
+  peerHostWin.on("closed", () => {
+    peerHostWin = null;
+  });
+  return peerHostWin;
+}
+
 export function showMain(): void {
   const win = getOrCreateMain();
   win.setMinimumSize(MIN_WIDTH, MIN_HEIGHT);
@@ -101,4 +136,17 @@ export function broadcastToUi(channel: string, payload?: unknown): void {
   if (mainWin && !mainWin.isDestroyed()) {
     mainWin.webContents.send(channel, payload);
   }
+}
+
+export function broadcastToPeerHost(channel: string, payload?: unknown): void {
+  if (peerHostWin && !peerHostWin.isDestroyed()) {
+    peerHostWin.webContents.send(channel, payload);
+  }
+}
+
+export function closePeerHost(): void {
+  if (peerHostWin && !peerHostWin.isDestroyed()) {
+    peerHostWin.close();
+  }
+  peerHostWin = null;
 }

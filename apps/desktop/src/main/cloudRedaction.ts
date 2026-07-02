@@ -1,7 +1,7 @@
 import type {
   ActionQueueEntry,
   AlignmentDetail,
-  DreamReport,
+  HealthReport,
   Finding,
   ProjectInsight,
 } from "../shared/types";
@@ -116,8 +116,8 @@ function sanitizeProjectInsight(insight: ProjectInsight): unknown {
 }
 
 function sanitizeRedactionPreview(
-  preview: DreamReport["cloudRedactionPreview"]
-): DreamReport["cloudRedactionPreview"] {
+  preview: HealthReport["cloudRedactionPreview"]
+): HealthReport["cloudRedactionPreview"] {
   if (!preview) return undefined;
   const [provider] = preview.runner.split(":");
   return {
@@ -128,7 +128,7 @@ function sanitizeRedactionPreview(
   };
 }
 
-export function sanitizeReportForCloud(report: DreamReport): unknown {
+export function sanitizeReportForCloud(report: HealthReport): unknown {
   return {
     id: report.id,
     timestamp: report.timestamp,

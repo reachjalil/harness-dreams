@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest";
 
-import type { DreamReport } from "../shared/types";
+import type { HealthReport } from "../shared/types";
 import { sanitizeCloudText, sanitizeReportForCloud } from "./cloudRedaction";
 
-function reportWithSensitiveFields(): DreamReport {
+function reportWithSensitiveFields(): HealthReport {
   return {
-    id: "cycle-sensitive",
+    id: "review-sensitive",
     timestamp: 1_782_655_100,
     rangeLabel: "Last night",
     sessions: 1,
@@ -68,11 +68,11 @@ function reportWithSensitiveFields(): DreamReport {
         hypothesis: "Sensitive path is redacted.",
         agentBenefit: "Clearer guidance.",
         userBenefit: "No leak.",
-        reflection: "Check next cycle.",
+        reflection: "Check next review.",
         metric: "alignment",
         status: "running",
         progress: 0,
-        progressLabel: "0 / 3 cycles",
+        progressLabel: "0 / 3 reviews",
         projectPath: "/Users/alice/work/private-repo",
       },
     ],
@@ -94,7 +94,7 @@ function reportWithSensitiveFields(): DreamReport {
           creates: false,
         },
         reviewBranch: {
-          branch: "codex/harness-dreams-test",
+          branch: "codex/harness-health-test",
           worktreePath: "/Users/alice/worktrees/private-repo",
           pushed: false,
         },

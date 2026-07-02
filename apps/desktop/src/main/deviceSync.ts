@@ -1,469 +1,205 @@
+import { randomUUID } from "node:crypto";
+import http from "node:http";
+
 import {
-  createHmac,
-  createHash,
-  randomUUID,
-  timingSafeEqual,
-} from "node:crypto";
-import http, { type IncomingMessage, type ServerResponse } from "node:http";
-import { networkInterfaces } from "node:os";
+  RTC_PROTOCOL_VERSION,
+  encodePairingLink,
+  generateSecret,
+  sha256Base64Url,
+} from "@harness-health/core";
 
 import type {
-  ActionState,
   CloudSyncDevice,
   CloudSyncDeviceKind,
   CloudSyncPairing,
-  DreamReport,
-  Finding,
+  HealthReport,
+  LiveTelemetrySnapshot,
   Metric,
-  Ring,
-  SyncedReviewDecision,
 } from "../shared/types";
-import { getLatest, mergeRemoteReviewDecisions } from "./reports";
+import { sanitizeReportForCloud } from "./cloudRedaction";
+import { registerPeerPairingSession } from "./cloudSync";
+import { getReports } from "./reports";
 import { getConfig, setConfig } from "./store";
+import { getTelemetrySnapshot } from "./telemetry";
 
 const PAIRING_TTL_MS = 10 * 60 * 1000;
-const DEV_SYNC_PORT = 39_391;
-const JWT_ISSUER = "harness-dreams-desktop";
-const JWT_AUDIENCE = "harness-dreams-companion";
-const VALID_DECISION_STATES = new Set<ActionState>([
-  "accepted",
-  "rejected",
-  "queued",
-  "snoozed",
-]);
+const DEV_SYNC_PORT = Number(process.env.HARNESS_HEALTH_DEV_SYNC_PORT ?? 39391);
 
-let server: http.Server | null = null;
-let serverPort: number | null = null;
+let devSyncServer: http.Server | null = null;
 
-interface PairingJwtPayload {
-  iss: typeof JWT_ISSUER;
-  aud: typeof JWT_AUDIENCE;
-  sub: string;
-  jti: string;
-  iat: number;
-  exp: number;
-  userId: string;
-  deviceId: string;
-  deviceName: string;
-  deviceKind: CloudSyncDeviceKind;
-  desktopDeviceId: string;
-  desktopDeviceName: string;
-  syncBaseUrl: string;
-  scope: string[];
+function signalingBaseUrl(): string {
+  return getConfig().cloudSync.cloudApiBaseUrl.replace(/\/+$/u, "");
 }
 
-interface AuthenticatedDevice {
-  token: string;
-  tokenHash: string;
-  device: CloudSyncDevice;
-  payload: PairingJwtPayload;
-}
-
-function devAutoPairEnabled(): boolean {
-  if (process.env.HARNESS_DREAMS_DEV_AUTO_PAIR === "0") return false;
-  if (process.env.HARNESS_DREAMS_DEV_AUTO_PAIR === "1") return true;
-  return (
-    process.env.NODE_ENV === "development" ||
-    Boolean((process as NodeJS.Process & { defaultApp?: boolean }).defaultApp)
+function metricByCanonical(
+  snapshot: LiveTelemetrySnapshot,
+  canonicalKey: string
+): Metric | undefined {
+  return snapshot.metrics.find(
+    (metric) => (metric.canonicalKey ?? metric.key) === canonicalKey
   );
 }
 
-function deviceSyncPort(): number {
-  const raw = process.env.HARNESS_DREAMS_DEVICE_SYNC_PORT;
-  if (raw) {
-    const parsed = Number(raw);
-    if (Number.isInteger(parsed) && parsed > 0 && parsed < 65_536) {
-      return parsed;
-    }
+function telemetryHasData(snapshot: LiveTelemetrySnapshot): boolean {
+  return snapshot.sources.some((source) => source.events > 0);
+}
+
+function metricSamples(
+  snapshot: LiveTelemetrySnapshot,
+  canonicalKey: string
+): NonNullable<Metric["samples"]> | undefined {
+  if (snapshot.trendSeries.length === 0) return undefined;
+  if (canonicalKey === "tokens.total") {
+    return snapshot.trendSeries.map((point) => ({
+      label: point.label,
+      value: point.tokens,
+      display:
+        point.tokens >= 1000
+          ? `${Math.round(point.tokens / 1000)}K`
+          : `${Math.round(point.tokens)}`,
+    }));
   }
-  return devAutoPairEnabled() ? DEV_SYNC_PORT : 0;
-}
-
-function isLoopbackRequest(request: IncomingMessage): boolean {
-  const address = request.socket.remoteAddress ?? "";
-  return (
-    address === "127.0.0.1" ||
-    address === "::1" ||
-    address === "::ffff:127.0.0.1"
-  );
-}
-
-function parseDeviceKind(value: string | null): CloudSyncDeviceKind {
-  return value === "ipad" || value === "watch" ? value : "iphone";
-}
-
-function base64url(input: Buffer | string): string {
-  return Buffer.from(input)
-    .toString("base64")
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/u, "");
-}
-
-function decodeBase64url(input: string): Buffer {
-  const normalized = input.replaceAll("-", "+").replaceAll("_", "/");
-  const padded = normalized.padEnd(
-    normalized.length + ((4 - (normalized.length % 4)) % 4),
-    "="
-  );
-  return Buffer.from(padded, "base64");
-}
-
-function tokenHash(token: string): string {
-  return createHash("sha256").update(token).digest("base64url");
-}
-
-function signJwt(payload: PairingJwtPayload, secret: string): string {
-  const header = { alg: "HS256", typ: "JWT" };
-  const encodedHeader = base64url(JSON.stringify(header));
-  const encodedPayload = base64url(JSON.stringify(payload));
-  const body = `${encodedHeader}.${encodedPayload}`;
-  const signature = createHmac("sha256", secret).update(body).digest();
-  return `${body}.${base64url(signature)}`;
-}
-
-function verifyJwt(token: string, secret: string): PairingJwtPayload | null {
-  const [encodedHeader, encodedPayload, encodedSignature] = token.split(".");
-  if (!encodedHeader || !encodedPayload || !encodedSignature) return null;
-
-  const body = `${encodedHeader}.${encodedPayload}`;
-  const expected = createHmac("sha256", secret).update(body).digest();
-  const actual = decodeBase64url(encodedSignature);
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
-    return null;
+  if (canonicalKey === "sessions.active") {
+    return snapshot.trendSeries.map((point) => ({
+      label: point.label,
+      value: point.sessions,
+      display: `${point.sessions}`,
+    }));
   }
-
-  const payload = JSON.parse(
-    decodeBase64url(encodedPayload).toString("utf8")
-  ) as PairingJwtPayload;
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  if (
-    payload.iss !== JWT_ISSUER ||
-    payload.aud !== JWT_AUDIENCE ||
-    payload.exp <= nowSeconds
-  ) {
-    return null;
-  }
-  return payload;
+  return undefined;
 }
 
-function localAddress(): string {
-  for (const interfaces of Object.values(networkInterfaces())) {
-    for (const item of interfaces ?? []) {
-      if (item.family === "IPv4" && !item.internal) return item.address;
-    }
-  }
-  return "127.0.0.1";
-}
-
-export function getDeviceSyncUrl(): string {
-  return serverPort ? `http://${localAddress()}:${serverPort}` : "";
-}
-
-function waitForDeviceSyncUrl(): Promise<string> {
-  const current = getDeviceSyncUrl();
-  if (current) return Promise.resolve(current);
-  return new Promise((resolve) => {
-    server?.once("listening", () => resolve(getDeviceSyncUrl()));
+function reportFromTelemetrySnapshot(
+  snapshot: LiveTelemetrySnapshot
+): HealthReport {
+  const sessions = metricByCanonical(snapshot, "sessions.active");
+  const metrics = snapshot.metrics.map((metric) => {
+    const canonicalKey = metric.canonicalKey ?? metric.key;
+    return {
+      ...metric,
+      key: canonicalKey,
+      canonicalKey,
+      samples: metric.samples ?? metricSamples(snapshot, canonicalKey),
+    };
   });
-}
-
-function json(
-  response: ServerResponse,
-  statusCode: number,
-  payload: unknown
-): void {
-  response.writeHead(statusCode, {
-    "Access-Control-Allow-Headers": "authorization, content-type",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json",
-  });
-  response.end(JSON.stringify(payload));
-}
-
-function readBody(request: IncomingMessage): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    request.on("data", (chunk: Buffer) => chunks.push(chunk));
-    request.on("error", reject);
-    request.on("end", () => {
-      if (chunks.length === 0) {
-        resolve({});
-        return;
-      }
-      try {
-        resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
-      } catch (err) {
-        reject(err);
-      }
-    });
-  });
-}
-
-function authenticate(request: IncomingMessage): AuthenticatedDevice | null {
-  const header = request.headers.authorization ?? "";
-  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  if (!token) return null;
-
-  const config = getConfig().cloudSync;
-  const payload = verifyJwt(token, config.jwtSecret);
-  if (!payload || payload.userId !== config.userId) return null;
-
-  const hash = tokenHash(token);
-  const device = config.devices.find(
-    (item) =>
-      item.deviceId === payload.deviceId &&
-      item.tokenHash === hash &&
-      item.status !== "revoked"
-  );
-  if (!device) return null;
-
-  return { token, tokenHash: hash, device, payload };
-}
-
-function markDeviceSeen(auth: AuthenticatedDevice): void {
-  const now = Date.now();
-  const current = getConfig().cloudSync.devices;
-  const existing = current.find(
-    (device) => device.deviceId === auth.device.deviceId
-  );
-  if (
-    existing &&
-    existing.status === "active" &&
-    existing.lastSeenAt &&
-    now - existing.lastSeenAt < 60_000
-  ) {
-    return;
-  }
-  setConfig({
-    cloudSync: {
-      devices: current.map((device) =>
-        device.deviceId === auth.device.deviceId
-          ? { ...device, status: "active", lastSeenAt: now }
-          : device
+  return {
+    id: `live-telemetry-${snapshot.generatedAt}`,
+    timestamp: snapshot.generatedAt,
+    kind: "quick",
+    reviewStatus: "unreviewed",
+    rangeLabel: snapshot.window.label,
+    sessions: Math.max(0, Math.round(sessions?.numericValue ?? 0)),
+    projects: snapshot.activeProjects.length,
+    harness: "Codex + Claude realtime",
+    digest: snapshot.status.message,
+    rings: snapshot.rings,
+    metrics,
+    findings: snapshot.insights.slice(0, 3).map((insight) => ({
+      id: insight.id,
+      type:
+        insight.severity === "positive"
+          ? "win"
+          : insight.severity === "warning"
+            ? "risk"
+            : "opportunity",
+      title: insight.title,
+      body: insight.explanation,
+      improvement: insight.recommendation ?? insight.explanation,
+      agentBenefit: insight.recommendation ?? insight.explanation,
+      userBenefit: insight.recommendation ?? insight.explanation,
+      reflection: insight.explanation,
+      confidence: insight.confidence,
+      project: "Realtime telemetry",
+      evidence: insight.explanation,
+      action: insight.recommendation ?? "Review realtime telemetry",
+    })),
+    experiments: [],
+    window: {
+      start: snapshot.window.start,
+      end: snapshot.window.end,
+      basis: "last-24h",
+      label: snapshot.window.label,
+      sessionsInWindow: Math.max(0, Math.round(sessions?.numericValue ?? 0)),
+      turnsInWindow: snapshot.sources.reduce(
+        (sum, source) => sum + source.events,
+        0
       ),
     },
-  });
-}
-
-function safeFindings(findings: Finding[]): Array<{
-  id: string;
-  type: Finding["type"];
-  title: string;
-  summary: string;
-  action: string;
-  confidence: Finding["confidence"];
-  project: string;
-}> {
-  return findings.map((finding) => ({
-    id: finding.id,
-    type: finding.type,
-    title: finding.title,
-    summary: finding.body,
-    action: finding.action,
-    confidence: finding.confidence,
-    project: finding.project,
-  }));
-}
-
-function mobileSnapshot(report: DreamReport | null): {
-  report: null | {
-    id: string;
-    timestamp: number;
-    rangeLabel: string;
-    sessions: number;
-    projects: number;
-    harness: string;
-    digest: string;
-    rings: Ring[];
-    metrics: Metric[];
-    findings: ReturnType<typeof safeFindings>;
-  };
-} {
-  if (!report) return { report: null };
-  return {
-    report: {
-      id: report.id,
-      timestamp: report.timestamp,
-      rangeLabel: report.rangeLabel,
-      sessions: report.sessions,
-      projects: report.projects,
-      harness: report.harness,
-      digest: report.digest,
-      rings: report.rings,
-      metrics: report.metrics,
-      findings: safeFindings(report.findings),
+    projectInsights: snapshot.activeProjects.map((project) => ({
+      name: project.name,
+      path: project.path,
+      sources: project.sources.filter(
+        (source) => source === "codex" || source === "claude-code"
+      ),
+      sessions: project.sessions,
+      turns: project.events,
+      corrections: project.corrections,
+      toolFailures: project.toolFailures,
+      hedges: 0,
+      alignment: project.contextScore ?? 80,
+      topics: ["tokens", "tools", "realtime"],
+      hasAgentsMd: false,
+      hasClaudeMd: false,
+      skillCount: 0,
+    })),
+    contextHealth: {
+      score: Math.max(
+        0,
+        Math.round(
+          snapshot.rings.find((ring) => ring.key === "alignment")?.score ?? 0
+        )
+      ),
+      status: "clear",
+      overloadedProjects: 0,
+      riskCount: snapshot.insights.filter(
+        (insight) => insight.severity === "warning"
+      ).length,
+      chars: 0,
+      memoryFiles: 0,
+      skillCount: snapshot.configArtifacts.length,
+      suggestions: snapshot.insights
+        .slice(0, 3)
+        .map((insight) => insight.recommendation ?? insight.explanation)
+        .filter((suggestion) => suggestion.length > 0),
+    },
+    provenance: {
+      mode: "real",
+      generator: "local-ingest",
+      usedSampleData: false,
+      sources: ["codex", "claude-code"],
+      generatedAt: snapshot.generatedAt,
+      cli: {
+        invoked: false,
+        status: "not-required",
+      },
     },
   };
-}
-
-async function handleSnapshot(
-  request: IncomingMessage,
-  response: ServerResponse
-): Promise<void> {
-  const auth = authenticate(request);
-  if (!auth) {
-    json(response, 401, { error: "unauthorized" });
-    return;
-  }
-  markDeviceSeen(auth);
-  json(response, 200, {
-    userId: auth.payload.userId,
-    desktopDeviceId: auth.payload.desktopDeviceId,
-    desktopDeviceName: auth.payload.desktopDeviceName,
-    deviceId: auth.device.deviceId,
-    ...mobileSnapshot(getLatest()),
-  });
-}
-
-async function handleDecisions(
-  request: IncomingMessage,
-  response: ServerResponse
-): Promise<void> {
-  const auth = authenticate(request);
-  if (!auth) {
-    json(response, 401, { error: "unauthorized" });
-    return;
-  }
-
-  const body = (await readBody(request)) as {
-    reportId?: unknown;
-    decisions?: unknown;
-  };
-  if (typeof body.reportId !== "string" || typeof body.decisions !== "object") {
-    json(response, 400, { error: "invalid decision payload" });
-    return;
-  }
-
-  const now = Date.now();
-  const incoming: SyncedReviewDecision[] = [];
-  for (const [findingId, state] of Object.entries(
-    body.decisions as Record<string, unknown>
-  )) {
-    if (
-      typeof findingId !== "string" ||
-      !VALID_DECISION_STATES.has(state as ActionState)
-    ) {
-      continue;
-    }
-    incoming.push({
-      reportId: body.reportId,
-      findingId,
-      state: state as Exclude<ActionState, "open">,
-      updatedAt: now,
-      sourceDeviceId: auth.device.deviceId,
-      sourceDeviceName: auth.device.deviceName,
-      deviceTokenHash: auth.tokenHash,
-    });
-  }
-
-  const result = mergeRemoteReviewDecisions(incoming);
-  markDeviceSeen(auth);
-  json(response, 200, {
-    applied: result.applied,
-    ...mobileSnapshot(getLatest()),
-  });
-}
-
-async function handleRequest(
-  request: IncomingMessage,
-  response: ServerResponse
-): Promise<void> {
-  if (request.method === "OPTIONS") {
-    json(response, 204, {});
-    return;
-  }
-
-  const url = new URL(
-    request.url ?? "/",
-    getDeviceSyncUrl() || "http://localhost"
-  );
-  if (request.method === "GET" && url.pathname === "/v1/snapshot") {
-    await handleSnapshot(request, response);
-    return;
-  }
-  if (request.method === "POST" && url.pathname === "/v1/decisions") {
-    await handleDecisions(request, response);
-    return;
-  }
-  if (request.method === "GET" && url.pathname === "/v1/dev/pair") {
-    await handleDevPair(request, response, url);
-    return;
-  }
-  json(response, 404, { error: "not found" });
-}
-
-async function handleDevPair(
-  request: IncomingMessage,
-  response: ServerResponse,
-  url: URL
-): Promise<void> {
-  const config = getConfig().cloudSync;
-  if (!devAutoPairEnabled() || !config.devBypassPaidPlan) {
-    json(response, 404, { error: "dev auto-pair is disabled" });
-    return;
-  }
-  if (!isLoopbackRequest(request)) {
-    json(response, 403, { error: "dev auto-pair requires loopback" });
-    return;
-  }
-
-  const kind = parseDeviceKind(url.searchParams.get("kind"));
-  const deviceName =
-    url.searchParams.get("deviceName") ??
-    (kind === "watch" ? "Dev Apple Watch" : "Dev iPhone");
-  const pairing = await createCloudSyncPairing({
-    deviceId: `dev-${kind}-simulator`,
-    deviceName,
-    kind,
-  });
-  json(response, 200, {
-    token: pairing.token,
-    pairingUrl: pairing.pairingUrl,
-    syncBaseUrl: getDeviceSyncUrl(),
-    devSyncBaseUrl: pairing.devSyncBaseUrl,
-    expiresAt: pairing.expiresAt,
-    device: pairing.device,
-  });
 }
 
 export function initDeviceSyncServer(): void {
-  if (server) return;
-  server = http.createServer((request, response) => {
-    void handleRequest(request, response).catch((err) => {
-      json(response, 500, {
-        error: err instanceof Error ? err.message : String(err),
-      });
-    });
+  if (devSyncServer) return;
+  devSyncServer = http.createServer((request, response) => {
+    void handleDevSyncRequest(request, response);
   });
-  server.on("error", (err: NodeJS.ErrnoException) => {
-    if (err.code === "EADDRINUSE" && serverPort === null) {
-      console.warn(
-        `[device-sync] port ${deviceSyncPort()} unavailable; falling back to an ephemeral port`
-      );
-      server?.listen(0, "0.0.0.0");
-      return;
-    }
-    console.error("[device-sync] server error", err);
+  devSyncServer.listen(DEV_SYNC_PORT, "127.0.0.1", () => {
+    console.log(
+      `[device-sync] dev pairing endpoint listening on http://127.0.0.1:${DEV_SYNC_PORT}`
+    );
   });
-  server.listen(deviceSyncPort(), "0.0.0.0", () => {
-    const address = server?.address();
-    serverPort = typeof address === "object" && address ? address.port : null;
+  devSyncServer.on("error", (err) => {
+    console.warn("[device-sync] dev pairing endpoint unavailable", err);
   });
 }
 
 export function shutdownDeviceSyncServer(): Promise<void> {
-  return new Promise((resolve) => {
-    if (!server) {
-      resolve();
-      return;
-    }
-    const current = server;
-    server = null;
-    serverPort = null;
-    current.close(() => resolve());
-  });
+  const server = devSyncServer;
+  devSyncServer = null;
+  if (!server) return Promise.resolve();
+  return new Promise((resolve) => server.close(() => resolve()));
+}
+
+export function getDeviceSyncUrl(): string {
+  return signalingBaseUrl();
 }
 
 export async function createCloudSyncPairing(input: {
@@ -471,7 +207,6 @@ export async function createCloudSyncPairing(input: {
   deviceName?: string;
   kind?: CloudSyncDeviceKind;
 }): Promise<CloudSyncPairing> {
-  if (!server) initDeviceSyncServer();
   const config = getConfig().cloudSync;
   const now = Date.now();
   const deviceId = input.deviceId ?? randomUUID();
@@ -479,36 +214,20 @@ export async function createCloudSyncPairing(input: {
   const deviceName =
     input.deviceName?.trim() ||
     (kind === "watch" ? "Apple Watch" : kind === "ipad" ? "iPad" : "iPhone");
+  const pairingId = randomUUID();
+  const secret = generateSecret();
   const expiresAt = now + PAIRING_TTL_MS;
-  const syncBaseUrl = await waitForDeviceSyncUrl();
-  const devSyncBaseUrl =
-    serverPort === null ? syncBaseUrl : `http://127.0.0.1:${serverPort}`;
-  const payload: PairingJwtPayload = {
-    iss: JWT_ISSUER,
-    aud: JWT_AUDIENCE,
-    sub: deviceId,
-    jti: randomUUID(),
-    iat: Math.floor(now / 1000),
-    exp: Math.floor(expiresAt / 1000),
-    userId: config.userId,
-    deviceId,
-    deviceName,
-    deviceKind: kind,
-    desktopDeviceId: config.deviceId,
-    desktopDeviceName: config.deviceName,
-    syncBaseUrl,
-    scope: ["cycle:read", "decision:write"],
-  };
-  const token = signJwt(payload, config.jwtSecret);
+  const secretHash = await sha256Base64Url(secret);
   const device: CloudSyncDevice = {
     deviceId,
     deviceName,
     kind,
     status: "pending",
-    tokenHash: tokenHash(token),
+    secretHash,
     createdAt: now,
-    lastTokenIssuedAt: now,
+    secretIssuedAt: now,
   };
+
   setConfig({
     cloudSync: {
       enabled: true,
@@ -519,27 +238,138 @@ export async function createCloudSyncPairing(input: {
         ),
       ],
     },
-    cloudSyncInterest: true,
+    companionSyncInterest: true,
   });
 
-  const pairingUrl = `harnessdreams://pair?token=${encodeURIComponent(
-    token
-  )}&syncBaseUrl=${encodeURIComponent(syncBaseUrl)}&devSyncBaseUrl=${encodeURIComponent(
-    devSyncBaseUrl
-  )}&deviceName=${encodeURIComponent(deviceName)}`;
+  const url = encodePairingLink({
+    version: RTC_PROTOCOL_VERSION,
+    signalUrl: signalingBaseUrl(),
+    cloudUserId: config.cloudUserId,
+    pairingId,
+    deviceName,
+    expiresAt,
+    pairingSecret: secret,
+    backupEnabled: config.backupEnabled,
+    backupEpochId: config.backupEnabled ? config.backupEpochId : undefined,
+    backupKey: config.backupEnabled ? config.backupKey : undefined,
+  });
   const QRCode = await import("qrcode");
-  const qrDataUrl = await QRCode.toDataURL(pairingUrl, {
+  const qrDataUrl = await QRCode.toDataURL(url, {
     errorCorrectionLevel: "M",
     margin: 1,
     width: 360,
   });
 
-  return { token, pairingUrl, devSyncBaseUrl, qrDataUrl, expiresAt, device };
+  registerPeerPairingSession({
+    pairingId,
+    secret,
+    expiresAt,
+    device,
+  });
+
+  return {
+    pairingId,
+    pairingUrl: url,
+    cloudApiBaseUrl: signalingBaseUrl(),
+    secret,
+    backupEnabled: config.backupEnabled,
+    qrDataUrl,
+    expiresAt,
+    device,
+  };
 }
 
-export function removeCloudSyncDevice(deviceId: string): CloudSyncDevice[] {
-  const devices = getConfig().cloudSync.devices.filter(
-    (device) => device.deviceId !== deviceId
+function writeJson(
+  response: http.ServerResponse,
+  status: number,
+  body: unknown
+): void {
+  response.writeHead(status, {
+    "access-control-allow-origin": "*",
+    "access-control-allow-methods": "GET, OPTIONS",
+    "access-control-allow-headers": "content-type",
+    "content-type": "application/json; charset=utf-8",
+  });
+  response.end(JSON.stringify(body));
+}
+
+async function handleDevSyncRequest(
+  request: http.IncomingMessage,
+  response: http.ServerResponse
+): Promise<void> {
+  if (request.method === "OPTIONS") {
+    writeJson(response, 204, {});
+    return;
+  }
+
+  const url = new URL(request.url ?? "/", `http://127.0.0.1:${DEV_SYNC_PORT}`);
+  if (request.method === "GET" && url.pathname === "/health") {
+    writeJson(response, 200, { ok: true });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/v1/dev/snapshot") {
+    const config = getConfig().cloudSync;
+    const reports = getReports().map((report) =>
+      sanitizeReportForCloud(report)
+    );
+    const telemetry = await getTelemetrySnapshot().catch(() => null);
+    const telemetryReport =
+      telemetry && telemetryHasData(telemetry)
+        ? sanitizeReportForCloud(reportFromTelemetrySnapshot(telemetry))
+        : null;
+    const latest = telemetryReport ?? reports[0] ?? null;
+    const latestRecord =
+      latest && typeof latest === "object"
+        ? (latest as Record<string, unknown>)
+        : {};
+    writeJson(response, 200, {
+      schemaVersion: 1,
+      cloudUserId: config.cloudUserId,
+      desktopDeviceId: config.deviceId,
+      desktopDeviceName: config.deviceName,
+      revision:
+        typeof latestRecord.timestamp === "number"
+          ? latestRecord.timestamp
+          : Date.now(),
+      report: latest,
+      reportCount: reports.length,
+    });
+    return;
+  }
+
+  if (request.method !== "GET" || url.pathname !== "/v1/dev/pair") {
+    writeJson(response, 404, { error: "not_found" });
+    return;
+  }
+
+  try {
+    const kindParam = url.searchParams.get("kind");
+    const kind: CloudSyncDeviceKind =
+      kindParam === "watch" || kindParam === "ipad" ? kindParam : "iphone";
+    const deviceName =
+      url.searchParams.get("deviceName") ??
+      (kind === "watch" ? "Dev Apple Watch" : "Dev iPhone Simulator");
+    const pairing = await createCloudSyncPairing({ kind, deviceName });
+    writeJson(response, 200, {
+      pairingUrl: pairing.pairingUrl,
+      cloudApiBaseUrl: pairing.cloudApiBaseUrl,
+      expiresAt: pairing.expiresAt,
+      device: pairing.device,
+    });
+  } catch (err) {
+    writeJson(response, 500, {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
+export async function removeCloudSyncDevice(
+  deviceId: string
+): Promise<CloudSyncDevice[]> {
+  const config = getConfig().cloudSync;
+  const devices = config.devices.filter(
+    (device) => device.deviceId !== deviceId && device.status !== "revoked"
   );
   setConfig({ cloudSync: { devices } });
   return devices;

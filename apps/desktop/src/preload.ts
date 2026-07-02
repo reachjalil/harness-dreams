@@ -10,8 +10,15 @@ import type {
   CloudSyncPairing,
   CloudSyncStatus,
   DiscoveredProject,
-  DreamReport,
+  HealthReport,
   GoalDisposition,
+  IngestStatus,
+  LiveMetricDetail,
+  LiveTelemetrySnapshot,
+  PeerHostConnectionUpdate,
+  PeerHostPairingAccepted,
+  PeerHostPairingSession,
+  PeerHostState,
   ReviewDecisions,
   RuntimeState,
 } from "./shared/types";
@@ -43,9 +50,9 @@ const api = {
     get: (): Promise<RuntimeState> => ipcRenderer.invoke(Invoke.StateGet),
   },
   report: {
-    get: (): Promise<DreamReport | null> =>
+    get: (): Promise<HealthReport | null> =>
       ipcRenderer.invoke(Invoke.ReportGet),
-    list: (): Promise<DreamReport[]> => ipcRenderer.invoke(Invoke.ReportList),
+    list: (): Promise<HealthReport[]> => ipcRenderer.invoke(Invoke.ReportList),
   },
   cloudSync: {
     status: (): Promise<CloudSyncStatus> =>
@@ -60,6 +67,50 @@ const api = {
     removeDevice: (deviceId: string): Promise<CloudSyncDevice[]> =>
       ipcRenderer.invoke(Invoke.CloudSyncRemoveDevice, deviceId),
   },
+  peerHost: {
+    state: (): Promise<PeerHostState> =>
+      ipcRenderer.invoke(Invoke.PeerHostState),
+    pairingAccepted: (
+      input: PeerHostPairingAccepted
+    ): Promise<CloudSyncDevice[]> =>
+      ipcRenderer.invoke(Invoke.PeerHostPairingAccepted, input),
+    applyDecisions: (
+      input: unknown
+    ): Promise<{ applied: number; revision: number }> =>
+      ipcRenderer.invoke(Invoke.PeerHostApplyDecisions, input),
+    connectionStatus: (
+      input: PeerHostConnectionUpdate
+    ): Promise<CloudSyncStatus> =>
+      ipcRenderer.invoke(Invoke.PeerHostConnectionStatus, input),
+    onRefresh: (
+      cb: (payload: { reason: string; at: number }) => void
+    ): Unsubscribe => subscribe(Send.PeerHostRefresh, cb),
+    onPairingSession: (
+      cb: (session: PeerHostPairingSession) => void
+    ): Unsubscribe => subscribe(Send.PeerHostPairingSession, cb),
+  },
+  telemetry: {
+    getSnapshot: (): Promise<LiveTelemetrySnapshot> =>
+      ipcRenderer.invoke(Invoke.TelemetrySnapshot),
+    getMetricDetail: (
+      metricId: string,
+      range?: "24h" | "7d" | "30d" | "90d",
+      filters?: {
+        source?: "claude-code" | "codex" | "cursor" | "code";
+        projectPath?: string;
+        model?: string;
+      }
+    ): Promise<LiveMetricDetail> =>
+      ipcRenderer.invoke(Invoke.TelemetryMetricDetail, {
+        metricId,
+        range,
+        filters,
+      }),
+    refresh: (): Promise<LiveTelemetrySnapshot> =>
+      ipcRenderer.invoke(Invoke.TelemetryRefresh, { reason: "renderer" }),
+    getIngestStatus: (): Promise<IngestStatus> =>
+      ipcRenderer.invoke(Invoke.TelemetryIngestStatus),
+  },
   projects: {
     discover: (): Promise<DiscoveredProject[]> =>
       ipcRenderer.invoke(Invoke.DiscoverProjects),
@@ -67,12 +118,14 @@ const api = {
       ipcRenderer.invoke(Invoke.AddProject, projectPath),
   },
   actions: {
-    dreamNow: (): Promise<RuntimeState> => ipcRenderer.invoke(Invoke.DreamNow),
-    napNow: (): Promise<RuntimeState> => ipcRenderer.invoke(Invoke.NapNow),
-    pauseDream: (): Promise<RuntimeState> =>
-      ipcRenderer.invoke(Invoke.PauseDream),
-    resumeDream: (): Promise<RuntimeState> =>
-      ipcRenderer.invoke(Invoke.ResumeDream),
+    runHealthReview: (): Promise<RuntimeState> =>
+      ipcRenderer.invoke(Invoke.RunHealthReview),
+    runQuickReview: (): Promise<RuntimeState> =>
+      ipcRenderer.invoke(Invoke.RunQuickReview),
+    pauseHealthReview: (): Promise<RuntimeState> =>
+      ipcRenderer.invoke(Invoke.PauseHealthReview),
+    resumeHealthReview: (): Promise<RuntimeState> =>
+      ipcRenderer.invoke(Invoke.ResumeHealthReview),
     completeOnboarding: (): Promise<AppConfig> =>
       ipcRenderer.invoke(Invoke.CompleteOnboarding),
     markReviewed: (
@@ -84,7 +137,7 @@ const api = {
       reportId: string,
       experimentId: string,
       disposition: GoalDisposition | null
-    ): Promise<DreamReport[]> =>
+    ): Promise<HealthReport[]> =>
       ipcRenderer.invoke(
         Invoke.SetGoalDisposition,
         reportId,
@@ -94,7 +147,7 @@ const api = {
     revertConfigUpdate: (
       reportId: string,
       findingId: string
-    ): Promise<DreamReport[]> =>
+    ): Promise<HealthReport[]> =>
       ipcRenderer.invoke(Invoke.RevertConfigUpdate, reportId, findingId),
     setLaunchAtLogin: (value: boolean): Promise<AppConfig> =>
       ipcRenderer.invoke(Invoke.SetLaunchAtLogin, value),
@@ -112,21 +165,26 @@ const api = {
       subscribe(Send.BroadcastConfig, cb),
     onState: (cb: (state: RuntimeState) => void): Unsubscribe =>
       subscribe(Send.BroadcastState, cb),
-    onReports: (cb: (reports: DreamReport[]) => void): Unsubscribe =>
+    onReports: (cb: (reports: HealthReport[]) => void): Unsubscribe =>
       subscribe(Send.BroadcastReports, cb),
     onCloudSync: (cb: (status: CloudSyncStatus) => void): Unsubscribe =>
       subscribe(Send.BroadcastCloudSync, cb),
+    onTelemetrySnapshot: (
+      cb: (snapshot: LiveTelemetrySnapshot) => void
+    ): Unsubscribe => subscribe(Send.BroadcastTelemetrySnapshot, cb),
+    onIngestStatus: (cb: (status: IngestStatus) => void): Unsubscribe =>
+      subscribe(Send.BroadcastIngestStatus, cb),
     onSelectReport: (cb: (id: string) => void): Unsubscribe =>
       subscribe(Send.SelectReport, cb),
   },
 };
 
-export type HarnessDreamsApi = typeof api;
+export type HarnessHealthApi = typeof api;
 
 contextBridge.exposeInMainWorld("hd", api);
 
 declare global {
   interface Window {
-    hd: HarnessDreamsApi;
+    hd: HarnessHealthApi;
   }
 }

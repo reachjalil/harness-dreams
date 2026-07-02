@@ -5,7 +5,7 @@ import { stageForProgress } from "../shared/stages";
 import { timeOfDay } from "../shared/timeOfDay";
 import type {
   AnalysisProject,
-  CycleKind,
+  HealthReviewKind,
   DiscoveredProject,
   GoalDisposition,
   ReviewDecisions,
@@ -13,7 +13,7 @@ import type {
 import { onCloudSyncStatusChange } from "./cloudSync";
 import { discoverAnalysisProjects } from "./localIngest";
 import {
-  addDream,
+  addHealthReview,
   getReports,
   markReportReviewed,
   onReportsChange,
@@ -34,15 +34,15 @@ import { broadcastToUi, setQuitting, showMain } from "./windows";
 
 /**
  * The controller owns every state-changing action the tray, menu, and UI can
- * trigger. A manual "dream" shows progress while the local Sleep Cycle runs and
- * then publishes a fresh report + morning-style notification.
+ * trigger. A manual review shows progress while the local Health Review runs
+ * and then publishes a fresh report + morning-style notification.
  */
 
 export interface Controller {
-  dreamNow(): void;
-  napNow(): void;
-  pauseDream(): void;
-  resumeDream(): void;
+  runHealthReview(): void;
+  runQuickReview(): void;
+  pauseHealthReview(): void;
+  resumeHealthReview(): void;
   openSession(id: string): void;
   completeOnboarding(): void;
   markReviewed(id?: string, decisions?: ReviewDecisions): void;
@@ -63,16 +63,16 @@ export interface Controller {
   quit(): void;
 }
 
-const DREAM_TICK_MS = 200;
-// Real full cycles run local ingest plus the configured CLI analyzer, so keep
+const REVIEW_TICK_MS = 200;
+// Real full reviews run local ingest plus the configured CLI analyzer, so keep
 // the visible progress paced like a real end-to-end pass instead of a demo.
-const DREAM_STEP = 0.006;
-const DEMO_DREAM_STEP = 0.14;
-// A nap is the fast cycle — it fills quicker than a full sleep.
-const NAP_STEP = 0.02;
-const DEMO_NAP_STEP = 0.28;
+const REVIEW_STEP = 0.006;
+const DEMO_REVIEW_STEP = 0.14;
+// A quick review is the fast path — it fills quicker than a full review.
+const QUICK_REVIEW_STEP = 0.02;
+const DEMO_QUICK_REVIEW_STEP = 0.28;
 
-let dreamTimer: ReturnType<typeof setInterval> | null = null;
+let reviewTimer: ReturnType<typeof setInterval> | null = null;
 
 /** Show a macOS notification that opens the app when clicked. */
 function notify(title: string, body: string): void {
@@ -96,70 +96,71 @@ function greetingPrefix(): string {
   }
 }
 
-function notifyCycleReady(kind: CycleKind): void {
+function notifyReviewReady(kind: HealthReviewKind): void {
   if (!getConfig().notifications) return;
-  if (kind === "nap") {
+  if (kind === "quick") {
     notify(
-      "Your nap reflection is ready ☕",
-      "A quick look at this morning — tap to see the top nudge."
+      "Your quick health review is ready",
+      "A short look at this morning's harness habits is ready."
     );
     return;
   }
   notify(
-    `${greetingPrefix()} — your dream is ready 🌙`,
-    "Last night's reflection is in. Tap to review your harness health."
+    `${greetingPrefix()} — your Harness Health review is ready`,
+    "Last night's review is in. Tap to see vitals, habits, and recommendations."
   );
 }
 
-function stepFor(kind: CycleKind): number {
+function stepFor(kind: HealthReviewKind): number {
   const demo = getConfig().demoMode;
-  if (kind === "nap") return demo ? DEMO_NAP_STEP : NAP_STEP;
-  return demo ? DEMO_DREAM_STEP : DREAM_STEP;
+  if (kind === "quick")
+    return demo ? DEMO_QUICK_REVIEW_STEP : QUICK_REVIEW_STEP;
+  return demo ? DEMO_REVIEW_STEP : REVIEW_STEP;
 }
 
-function runDream(kind: CycleKind = "sleep"): void {
-  if (getState().phase === "dreaming") return;
+function runReview(kind: HealthReviewKind = "full"): void {
+  if (getState().phase === "running") return;
   const step = stepFor(kind);
   patchState({
-    phase: "dreaming",
+    phase: "running",
     progress: 0,
     stage: stageForProgress(0, kind).label,
     paused: false,
   });
-  dreamTimer = setInterval(() => {
+  reviewTimer = setInterval(() => {
     // While paused, hold position — the icon and UI stay put.
     if (getState().paused) return;
     const next = getState().progress + step;
     if (next >= 1) {
-      if (dreamTimer) clearInterval(dreamTimer);
-      dreamTimer = null;
-      addDream(kind);
+      if (reviewTimer) clearInterval(reviewTimer);
+      reviewTimer = null;
+      addHealthReview(kind);
       patchState({
         phase: "ready",
         progress: 0,
         stage: null,
         paused: false,
-        lastDreamAt: Date.now(),
+        lastReviewAt: Date.now(),
         hasUnreviewed: true,
       });
-      notifyCycleReady(kind);
+      notifyReviewReady(kind);
     } else {
       patchState({ progress: next, stage: stageForProgress(next, kind).label });
     }
-  }, DREAM_TICK_MS);
+  }, REVIEW_TICK_MS);
 }
 
 export function createController(): Controller {
   return {
-    dreamNow: () => runDream("sleep"),
-    napNow: () => runDream("nap"),
-    pauseDream: () => {
-      if (getState().phase === "dreaming" && !getState().paused) {
+    runHealthReview: () => runReview("full"),
+    runQuickReview: () => runReview("quick"),
+    pauseHealthReview: () => {
+      if (getState().phase === "running" && !getState().paused) {
         patchState({ paused: true });
       }
     },
-    resumeDream: () => {
-      if (getState().phase === "dreaming" && getState().paused) {
+    resumeHealthReview: () => {
+      if (getState().phase === "running" && getState().paused) {
         patchState({ paused: false });
       }
     },
@@ -224,7 +225,7 @@ export function createController(): Controller {
     },
     testNotification: () =>
       notify(
-        "Harness Dreams",
+        "Harness Health",
         "Notifications are working — this is what a morning nudge looks like."
       ),
     resetOnboarding: () => {
@@ -239,7 +240,7 @@ export function createController(): Controller {
         progress: 0,
         stage: null,
         paused: false,
-        lastDreamAt: Date.now(),
+        lastReviewAt: Date.now(),
         hasUnreviewed: true,
       });
       showMain();

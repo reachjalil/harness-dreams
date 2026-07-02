@@ -25,38 +25,27 @@ const CLOUD_SYNC_PLANS: CloudSyncPlan[] = [
     statusTone: "neutral",
     description:
       "Private harness health on this Mac, with local reports, projects, and learning.",
-    features: ["No account", "No cloud sync", "Code and secrets stay local"],
+    features: [
+      "No account",
+      "Mac dashboard included",
+      "Code and secrets stay local",
+    ],
   },
   {
     icon: "cloudsync",
-    name: "Sync",
+    name: "iPhone + Watch",
     price: "$5",
     cadence: "per month",
-    status: "Coming soon",
+    status: "2-week trial",
     statusTone: "accent",
     description:
-      "Sync your harness health, projects, and learning across your own devices.",
+      "Connect this Mac to your iPhone and Apple Watch for companion review.",
     features: [
-      "Mac, iPhone, and Apple Watch",
-      "Cross-device learning",
-      "Personal project sync",
+      "iPhone and Apple Watch pairing",
+      "Desktop-owned local connection",
+      "Scores, findings, and goals only",
     ],
     featured: true,
-  },
-  {
-    icon: "human",
-    name: "Team Sync",
-    price: "$10",
-    cadence: "per member / month",
-    status: "Coming soon",
-    statusTone: "accent",
-    description:
-      "Shared collaboration and team learning, with projects synced across the team.",
-    features: [
-      "Team project sync",
-      "Shared learning loops",
-      "Collaborative improvements",
-    ],
   },
 ];
 
@@ -116,7 +105,7 @@ function Modal({
   );
 }
 
-/** The always-reachable Cloud Sync upgrade dialog. */
+/** The always-reachable Private Device Sync upgrade dialog. */
 export function CloudSyncDialog({
   open,
   onClose,
@@ -146,9 +135,9 @@ export function CloudSyncDialog({
             <Icon name="cloudsync" size={22} />
           </span>
           <div className="cloudsync-head-text">
-            <div className="cloudsync-eyebrow">Harness Dreams</div>
+            <div className="cloudsync-eyebrow">Harness Health</div>
             <h2 id="cloudsync-title" className="cloudsync-title">
-              Upgrade Sync
+              Private Device Sync
             </h2>
           </div>
           <span className="cloudsync-price">
@@ -158,14 +147,15 @@ export function CloudSyncDialog({
         </div>
 
         <p className="cloudsync-lede">
-          Start local for free, add personal sync for $5 a month, or bring a
-          team into shared projects and learning for $10 per member.
+          Start local for free. The paid plan is only for connecting this Mac
+          directly to your iPhone and Apple Watch, with a 2-week trial before
+          billing.
         </p>
 
         <div
           className="cloudsync-plans"
           role="list"
-          aria-label="Cloud Sync plans"
+          aria-label="Private Device Sync plans"
         >
           {CLOUD_SYNC_PLANS.map((plan) => (
             <article
@@ -198,8 +188,8 @@ export function CloudSyncDialog({
         </div>
 
         <p className="cloudsync-footnote">
-          Code, transcripts, repo paths, patch snippets, and secrets stay local
-          on every plan.
+          Sync is direct by default. Encrypted fallback snapshots are opt-in and
+          decrypt only on paired devices.
         </p>
 
         <div className="cloudsync-actions">

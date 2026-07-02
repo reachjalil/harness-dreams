@@ -1,16 +1,24 @@
 import {
-  type ChangeStream,
-  type Collection,
-  type Db,
-  MongoClient,
-} from "mongodb";
+  encryptSnapshotBackupPackage,
+  peerReviewDecisionBatchV1Schema,
+  sha256Base64Url,
+  snapshotBackupApiUrl,
+  snapshotBackupAuthToken,
+  type PeerReviewDecisionBatchV1,
+  type SnapshotBackupPayloadV1,
+} from "@harness-health/core";
 
+import { Send } from "../shared/channels";
 import type {
-  ActionQueueEntry,
   ActionState,
   CloudSyncConfig,
   CloudSyncStatus,
-  DreamReport,
+  HealthReport,
+  PeerHostConnectionUpdate,
+  PeerHostDevice,
+  PeerHostPairingAccepted,
+  PeerHostPairingSession,
+  PeerHostState,
   SyncedReviewDecision,
 } from "../shared/types";
 import {
@@ -18,106 +26,247 @@ import {
   mergeRemoteReviewDecisions,
   onReportsChange,
 } from "./reports";
-import { getConfig, onConfigChange } from "./store";
-import { getDeviceSyncUrl } from "./deviceSync";
-import { sanitizeCloudText, sanitizeReportForCloud } from "./cloudRedaction";
-
-const CYCLES_COLLECTION = "sleep_cycles";
-const DECISIONS_COLLECTION = "sleep_cycle_decisions";
-const DEVICES_COLLECTION = "sync_devices";
-const SCHEMA_VERSION = 1;
-const APP_NAME = "Harness Dreams Desktop";
-const SYNC_DECISION_STATES = [
-  "accepted",
-  "rejected",
-  "queued",
-  "snoozed",
-] as const satisfies readonly Exclude<ActionState, "open">[];
-const NON_OPEN_STATES = new Set<ActionState>(SYNC_DECISION_STATES);
+import { getConfig, onConfigChange, setConfig } from "./store";
+import {
+  broadcastToPeerHost,
+  closePeerHost,
+  getOrCreatePeerHost,
+} from "./windows";
+import { protectLocalSecret, revealLocalSecret } from "./localSecrets";
+import { sanitizeReportForCloud } from "./cloudRedaction";
 
 type Listener = (status: CloudSyncStatus) => void;
 
-interface EffectiveCloudSyncConfig extends CloudSyncConfig {
-  atlasUri: string;
-  databaseName: string;
-  userId: string;
-}
-
-interface CloudCycleDoc {
-  schemaVersion: number;
-  userId: string;
-  reportId: string;
-  sourceDeviceId: string;
-  sourceDeviceName: string;
-  timestamp: number;
-  updatedAt: number;
-  reviewStatus: DreamReport["reviewStatus"];
-  reviewedAt: number | null;
-  digest: string;
-  cycle: unknown;
-}
-
-interface CloudDecisionDoc {
-  schemaVersion: number;
-  userId: string;
-  reportId: string;
-  findingId: string;
-  state: Exclude<ActionState, "open">;
-  updatedAt: number;
-  sourceDeviceId: string;
-  sourceDeviceName?: string;
-  deviceTokenHash?: string;
-}
+const listeners = new Set<Listener>();
+const pairingSessions = new Map<string, PeerHostPairingSession>();
+const activeConnections = new Set<string>();
 
 let initialized = false;
-let client: MongoClient | null = null;
-let activeKey = "";
-let changeStream: ChangeStream<CloudDecisionDoc> | null = null;
-let syncTimer: ReturnType<typeof setTimeout> | null = null;
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-let syncing = false;
-let syncAgain = false;
-const listeners = new Set<Listener>();
-
+let iceMode: CloudSyncStatus["iceMode"] = "unknown";
+let backupUploadInFlight = false;
+let backupUploadAgain = false;
 let status: CloudSyncStatus = makeStatus(resolveConfig());
 
 function env(name: string): string {
   return process.env[name]?.trim() ?? "";
 }
 
-function resolveConfig(): EffectiveCloudSyncConfig {
+function resolveConfig(): CloudSyncConfig {
   const config = getConfig().cloudSync;
   return {
     ...config,
-    atlasUri:
-      config.atlasUri ||
-      env("HARNESS_DREAMS_MONGODB_URI") ||
-      env("MONGODB_URI"),
-    databaseName:
-      config.databaseName ||
-      env("HARNESS_DREAMS_MONGODB_DB") ||
-      env("MONGODB_DB") ||
-      "harness_dreams",
-    userId: config.userId || env("HARNESS_DREAMS_CLOUD_USER_ID"),
+    cloudApiBaseUrl:
+      config.cloudApiBaseUrl ||
+      env("HARNESS_HEALTH_CLOUD_API_BASE_URL") ||
+      env("HARNESS_HEALTH_SIGNAL_API_BASE_URL") ||
+      "http://127.0.0.1:8787",
+    cloudUserId: config.cloudUserId,
   };
 }
 
-function isConfigured(config: EffectiveCloudSyncConfig): boolean {
-  return Boolean(
-    config.enabled &&
-      planAllowsCloudSync(config) &&
-      config.atlasUri &&
-      config.userId
-  );
-}
-
-function planAllowsCloudSync(config: EffectiveCloudSyncConfig): boolean {
+function planAllowsPrivateSync(config: CloudSyncConfig): boolean {
   return config.paidPlan || config.devBypassPaidPlan;
 }
 
-function makeStatus(config: EffectiveCloudSyncConfig): CloudSyncStatus {
+function isConfigured(config: CloudSyncConfig): boolean {
+  return Boolean(
+    config.enabled &&
+      planAllowsPrivateSync(config) &&
+      config.cloudApiBaseUrl &&
+      config.cloudUserId &&
+      config.deviceId
+  );
+}
+
+function backupConfigured(config: CloudSyncConfig): boolean {
+  return Boolean(
+    config.backupEnabled &&
+      config.cloudApiBaseUrl &&
+      config.cloudUserId &&
+      config.deviceId &&
+      config.backupKey &&
+      config.backupEpochId
+  );
+}
+
+function reportUpdatedAt(report: HealthReport): number {
+  const decisionTimes =
+    report.reviewDecisions?.map(
+      (entry) => entry.decidedAt ?? report.reviewedAt ?? report.timestamp
+    ) ?? [];
+  return Math.max(report.timestamp, report.reviewedAt ?? 0, ...decisionTimes);
+}
+
+function currentRevision(): number {
+  return getReports().reduce(
+    (revision, report) => Math.max(revision, reportUpdatedAt(report)),
+    0
+  );
+}
+
+function buildSnapshotBackupPayload(
+  config: CloudSyncConfig
+): SnapshotBackupPayloadV1 {
+  const reports = getReports();
+  const revision = currentRevision();
+  return {
+    schemaVersion: 1,
+    cloudUserId: config.cloudUserId,
+    epochId: config.backupEpochId,
+    revision,
+    desktopDeviceId: config.deviceId,
+    desktopDeviceName: config.deviceName,
+    ops: [
+      {
+        op: "replaceTable",
+        table: "reports",
+        rows: reports.map((report) => ({
+          id: report.id,
+          updatedAt: reportUpdatedAt(report),
+          json: JSON.stringify(sanitizeReportForCloud(report)),
+        })),
+      },
+      {
+        op: "setMeta",
+        key: "revision",
+        value: String(revision),
+      },
+      {
+        op: "setMeta",
+        key: "desktopDeviceName",
+        value: config.deviceName,
+      },
+    ],
+    createdAt: Date.now(),
+  };
+}
+
+async function pushEncryptedSnapshotBackup(reason: string): Promise<void> {
+  const config = resolveConfig();
+  if (!backupConfigured(config)) {
+    updateStatus({
+      backupEnabled: config.backupEnabled,
+      backupConfigured: false,
+    });
+    return;
+  }
+  if (backupUploadInFlight) {
+    backupUploadAgain = true;
+    return;
+  }
+  backupUploadInFlight = true;
+  try {
+    const payload = buildSnapshotBackupPayload(config);
+    if (
+      config.lastBackupRevision &&
+      config.lastBackupRevision >= payload.revision &&
+      reason !== "manual-sync"
+    ) {
+      return;
+    }
+    const authToken = await snapshotBackupAuthToken({
+      backupKey: config.backupKey,
+      cloudUserId: config.cloudUserId,
+    });
+    const pkg = await encryptSnapshotBackupPackage({
+      backupKey: config.backupKey,
+      cloudUserId: config.cloudUserId,
+      epochId: config.backupEpochId,
+      revision: payload.revision,
+      authorDeviceId: config.deviceId,
+      payload,
+      expiresAt: Date.now() + config.backupRetentionDays * 24 * 60 * 60 * 1000,
+    });
+    const response = await fetch(
+      snapshotBackupApiUrl(
+        config.cloudApiBaseUrl,
+        `/backup/users/${encodeURIComponent(config.cloudUserId)}/snapshots`
+      ),
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(pkg),
+      }
+    );
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(text || `Backup failed: ${response.status}`);
+    }
+    const now = Date.now();
+    setConfig({
+      cloudSync: {
+        lastBackupAt: now,
+        lastBackupRevision: payload.revision,
+      },
+    });
+    updateStatus({
+      message:
+        activeConnections.size > 0
+          ? status.message
+          : "Encrypted cloud fallback snapshot is current.",
+      lastBackedUpAt: now,
+      backupRevision: payload.revision,
+      lastError: undefined,
+    });
+  } catch (error) {
+    updateStatus({
+      state: "offline",
+      message: "Encrypted backup fallback could not be updated.",
+      lastError: error instanceof Error ? error.message : String(error),
+    });
+  } finally {
+    backupUploadInFlight = false;
+    if (backupUploadAgain) {
+      backupUploadAgain = false;
+      void pushEncryptedSnapshotBackup("queued");
+    }
+  }
+}
+
+async function clearEncryptedSnapshotBackup(
+  config: CloudSyncConfig
+): Promise<void> {
+  if (!config.backupKey || !config.cloudApiBaseUrl || !config.cloudUserId)
+    return;
+  try {
+    const authToken = await snapshotBackupAuthToken({
+      backupKey: config.backupKey,
+      cloudUserId: config.cloudUserId,
+    });
+    await fetch(
+      snapshotBackupApiUrl(
+        config.cloudApiBaseUrl,
+        `/backup/users/${encodeURIComponent(config.cloudUserId)}`
+      ),
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${authToken}` },
+      }
+    ).catch(() => undefined);
+  } finally {
+    setConfig({
+      cloudSync: {
+        backupKey: "",
+        backupEpochId: "",
+        lastBackupAt: 0,
+        lastBackupRevision: 0,
+      },
+    });
+    updateStatus({
+      backupEnabled: false,
+      backupConfigured: false,
+      backupRevision: 0,
+      lastBackedUpAt: null,
+    });
+  }
+}
+
+function makeStatus(config: CloudSyncConfig): CloudSyncStatus {
   const configured = isConfigured(config);
-  const allowedByPlan = planAllowsCloudSync(config);
+  const allowedByPlan = planAllowsPrivateSync(config);
   const state = config.enabled
     ? !allowedByPlan
       ? "needs-setup"
@@ -134,43 +283,53 @@ function makeStatus(config: EffectiveCloudSyncConfig): CloudSyncStatus {
     state,
     message: config.enabled
       ? !allowedByPlan
-        ? "Cloud Sync is part of the paid plan. Dev bypass is off."
+        ? "Private Device Sync is part of the paid plan. Dev bypass is off."
         : configured
-          ? "Cloud Sync is ready to connect."
-          : "Add an Atlas URI and shared user id to start syncing."
-      : "Cloud Sync is off.",
-    userId: config.userId,
+          ? "Private Device Sync is ready for WebRTC pairing."
+          : "Private Device Sync needs a signaling URL and local device id."
+      : "Private Device Sync is off.",
+    cloudUserId: config.cloudUserId,
     deviceId: config.deviceId,
-    databaseName: config.databaseName,
-    collections: {
-      cycles: CYCLES_COLLECTION,
-      decisions: DECISIONS_COLLECTION,
-      devices: DEVICES_COLLECTION,
-    },
+    cloudApiBaseUrl: config.cloudApiBaseUrl,
     lastSyncedAt: null,
     lastPulledAt: null,
     lastPushedAt: null,
     nextSyncAt: null,
-    localSyncUrl: getDeviceSyncUrl(),
-    cyclesPushed: 0,
+    reviewsPushed: 0,
     decisionsPushed: 0,
     remoteDecisionsApplied: 0,
+    activeConnections: activeConnections.size,
+    pairingActive: pairingSessions.size > 0,
+    iceMode,
+    revision: currentRevision(),
+    backupEnabled: config.backupEnabled,
+    backupConfigured: backupConfigured(config),
+    backupRevision: config.lastBackupRevision ?? 0,
+    lastBackedUpAt: config.lastBackupAt ?? null,
   };
 }
 
 function updateStatus(patch: Partial<CloudSyncStatus>): CloudSyncStatus {
   const config = resolveConfig();
+  const connected = activeConnections.size;
   status = {
     ...status,
     enabled: config.enabled,
     paidPlan: config.paidPlan,
     devBypassPaidPlan: config.devBypassPaidPlan,
-    allowedByPlan: planAllowsCloudSync(config),
+    allowedByPlan: planAllowsPrivateSync(config),
     configured: isConfigured(config),
-    userId: config.userId,
+    cloudUserId: config.cloudUserId,
     deviceId: config.deviceId,
-    databaseName: config.databaseName,
-    localSyncUrl: getDeviceSyncUrl(),
+    cloudApiBaseUrl: config.cloudApiBaseUrl,
+    activeConnections: connected,
+    pairingActive: pairingSessions.size > 0,
+    iceMode,
+    revision: currentRevision(),
+    backupEnabled: config.backupEnabled,
+    backupConfigured: backupConfigured(config),
+    backupRevision: config.lastBackupRevision ?? status.backupRevision ?? 0,
+    lastBackedUpAt: config.lastBackupAt ?? status.lastBackedUpAt ?? null,
     ...patch,
   };
   for (const listener of listeners) listener(status);
@@ -182,288 +341,175 @@ function resetStatusForConfig(): void {
   for (const listener of listeners) listener(status);
 }
 
-function connectionKey(config: EffectiveCloudSyncConfig): string {
-  return `${config.atlasUri}\n${config.databaseName}`;
+function ensurePeerHost(): void {
+  if (!isConfigured(resolveConfig())) return;
+  getOrCreatePeerHost();
 }
 
-async function closeClient(): Promise<void> {
-  if (syncTimer) clearTimeout(syncTimer);
-  if (debounceTimer) clearTimeout(debounceTimer);
-  syncTimer = null;
-  debounceTimer = null;
-  if (changeStream) {
-    const stream = changeStream;
-    changeStream = null;
-    await stream.close().catch(() => undefined);
-  }
-  if (client) {
-    const current = client;
-    client = null;
-    activeKey = "";
-    await current.close().catch(() => undefined);
-  }
+function broadcastPeerHostRefresh(reason: string): void {
+  broadcastToPeerHost(Send.PeerHostRefresh, { reason, at: Date.now() });
 }
 
-async function ensureIndexes(db: Db): Promise<void> {
-  await Promise.all([
-    db
-      .collection<CloudCycleDoc>(CYCLES_COLLECTION)
-      .createIndex({ userId: 1, reportId: 1 }, { unique: true }),
-    db
-      .collection<CloudCycleDoc>(CYCLES_COLLECTION)
-      .createIndex({ userId: 1, timestamp: -1 }),
-    db
-      .collection<CloudDecisionDoc>(DECISIONS_COLLECTION)
-      .createIndex({ userId: 1, reportId: 1, findingId: 1 }, { unique: true }),
-    db
-      .collection<CloudDecisionDoc>(DECISIONS_COLLECTION)
-      .createIndex({ userId: 1, updatedAt: -1 }),
-    db
-      .collection(DEVICES_COLLECTION)
-      .createIndex({ userId: 1, deviceId: 1 }, { unique: true }),
-  ]);
-}
-
-async function ensureDb(config: EffectiveCloudSyncConfig): Promise<Db> {
-  const key = connectionKey(config);
-  if (!client || activeKey !== key) {
-    await closeClient();
-    updateStatus({
-      state: "connecting",
-      message: "Connecting to MongoDB Atlas...",
-      nextSyncAt: null,
+function decryptPairedDevices(config: CloudSyncConfig): PeerHostDevice[] {
+  const devices: PeerHostDevice[] = [];
+  for (const device of config.devices) {
+    if (device.status !== "active" || !device.secretCiphertext) continue;
+    const sharedSecret = revealLocalSecret(device.secretCiphertext);
+    if (!sharedSecret) continue;
+    devices.push({
+      deviceId: device.deviceId,
+      deviceName: device.deviceName,
+      kind: device.kind,
+      status: device.status,
+      sharedSecret,
+      lastSeenAt: device.lastSeenAt,
+      lastAckedRevision: device.lastAckedRevision,
     });
-    client = new MongoClient(config.atlasUri, { appName: APP_NAME });
-    await client.connect();
-    activeKey = key;
-    await ensureIndexes(client.db(config.databaseName));
   }
-  return client.db(config.databaseName);
+  return devices;
 }
 
-function scheduleSync(delayMs = 500): void {
+export function getPeerHostState(): PeerHostState {
   const config = resolveConfig();
-  if (!isConfigured(config)) return;
-  if (debounceTimer) clearTimeout(debounceTimer);
-  const nextSyncAt = Date.now() + delayMs;
-  updateStatus({ nextSyncAt });
-  debounceTimer = setTimeout(() => {
-    debounceTimer = null;
-    void syncCloudNow();
-  }, delayMs);
+  return {
+    enabled: config.enabled,
+    allowedByPlan: planAllowsPrivateSync(config),
+    signalUrl: config.cloudApiBaseUrl,
+    cloudUserId: config.cloudUserId,
+    desktopDeviceId: config.deviceId,
+    desktopDeviceName: config.deviceName,
+    devices: decryptPairedDevices(config),
+    pairingSessions: [...pairingSessions.values()].filter(
+      (session) => session.expiresAt > Date.now()
+    ),
+    reports: getReports(),
+    revision: currentRevision(),
+    backupEnabled: config.backupEnabled,
+    backupEpochId: config.backupEpochId,
+    backupKey: config.backupEnabled ? config.backupKey : "",
+  };
 }
 
-function armPollingTimer(): void {
-  const config = resolveConfig();
-  if (syncTimer) clearTimeout(syncTimer);
-  syncTimer = null;
-  if (!isConfigured(config)) return;
-  const delay = Math.max(5_000, config.syncIntervalMs);
-  const nextSyncAt = Date.now() + delay;
-  updateStatus({ nextSyncAt });
-  syncTimer = setTimeout(() => {
-    syncTimer = null;
-    void syncCloudNow();
-  }, delay);
-}
-
-function startDecisionWatch(
-  collection: Collection<CloudDecisionDoc>,
-  config: EffectiveCloudSyncConfig
+export function registerPeerPairingSession(
+  session: PeerHostPairingSession
 ): void {
-  if (changeStream) return;
-  try {
-    changeStream = collection.watch(
-      [
-        {
-          $match: {
-            operationType: { $in: ["insert", "replace", "update"] },
-            "fullDocument.userId": config.userId,
-          },
-        },
-      ],
-      { fullDocument: "updateLookup" }
-    );
-    changeStream.on("change", (change) => {
-      const doc = "fullDocument" in change ? change.fullDocument : null;
-      if (!doc || doc.sourceDeviceId === config.deviceId) return;
-      scheduleSync(250);
-    });
-    changeStream.on("error", (err) => {
-      changeStream = null;
-      updateStatus({
-        state: "watching",
-        message: "Connected. Atlas watch paused; polling for changes.",
-        lastError: err instanceof Error ? err.message : String(err),
-      });
-      armPollingTimer();
-    });
-  } catch (err) {
-    updateStatus({
-      state: "watching",
-      message: "Connected. Atlas watch unavailable; polling for changes.",
-      lastError: err instanceof Error ? err.message : String(err),
-    });
+  pairingSessions.set(session.pairingId, session);
+  ensurePeerHost();
+  broadcastToPeerHost(Send.PeerHostPairingSession, session);
+  updateStatus({
+    state: "watching",
+    message: "Pairing QR is active. Waiting for the device camera scan.",
+    nextSyncAt: session.expiresAt,
+  });
+}
+
+export async function acceptPeerHostPairing(
+  input: PeerHostPairingAccepted
+): Promise<CloudSyncConfig["devices"]> {
+  const session = pairingSessions.get(input.pairingId);
+  if (!session || session.expiresAt <= Date.now()) {
+    throw new Error("Pairing session expired.");
   }
-}
-
-function reportUpdatedAt(report: DreamReport): number {
-  const decisionTimes =
-    report.reviewDecisions?.map(
-      (entry) => entry.decidedAt ?? report.reviewedAt ?? report.timestamp
-    ) ?? [];
-  return Math.max(report.timestamp, report.reviewedAt ?? 0, ...decisionTimes);
-}
-
-function cycleDoc(
-  report: DreamReport,
-  config: EffectiveCloudSyncConfig
-): CloudCycleDoc {
-  return {
-    schemaVersion: SCHEMA_VERSION,
-    userId: config.userId,
-    reportId: report.id,
-    sourceDeviceId: config.deviceId,
-    sourceDeviceName: config.deviceName,
-    timestamp: report.timestamp,
-    updatedAt: reportUpdatedAt(report),
-    reviewStatus: report.reviewStatus,
-    reviewedAt: report.reviewedAt ?? null,
-    digest: sanitizeCloudText(report.digest),
-    cycle: sanitizeReportForCloud(report),
-  };
-}
-
-async function pushCycles(
-  collection: Collection<CloudCycleDoc>,
-  reports: DreamReport[],
-  config: EffectiveCloudSyncConfig
-): Promise<number> {
-  let pushed = 0;
-  for (const report of reports) {
-    await collection.updateOne(
-      { userId: config.userId, reportId: report.id },
-      { $set: cycleDoc(report, config) },
-      { upsert: true }
-    );
-    pushed += 1;
-  }
-  return pushed;
-}
-
-function localDecisionUpdatedAt(
-  report: DreamReport,
-  entry: ActionQueueEntry
-): number {
-  return entry.decidedAt ?? report.reviewedAt ?? report.timestamp;
-}
-
-function decisionDoc(
-  report: DreamReport,
-  entry: ActionQueueEntry,
-  config: EffectiveCloudSyncConfig
-): CloudDecisionDoc | null {
-  if (!NON_OPEN_STATES.has(entry.state)) return null;
-  return {
-    schemaVersion: SCHEMA_VERSION,
-    userId: config.userId,
-    reportId: report.id,
-    findingId: entry.findingId,
-    state: entry.state as Exclude<ActionState, "open">,
-    updatedAt: localDecisionUpdatedAt(report, entry),
-    sourceDeviceId: entry.sourceDeviceId || config.deviceId,
-    sourceDeviceName: entry.sourceDeviceName || config.deviceName,
-  };
-}
-
-async function pushDecisions(
-  collection: Collection<CloudDecisionDoc>,
-  reports: DreamReport[],
-  config: EffectiveCloudSyncConfig
-): Promise<number> {
-  let pushed = 0;
-  for (const report of reports) {
-    for (const entry of report.reviewDecisions ?? []) {
-      const next = decisionDoc(report, entry, config);
-      if (!next) continue;
-      const current = await collection.findOne({
-        userId: config.userId,
-        reportId: report.id,
-        findingId: entry.findingId,
-      });
-      if (current && current.updatedAt > next.updatedAt) continue;
-      await collection.updateOne(
-        {
-          userId: config.userId,
-          reportId: report.id,
-          findingId: entry.findingId,
-        },
-        { $set: next },
-        { upsert: true }
-      );
-      pushed += 1;
-    }
-  }
-  return pushed;
-}
-
-async function pullRemoteDecisions(
-  collection: Collection<CloudDecisionDoc>,
-  reports: DreamReport[],
-  config: EffectiveCloudSyncConfig
-): Promise<SyncedReviewDecision[]> {
-  const reportIds = reports.map((report) => report.id);
-  if (reportIds.length === 0) return [];
-  const docs = await collection
-    .find({
-      userId: config.userId,
-      reportId: { $in: reportIds },
-      state: { $in: SYNC_DECISION_STATES },
-    })
-    .toArray();
-  const allowedDeviceHashes = new Map(
-    config.devices
-      .filter((device) => device.status !== "revoked")
-      .map((device) => [device.deviceId, device.tokenHash])
-  );
-  return docs
-    .filter((doc) => {
-      if (doc.sourceDeviceId === config.deviceId) return true;
-      const expectedHash = allowedDeviceHashes.get(doc.sourceDeviceId);
-      return Boolean(expectedHash && doc.deviceTokenHash === expectedHash);
-    })
-    .map((doc) => ({
-      reportId: doc.reportId,
-      findingId: doc.findingId,
-      state: doc.state,
-      updatedAt: doc.updatedAt,
-      sourceDeviceId: doc.sourceDeviceId,
-      sourceDeviceName: doc.sourceDeviceName,
-      deviceTokenHash: doc.deviceTokenHash,
-    }));
-}
-
-async function upsertDevice(
-  collection: Collection,
-  config: EffectiveCloudSyncConfig
-): Promise<void> {
   const now = Date.now();
-  await collection.updateOne(
-    { userId: config.userId, deviceId: config.deviceId },
-    {
-      $set: {
-        schemaVersion: SCHEMA_VERSION,
-        userId: config.userId,
-        deviceId: config.deviceId,
-        deviceName: config.deviceName,
-        client: "desktop",
-        appName: APP_NAME,
-        lastSeenAt: now,
-      },
-      $setOnInsert: { createdAt: now },
-    },
-    { upsert: true }
+  const nextDevice = {
+    ...session.device,
+    deviceId: input.deviceId,
+    deviceName: input.deviceName,
+    kind: input.kind,
+    status: "active" as const,
+    secretHash: await sha256Base64Url(input.pairedDeviceSecret),
+    secretCiphertext: protectLocalSecret(input.pairedDeviceSecret),
+    secretIssuedAt: now,
+    lastSeenAt: now,
+    revokedAt: undefined,
+  };
+  const config = getConfig().cloudSync;
+  const devices = [
+    nextDevice,
+    ...config.devices.filter((device) => device.deviceId !== input.deviceId),
+  ];
+  pairingSessions.delete(input.pairingId);
+  setConfig({
+    cloudSync: { enabled: true, devices },
+    companionSyncInterest: true,
+  });
+  broadcastPeerHostRefresh("pairing-accepted");
+  updateStatus({
+    state: "watching",
+    message: `${input.deviceName} is paired. Establishing private WebRTC sync.`,
+    lastSyncedAt: now,
+    lastError: undefined,
+  });
+  return devices;
+}
+
+function decisionsFromBatch(
+  batch: PeerReviewDecisionBatchV1
+): SyncedReviewDecision[] {
+  return batch.decisions.map((decision) => ({
+    reportId: decision.reportId,
+    findingId: decision.findingId,
+    state: decision.state as Exclude<ActionState, "open">,
+    updatedAt: decision.updatedAt,
+    sourceDeviceId: decision.sourceDeviceId,
+    sourceDeviceName: decision.sourceDeviceName ?? batch.sourceDeviceName,
+  }));
+}
+
+export function applyPeerReviewDecisionBatch(input: unknown): {
+  applied: number;
+  revision: number;
+} {
+  const batch = peerReviewDecisionBatchV1Schema.parse(input);
+  const { applied } = mergeRemoteReviewDecisions(decisionsFromBatch(batch));
+  const now = Date.now();
+  updateStatus({
+    state: activeConnections.size > 0 ? "watching" : "connecting",
+    message:
+      applied > 0
+        ? "Applied private device decisions on this Mac."
+        : "Private device decisions were already current.",
+    lastPulledAt: now,
+    remoteDecisionsApplied: applied,
+    lastSyncedAt: now,
+    lastError: undefined,
+  });
+  broadcastPeerHostRefresh("decisions-applied");
+  return { applied, revision: currentRevision() };
+}
+
+export function updatePeerHostConnection(
+  update: PeerHostConnectionUpdate
+): CloudSyncStatus {
+  if (update.connected) activeConnections.add(update.deviceId);
+  else activeConnections.delete(update.deviceId);
+  if (update.iceMode) iceMode = update.iceMode;
+
+  const config = getConfig().cloudSync;
+  const devices = config.devices.map((device) =>
+    device.deviceId === update.deviceId
+      ? {
+          ...device,
+          status: update.connected ? ("active" as const) : device.status,
+          lastSeenAt: update.lastSeenAt ?? device.lastSeenAt,
+          lastAckedRevision:
+            update.lastAckedRevision ?? device.lastAckedRevision,
+        }
+      : device
   );
+  setConfig({ cloudSync: { devices } });
+  return updateStatus({
+    state: update.connected
+      ? "watching"
+      : isConfigured(resolveConfig())
+        ? "connecting"
+        : status.state,
+    message: update.connected
+      ? "Private WebRTC device sync is connected."
+      : "No private devices are connected right now.",
+    lastSyncedAt: update.connected ? Date.now() : status.lastSyncedAt,
+    lastError: update.error,
+  });
 }
 
 export function getCloudSyncStatus(): CloudSyncStatus {
@@ -477,101 +523,64 @@ export function onCloudSyncStatusChange(listener: Listener): () => void {
 
 export async function syncCloudNow(): Promise<CloudSyncStatus> {
   const config = resolveConfig();
-  if (!config.enabled) {
-    await closeClient();
+  if (!config.enabled || !isConfigured(config)) {
+    closePeerHost();
+    activeConnections.clear();
     resetStatusForConfig();
     return status;
   }
-  if (!isConfigured(config)) {
-    await closeClient();
-    resetStatusForConfig();
-    return status;
-  }
-  if (syncing) {
-    syncAgain = true;
-    return status;
-  }
-
-  syncing = true;
-  if (syncTimer) clearTimeout(syncTimer);
-  syncTimer = null;
-  updateStatus({
-    state: "syncing",
-    message: "Syncing cycle history and decisions...",
+  ensurePeerHost();
+  broadcastPeerHostRefresh("manual-sync");
+  void pushEncryptedSnapshotBackup("manual-sync");
+  return updateStatus({
+    state: activeConnections.size > 0 ? "watching" : "connecting",
+    message:
+      activeConnections.size > 0
+        ? "Sent the latest Mac snapshot over private WebRTC."
+        : "Private Device Sync is waiting for paired devices to reconnect.",
+    lastPushedAt: activeConnections.size > 0 ? Date.now() : status.lastPushedAt,
+    reviewsPushed: getReports().length,
     nextSyncAt: null,
+    lastError: undefined,
   });
-
-  try {
-    const db = await ensureDb(config);
-    const cycles = db.collection<CloudCycleDoc>(CYCLES_COLLECTION);
-    const decisions = db.collection<CloudDecisionDoc>(DECISIONS_COLLECTION);
-    const devices = db.collection(DEVICES_COLLECTION);
-
-    await upsertDevice(devices, config);
-    const beforePull = getReports();
-    const cyclesPushedBeforePull = await pushCycles(cycles, beforePull, config);
-    const remote = await pullRemoteDecisions(decisions, beforePull, config);
-    const { applied } = mergeRemoteReviewDecisions(remote);
-    const afterPull = getReports();
-    const cyclesPushedAfterPull =
-      applied > 0 ? await pushCycles(cycles, afterPull, config) : 0;
-    const decisionsPushed = await pushDecisions(decisions, afterPull, config);
-    const now = Date.now();
-
-    startDecisionWatch(decisions, config);
-    updateStatus({
-      state: "watching",
-      message: changeStream
-        ? "Connected. Watching Atlas for phone and watch changes."
-        : "Connected. Polling Atlas for phone and watch changes.",
-      lastSyncedAt: now,
-      lastPulledAt: remote.length > 0 ? now : status.lastPulledAt,
-      lastPushedAt:
-        cyclesPushedBeforePull + cyclesPushedAfterPull + decisionsPushed > 0
-          ? now
-          : status.lastPushedAt,
-      cyclesPushed: cyclesPushedBeforePull + cyclesPushedAfterPull,
-      decisionsPushed,
-      remoteDecisionsApplied: applied,
-      lastError: undefined,
-    });
-  } catch (err) {
-    await closeClient();
-    updateStatus({
-      state: "offline",
-      message: "Atlas is unavailable. Cloud Sync will retry.",
-      lastError: err instanceof Error ? err.message : String(err),
-    });
-  } finally {
-    syncing = false;
-    if (syncAgain) {
-      syncAgain = false;
-      scheduleSync(250);
-    } else {
-      armPollingTimer();
-    }
-  }
-
-  return status;
 }
 
-async function reconfigureCloudSync(): Promise<void> {
-  await closeClient();
-  resetStatusForConfig();
+function reconfigureCloudSync(): void {
   const config = resolveConfig();
-  if (isConfigured(config)) scheduleSync(0);
+  resetStatusForConfig();
+  if (isConfigured(config)) {
+    ensurePeerHost();
+    broadcastPeerHostRefresh("config");
+  } else {
+    closePeerHost();
+  }
+  if (config.backupEnabled) {
+    void pushEncryptedSnapshotBackup("config");
+  } else if (config.backupKey) {
+    void clearEncryptedSnapshotBackup(config);
+  }
 }
 
 export function initCloudSync(): void {
   if (initialized) return;
   initialized = true;
-  onConfigChange(() => {
-    void reconfigureCloudSync();
+  onConfigChange(() => reconfigureCloudSync());
+  onReportsChange(() => {
+    updateStatus({
+      revision: currentRevision(),
+      lastSyncedAt: Date.now(),
+      reviewsPushed: getReports().length,
+    });
+    broadcastPeerHostRefresh("reports");
+    void pushEncryptedSnapshotBackup("reports");
   });
-  onReportsChange(() => scheduleSync());
-  void reconfigureCloudSync();
+  reconfigureCloudSync();
+  void pushEncryptedSnapshotBackup("startup");
 }
 
 export async function shutdownCloudSync(): Promise<void> {
-  await closeClient();
+  closePeerHost();
+  activeConnections.clear();
+  pairingSessions.clear();
+  resetStatusForConfig();
 }
