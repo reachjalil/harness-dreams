@@ -8,10 +8,21 @@ import { z } from "zod";
 export const PrivacyModeSchema = z.enum(["local", "cloud"]);
 export const AnalysisDepthSchema = z.enum(["light", "standard", "deep"]);
 export const GuidanceApplyModeSchema = z.enum(["branch", "direct"]);
-export const ScheduleModeSchema = z.enum(["nightly", "manual"]);
+export const ScheduleModeSchema = z.enum(["daily", "manual"]);
 export const AnalysisSourceSchema = z.enum(["claude-code", "codex", "code"]);
-export const RemRunnerProviderSchema = z.enum(["claude-code", "codex"]);
-export const CloudSyncDeviceKindSchema = z.enum(["iphone", "ipad", "watch"]);
+export const HarnessKindSchema = z.enum([
+  "claude-code",
+  "codex",
+  "cursor",
+  "code",
+]);
+export const InsightRunnerProviderSchema = z.enum(["claude-code", "codex"]);
+export const CloudSyncDeviceKindSchema = z.enum([
+  "desktop",
+  "iphone",
+  "ipad",
+  "watch",
+]);
 export const CloudSyncDeviceStatusSchema = z.enum([
   "pending",
   "active",
@@ -24,24 +35,42 @@ const CloudSyncDeviceSchema = z.object({
   deviceName: z.string().min(1),
   kind: CloudSyncDeviceKindSchema,
   status: CloudSyncDeviceStatusSchema,
-  tokenHash: z.string().min(1),
+  secretHash: z.string().min(1),
+  secretCiphertext: z.string().optional(),
   createdAt: z.number(),
-  lastTokenIssuedAt: z.number(),
+  secretIssuedAt: z.number(),
   lastSeenAt: z.number().optional(),
   revokedAt: z.number().optional(),
+  lastAckedRevision: z.number().int().min(0).optional(),
 });
 const CloudSyncSchema = z.object({
   enabled: z.boolean(),
   paidPlan: z.boolean(),
   devBypassPaidPlan: z.boolean(),
-  atlasUri: z.string(),
-  databaseName: z.string().min(1),
-  userId: z.string(),
-  jwtSecret: z.string(),
+  cloudApiBaseUrl: z.string(),
+  cloudUserId: z.string(),
   deviceId: z.string(),
   deviceName: z.string(),
-  syncIntervalMs: z.number().int().min(5_000),
   devices: z.array(CloudSyncDeviceSchema),
+  backupEnabled: z.boolean(),
+  backupKey: z.string(),
+  backupEpochId: z.string(),
+  backupRetentionDays: z.number().int().min(1).max(365),
+  lastBackupAt: z.number().optional(),
+  lastBackupRevision: z.number().int().min(0).optional(),
+});
+const TelemetryPricePointSchema = z.object({
+  inputPerMTok: z.number().min(0),
+  outputPerMTok: z.number().min(0),
+  cacheReadPerMTok: z.number().min(0).optional(),
+  cacheCreatePerMTok: z.number().min(0).optional(),
+});
+const TelemetrySchema = z.object({
+  enabled: z.boolean(),
+  watch: z.boolean(),
+  retentionDays: z.number().int().min(1).max(365),
+  rawTextRetention: z.boolean(),
+  priceTable: z.record(z.string(), TelemetryPricePointSchema),
 });
 
 export const AppConfigSchema = z.object({
@@ -57,8 +86,8 @@ export const AppConfigSchema = z.object({
   notifications: z.boolean(),
   analysisDepth: AnalysisDepthSchema,
   guidanceApplyMode: GuidanceApplyModeSchema,
-  remRunner: z.object({
-    provider: RemRunnerProviderSchema,
+  insightRunner: z.object({
+    provider: InsightRunnerProviderSchema,
     model: z.string(),
     claudePath: z.string(),
     codexPath: z.string(),
@@ -66,8 +95,9 @@ export const AppConfigSchema = z.object({
   }),
   launchAtLogin: z.boolean(),
   reduceMotion: z.boolean(),
+  telemetry: TelemetrySchema,
   cloudSync: CloudSyncSchema,
-  cloudSyncInterest: z.boolean(),
+  companionSyncInterest: z.boolean(),
   connectors: z.object({
     claudeCode: z.boolean(),
     codex: z.boolean(),
@@ -101,9 +131,9 @@ export const ConfigPatchSchema = z
     notifications: z.boolean(),
     analysisDepth: AnalysisDepthSchema,
     guidanceApplyMode: GuidanceApplyModeSchema,
-    remRunner: z
+    insightRunner: z
       .object({
-        provider: RemRunnerProviderSchema,
+        provider: InsightRunnerProviderSchema,
         model: z.string(),
         claudePath: z.string(),
         codexPath: z.string(),
@@ -112,8 +142,9 @@ export const ConfigPatchSchema = z
       .partial(),
     launchAtLogin: z.boolean(),
     reduceMotion: z.boolean(),
+    telemetry: TelemetrySchema.partial(),
     cloudSync: CloudSyncSchema.partial(),
-    cloudSyncInterest: z.boolean(),
+    companionSyncInterest: z.boolean(),
     connectors: z
       .object({
         claudeCode: z.boolean(),
@@ -133,3 +164,21 @@ export const ConfigPatchSchema = z
   })
   .partial();
 export type ConfigPatch = z.infer<typeof ConfigPatchSchema>;
+
+export const TelemetryMetricDetailInputSchema = z.object({
+  metricId: z.string().min(1),
+  range: z.enum(["24h", "7d", "30d", "90d"]).optional(),
+  filters: z
+    .object({
+      source: HarnessKindSchema.optional(),
+      projectPath: z.string().optional(),
+      model: z.string().optional(),
+    })
+    .optional(),
+});
+
+export const TelemetryRefreshInputSchema = z
+  .object({
+    reason: z.string().optional(),
+  })
+  .optional();

@@ -3,9 +3,9 @@ import type {
   AlignmentBand,
   AlignmentDetail,
   AnalysisProject,
-  CycleKind,
-  CycleReviewStatus,
-  DreamReport,
+  HealthReviewKind,
+  HealthReviewStatus,
+  HealthReport,
   Experiment,
   Finding,
   Metric,
@@ -197,7 +197,7 @@ const FINDINGS: Finding[] = [
       file: "/Users/jalillaaraichi/agent-fleet/AGENTS.md",
       label: "AGENTS.md · agent-fleet",
       snippet:
-        "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\n- Run `pnpm test` before claiming code changes are complete.\n<!-- harness-dreams:end -->\n",
+        "<!-- harness-health:start -->\n## Harness Health — accepted guidance\n\n- Run `pnpm test` before claiming code changes are complete.\n<!-- harness-health:end -->\n",
       creates: false,
     },
   },
@@ -254,14 +254,14 @@ const REVIEW_DECISIONS: ActionQueueEntry[] = [
     projectPath: "/Users/jalillaaraichi/agent-fleet",
     patch: FINDINGS[1].patch,
     reviewBranch: {
-      branch: "codex/harness-dreams-agent-fleet-tests",
+      branch: "codex/harness-health-agent-fleet-tests",
       baseBranch: "main",
       worktreePath:
-        "/Users/jalillaaraichi/Library/Application Support/Harness Dreams/recommendation-worktrees/agent-fleet",
+        "/Users/jalillaaraichi/Library/Application Support/Harness Health/recommendation-worktrees/agent-fleet",
       commit: "7c3a91d",
       remote: "origin",
       prUrl:
-        "https://github.com/example/agent-fleet/compare/main...codex/harness-dreams-agent-fleet-tests?expand=1",
+        "https://github.com/example/agent-fleet/compare/main...codex/harness-health-agent-fleet-tests?expand=1",
       pushed: true,
     },
   },
@@ -289,7 +289,7 @@ const EXPERIMENTS: Experiment[] = [
     metric: "alignment · re-ask rate · tool success",
     status: "concluded",
     progress: 1 / 3,
-    progressLabel: "1 / 3 cycles measured",
+    progressLabel: "1 / 3 reviews measured",
     verdict: "helped",
     verdictNote: "Alignment 71 → 83 (+12)",
     projectPath: "/Users/jalillaaraichi/agent-fleet",
@@ -418,7 +418,7 @@ const DEMO_FINDINGS: Finding[] = [
       file: "/Users/demo/work/atlas-notes/AGENTS.md",
       label: "AGENTS.md · atlas-notes",
       snippet:
-        "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\n- Run `pnpm test:fixtures` before claiming parser or import changes are complete.\n<!-- harness-dreams:end -->\n",
+        "<!-- harness-health:start -->\n## Harness Health — accepted guidance\n\n- Run `pnpm test:fixtures` before claiming parser or import changes are complete.\n<!-- harness-health:end -->\n",
       creates: false,
     },
   },
@@ -486,7 +486,7 @@ const DEMO_FINDINGS: Finding[] = [
       file: "/Users/demo/work/launch-ledger/CLAUDE.md",
       label: "CLAUDE.md · launch-ledger",
       snippet:
-        "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\n- Draft release notes for customers, not maintainers; include migration risk when data shape changes.\n<!-- harness-dreams:end -->\n",
+        "<!-- harness-health:start -->\n## Harness Health — accepted guidance\n\n- Draft release notes for customers, not maintainers; include migration risk when data shape changes.\n<!-- harness-health:end -->\n",
       creates: false,
     },
   },
@@ -520,7 +520,7 @@ const DEMO_FINDINGS: Finding[] = [
       file: "/Users/demo/work/launch-ledger/AGENTS.md",
       label: "AGENTS.md · launch-ledger",
       snippet:
-        "<!-- harness-dreams:start -->\n## Harness Dreams — accepted guidance\n\n- When API response shapes change, update the OpenAPI example and fixture response in the same branch.\n<!-- harness-dreams:end -->\n",
+        "<!-- harness-health:start -->\n## Harness Health — accepted guidance\n\n- When API response shapes change, update the OpenAPI example and fixture response in the same branch.\n<!-- harness-health:end -->\n",
       creates: false,
     },
   },
@@ -738,28 +738,28 @@ const DEMO_PROJECT_INSIGHTS: ProjectInsight[] = [
 function demoReviewBranch(finding: Finding, index: number) {
   const slug = finding.project.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   return {
-    branch: `demo/harness-dreams-${slug}-${index + 1}`,
+    branch: `demo/harness-health-${slug}-${index + 1}`,
     baseBranch: "main",
-    worktreePath: `/Users/demo/Library/Application Support/Harness Dreams/recommendation-worktrees/${slug}`,
+    worktreePath: `/Users/demo/Library/Application Support/Harness Health/recommendation-worktrees/${slug}`,
     commit: `demo${index + 17}c${finding.id.length}`,
     remote: "origin",
-    prUrl: `https://github.com/demo-org/${slug}/compare/main...demo/harness-dreams-${slug}-${index + 1}?expand=1`,
+    prUrl: `https://github.com/demo-org/${slug}/compare/main...demo/harness-health-${slug}-${index + 1}?expand=1`,
     pushed: true,
   };
 }
 
-function demoScenario(cycleNumber: number) {
-  return DEMO_SCENARIOS[Math.abs(cycleNumber) % DEMO_SCENARIOS.length];
+function demoScenario(reviewNumber: number) {
+  return DEMO_SCENARIOS[Math.abs(reviewNumber) % DEMO_SCENARIOS.length];
 }
 
-function demoFindings(cycleNumber: number): Finding[] {
-  const ids = new Set<string>(demoScenario(cycleNumber).findingIds);
+function demoFindings(reviewNumber: number): Finding[] {
+  const ids = new Set<string>(demoScenario(reviewNumber).findingIds);
   return DEMO_FINDINGS.filter((finding) => ids.has(finding.id));
 }
 
-function demoVerdictFor(entry: ActionQueueEntry, cycleNumber: number) {
+function demoVerdictFor(entry: ActionQueueEntry, reviewNumber: number) {
   if (entry.category === "prompthabit") return "no-change" as const;
-  if (entry.category === "claudemd" && cycleNumber % 3 === 0) {
+  if (entry.category === "claudemd" && reviewNumber % 3 === 0) {
     return "worse" as const;
   }
   return "helped" as const;
@@ -767,8 +767,8 @@ function demoVerdictFor(entry: ActionQueueEntry, cycleNumber: number) {
 
 function concludeDemoExperiments(
   experiments: Experiment[],
-  cycleNumber: number,
-  previous?: DreamReport | null
+  reviewNumber: number,
+  previous?: HealthReport | null
 ): Experiment[] {
   const accepted = previous?.reviewDecisions?.filter(
     (entry) => entry.state === "accepted"
@@ -790,7 +790,7 @@ function concludeDemoExperiments(
       (baseline?.alignment ?? 64) +
         (entry.category === "prompthabit" ? 2 : 14 - index * 3)
     );
-    const verdict = demoVerdictFor(entry, cycleNumber);
+    const verdict = demoVerdictFor(entry, reviewNumber);
     const baselineAlignment = baseline?.alignment ?? 64;
     existing.set(`accepted_${entry.findingId}`, {
       id: `accepted_${entry.findingId}`,
@@ -805,18 +805,18 @@ function concludeDemoExperiments(
         "The user spends fewer prompts correcting the agent.",
       reflection:
         prior?.reflection ??
-        "The next cycle compares alignment and corrections.",
+        "The next review compares alignment and corrections.",
       metric: "alignment · corrections · tool success",
       status: "concluded",
       progress: 1,
-      progressLabel: "1 / 1 demo cycle measured",
+      progressLabel: "1 / 1 demo review measured",
       verdict,
       verdictNote:
         verdict === "helped"
           ? `Alignment ${baselineAlignment} -> ${nextAlignment} (+${nextAlignment - baselineAlignment})`
           : verdict === "worse"
             ? `Alignment ${baselineAlignment} -> ${Math.max(40, baselineAlignment - 3)} (-3); release copy still needed a rewrite.`
-            : "No repeated friction observed yet; keep watching one more cycle.",
+            : "No repeated friction observed yet; keep watching one more review.",
       projectPath: entry.projectPath,
       category: entry.category,
       ...(existingExperiment?.disposition
@@ -881,17 +881,17 @@ function dateLabel(timestamp: number): string {
   });
 }
 
-/** Mint a Dream Report. `seed` drives the (deterministic) mock variation. */
+/** Mint a Health Report. `seed` drives the (deterministic) mock variation. */
 export function makeReport(
   timestamp: number,
   seed: number,
-  reviewStatus: CycleReviewStatus = "unreviewed"
-): DreamReport {
+  reviewStatus: HealthReviewStatus = "unreviewed"
+): HealthReport {
   const sessions = Math.max(6, vary(13, seed, 17, 4));
   const ringSet = rings(seed);
   const alignScore = ringSet.find((r) => r.key === "alignment")?.score ?? 82;
   return {
-    id: `dream_${timestamp}`,
+    id: `review_${timestamp}`,
     timestamp,
     reviewStatus,
     reviewedAt: reviewStatus === "reviewed" ? timestamp + 1_800_000 : undefined,
@@ -918,8 +918,8 @@ export function makeReport(
   };
 }
 
-/** A history of past dreams, newest first. */
-export function seedReports(now: number): DreamReport[] {
+/** A history of past health reports, newest first. */
+export function seedReports(now: number): HealthReport[] {
   const DAY = 86_400_000;
   return [0, 1, 2, 3, 4].map((i) =>
     makeReport(now - i * DAY, 97 - i * 11, i === 0 ? "unreviewed" : "reviewed")
@@ -927,19 +927,19 @@ export function seedReports(now: number): DreamReport[] {
 }
 
 /**
- * Shape a full demo cycle into a "nap": lighter and morning-framed. A nap is a
- * fast Deep-Sleep-only check-in, so it keeps the vitals but trims to the single
+ * Shape a full demo review into a "quick": lighter and morning-framed. A quick review is a
+ * fast same-day check-in, so it keeps the vitals but trims to the single
  * most useful nudge and a short "this morning" window.
  */
-function napifyDemo(report: DreamReport): DreamReport {
-  const napSessions = Math.max(2, Math.round(report.sessions / 3));
+function quickifyDemo(report: HealthReport): HealthReport {
+  const quickSessions = Math.max(2, Math.round(report.sessions / 3));
   return {
     ...report,
-    kind: "nap",
-    sessions: napSessions,
+    kind: "quick",
+    sessions: quickSessions,
     findings: report.findings.slice(0, 1),
     reviewDecisions: undefined,
-    rangeLabel: `This morning · ${napSessions} session${napSessions === 1 ? "" : "s"}`,
+    rangeLabel: `This morning · ${quickSessions} session${quickSessions === 1 ? "" : "s"}`,
     digest:
       "A quick mid-day look at this morning's work — just the most useful nudge to keep your momentum.",
     alignment: report.alignment
@@ -949,7 +949,7 @@ function napifyDemo(report: DreamReport): DreamReport {
       ? {
           ...report.window,
           label: "This morning",
-          sessionsInWindow: napSessions,
+          sessionsInWindow: quickSessions,
         }
       : report.window,
   };
@@ -957,18 +957,18 @@ function napifyDemo(report: DreamReport): DreamReport {
 
 export function makeDemoReport(
   timestamp: number,
-  cycleNumber: number,
-  reviewStatus: CycleReviewStatus = "unreviewed",
-  previous?: DreamReport | null,
-  kind: CycleKind = "sleep"
-): DreamReport {
-  const seed = 240 + cycleNumber * 19;
+  reviewNumber: number,
+  reviewStatus: HealthReviewStatus = "unreviewed",
+  previous?: HealthReport | null,
+  kind: HealthReviewKind = "full"
+): HealthReport {
+  const seed = 240 + reviewNumber * 19;
   const base = makeReport(timestamp, seed, reviewStatus);
-  const scenario = demoScenario(cycleNumber);
-  const alignmentScore = Math.min(92, scenario.alignment + cycleNumber);
-  const sessions = scenario.sessions + Math.floor(cycleNumber / 4);
-  const turns = scenario.turns + Math.floor(cycleNumber / 4) * 5;
-  const findings = demoFindings(cycleNumber);
+  const scenario = demoScenario(reviewNumber);
+  const alignmentScore = Math.min(92, scenario.alignment + reviewNumber);
+  const sessions = scenario.sessions + Math.floor(reviewNumber / 4);
+  const turns = scenario.turns + Math.floor(reviewNumber / 4) * 5;
+  const findings = demoFindings(reviewNumber);
   const reviewedDecisions =
     reviewStatus === "reviewed"
       ? findings.slice(0, 2).map(
@@ -987,30 +987,34 @@ export function makeDemoReport(
       : undefined;
   const experiments = concludeDemoExperiments(
     previous?.experiments ?? EXPERIMENTS,
-    cycleNumber,
+    reviewNumber,
     previous
   );
-  const report: DreamReport = {
+  const report: HealthReport = {
     ...base,
-    id: `demo_cycle_${timestamp}_${cycleNumber}`,
+    id: `demo_review_${timestamp}_${reviewNumber}`,
     timestamp,
     reviewStatus,
     reviewedAt: reviewStatus === "reviewed" ? timestamp + 1_200_000 : undefined,
-    rangeLabel: `${dateLabel(timestamp)} · Demo cycle ${cycleNumber + 1}`,
+    rangeLabel: `${dateLabel(timestamp)} · Demo review ${reviewNumber + 1}`,
     sessions,
     projects: DEMO_PROJECTS.length,
     harness: "Codex + Claude Code demo",
     digest: scenario.digest,
     rings: base.rings.map((ring) =>
       ring.key === "alignment"
-        ? { ...ring, score: alignmentScore, delta: cycleNumber === 0 ? -6 : 14 }
+        ? {
+            ...ring,
+            score: alignmentScore,
+            delta: reviewNumber === 0 ? -6 : 14,
+          }
         : ring.key === "efficiency"
-          ? { ...ring, score: Math.min(90, ring.score + cycleNumber * 5) }
+          ? { ...ring, score: Math.min(90, ring.score + reviewNumber * 5) }
           : ring
     ),
     metrics: base.metrics.map((metric) =>
       metric.key === "sessions"
-        ? { ...metric, value: `${sessions}`, delta: cycleNumber + 1 }
+        ? { ...metric, value: `${sessions}`, delta: reviewNumber + 1 }
         : metric.key === "reask"
           ? {
               ...metric,
@@ -1046,40 +1050,40 @@ export function makeDemoReport(
     window: {
       start: timestamp - 7_200_000,
       end: timestamp,
-      basis: cycleNumber === 0 ? "last-24h" : "since-last-cycle",
+      basis: reviewNumber === 0 ? "last-24h" : "since-last-review",
       label: scenario.label,
       sessionsInWindow: sessions,
       turnsInWindow: turns,
     },
     projectInsights: DEMO_PROJECT_INSIGHTS.map((project, index) => ({
       ...project,
-      sessions: Math.max(1, project.sessions + cycleNumber - index),
-      turns: Math.max(5, project.turns + cycleNumber * 4 - index),
+      sessions: Math.max(1, project.sessions + reviewNumber - index),
+      turns: Math.max(5, project.turns + reviewNumber * 4 - index),
       corrections: Math.max(
         0,
-        project.corrections + (scenario.reask > 24 ? 1 : 0) - cycleNumber
+        project.corrections + (scenario.reask > 24 ? 1 : 0) - reviewNumber
       ),
       alignment: Math.min(
         94,
         project.alignment +
-          Math.floor(cycleNumber / 2) * (8 - index * 2) +
+          Math.floor(reviewNumber / 2) * (8 - index * 2) +
           (scenario.reask <= 18 ? 4 : 0)
       ),
       hasAgentsMd:
         project.path === "/Users/demo/work/atlas-notes" ||
-        (project.path === "/Users/demo/work/launch-ledger" && cycleNumber > 1)
+        (project.path === "/Users/demo/work/launch-ledger" && reviewNumber > 1)
           ? true
           : project.hasAgentsMd,
       skillCount:
         project.path === "/Users/demo/work/route-hopper"
-          ? project.skillCount + (cycleNumber > 2 ? 1 : 0)
+          ? project.skillCount + (reviewNumber > 2 ? 1 : 0)
           : project.skillCount,
     })),
     cloudRedactionPreview:
-      cycleNumber === 0
+      reviewNumber === 0
         ? {
             runner: "demo",
-            model: "demo-rem",
+            model: "demo-insight",
             redactions: 4,
             payloadChars: 4_860,
             projects: DEMO_PROJECTS.length,
@@ -1096,10 +1100,10 @@ export function makeDemoReport(
       cli: { invoked: false, status: "not-required" },
     },
   };
-  return kind === "nap" ? napifyDemo(report) : report;
+  return kind === "quick" ? quickifyDemo(report) : report;
 }
 
-export function seedDemoReports(now: number): DreamReport[] {
+export function seedDemoReports(now: number): HealthReport[] {
   const DAY = 86_400_000;
   const oldest = makeDemoReport(now - DAY * 4, 0, "reviewed");
   const second = makeDemoReport(now - DAY * 3, 1, "reviewed", oldest);
@@ -1116,10 +1120,10 @@ export function seedDemoReports(now: number): DreamReport[] {
 
 export function nextDemoReport(
   now: number,
-  previous?: DreamReport | null,
-  kind: CycleKind = "sleep"
-): DreamReport {
-  const count = previous?.id.startsWith("demo_cycle_")
+  previous?: HealthReport | null,
+  kind: HealthReviewKind = "full"
+): HealthReport {
+  const count = previous?.id.startsWith("demo_review_")
     ? Number(previous.id.split("_").at(-1) ?? 0) + 1
     : 1;
   return makeDemoReport(

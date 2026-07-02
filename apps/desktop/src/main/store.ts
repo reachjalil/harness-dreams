@@ -9,6 +9,7 @@ import {
 import { hostname } from "node:os";
 import path from "node:path";
 import { app } from "electron";
+import { DEFAULT_SIGNAL_API_BASE_URL } from "@harness-health/core";
 
 import { AppConfigSchema } from "../shared/schemas";
 import type { AppConfig } from "../shared/types";
@@ -25,16 +26,23 @@ export const DEFAULT_CONFIG: AppConfig = {
   demoMode: false,
   showOnboardingOnLaunch: false,
   privacyMode: "local",
-  schedule: { mode: "nightly", time: "03:00" },
+  schedule: { mode: "daily", time: "03:00" },
   notifications: true,
   analysisDepth: "standard",
   guidanceApplyMode: "direct",
-  remRunner: {
+  insightRunner: {
     provider: "codex",
     model: "gpt-5.5",
     claudePath: "claude",
     codexPath: "codex",
     timeoutMs: 180_000,
+  },
+  telemetry: {
+    enabled: true,
+    watch: true,
+    retentionDays: 90,
+    rawTextRetention: false,
+    priceTable: {},
   },
   launchAtLogin: false,
   reduceMotion: false,
@@ -42,17 +50,21 @@ export const DEFAULT_CONFIG: AppConfig = {
     enabled: false,
     paidPlan: false,
     devBypassPaidPlan: true,
-    atlasUri: "",
-    databaseName: "harness_dreams",
-    userId: "",
-    jwtSecret: "",
+    cloudApiBaseUrl:
+      process.env.HARNESS_HEALTH_CLOUD_API_BASE_URL ||
+      process.env.HARNESS_HEALTH_SIGNAL_API_BASE_URL ||
+      DEFAULT_SIGNAL_API_BASE_URL,
+    cloudUserId: "",
     deviceId: "",
     deviceName: "",
-    syncIntervalMs: 30_000,
     devices: [],
+    backupEnabled: false,
+    backupKey: "",
+    backupEpochId: "",
+    backupRetentionDays: 30,
   },
-  cloudSyncInterest: false,
-  connectors: { claudeCode: true, codex: false, cursor: false },
+  companionSyncInterest: false,
+  connectors: { claudeCode: true, codex: true, cursor: false },
   projects: [],
 };
 
@@ -93,27 +105,38 @@ function persist(): void {
 
 function withRuntimeDefaults(next: AppConfig): AppConfig {
   const cloudSync = next.cloudSync ?? DEFAULT_CONFIG.cloudSync;
+  const backupEnabled = Boolean(cloudSync.backupEnabled);
   return {
     ...next,
     cloudSync: {
       ...cloudSync,
-      databaseName:
-        cloudSync.databaseName || DEFAULT_CONFIG.cloudSync.databaseName,
-      userId: cloudSync.userId || randomUUID(),
-      jwtSecret: cloudSync.jwtSecret || randomBytes(32).toString("base64url"),
+      cloudApiBaseUrl:
+        cloudSync.cloudApiBaseUrl ||
+        process.env.HARNESS_HEALTH_CLOUD_API_BASE_URL ||
+        process.env.HARNESS_HEALTH_SIGNAL_API_BASE_URL ||
+        DEFAULT_CONFIG.cloudSync.cloudApiBaseUrl,
+      cloudUserId: cloudSync.cloudUserId || randomUUID(),
       deviceId: cloudSync.deviceId || randomUUID(),
       deviceName: cloudSync.deviceName || hostname() || "Desktop",
-      syncIntervalMs: Math.max(
-        5_000,
-        cloudSync.syncIntervalMs || DEFAULT_CONFIG.cloudSync.syncIntervalMs
-      ),
       devices: cloudSync.devices ?? [],
+      backupEnabled,
+      backupKey:
+        backupEnabled && !cloudSync.backupKey
+          ? randomBytes(32).toString("base64url")
+          : cloudSync.backupKey || "",
+      backupEpochId:
+        backupEnabled && !cloudSync.backupEpochId
+          ? randomUUID()
+          : cloudSync.backupEpochId || "",
+      backupRetentionDays:
+        cloudSync.backupRetentionDays ||
+        DEFAULT_CONFIG.cloudSync.backupRetentionDays,
     },
   };
 }
 
 export function initStore(): AppConfig {
-  filePath = path.join(app.getPath("userData"), "harness-dreams-config.json");
+  filePath = path.join(app.getPath("userData"), "harness-health-config.json");
   try {
     if (existsSync(filePath)) {
       const raw: unknown = JSON.parse(readFileSync(filePath, "utf8"));

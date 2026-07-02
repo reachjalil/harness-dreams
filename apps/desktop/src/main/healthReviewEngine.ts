@@ -2,10 +2,10 @@ import type {
   AlignmentDetail,
   AnalysisProject,
   AnalysisSource,
-  CycleKind,
-  CycleWindow,
-  CycleProvenance,
-  DreamReport,
+  HealthReviewKind,
+  ReviewWindow,
+  ReviewProvenance,
+  HealthReport,
   Experiment,
   Finding,
   FrictionType,
@@ -14,7 +14,7 @@ import type {
   Ring,
   WindowBasis,
   PrivacyMode,
-  RemRunnerConfig,
+  InsightRunnerConfig,
 } from "../shared/types";
 import {
   agentsPatch,
@@ -30,11 +30,14 @@ import {
   type LocalSession,
   type LocalTurn,
 } from "./localIngest";
-import { runRemAnalysis, type RemAnalysisResult } from "./remAnalysis";
+import {
+  runInsightAnalysis,
+  type InsightAnalysisResult,
+} from "./insightAnalysis";
 
 /**
- * The real Sleep Cycle engine. Given the enabled projects and the time since
- * the last cycle, it ingests only the windowed sessions (capped at 24h),
+ * The real Health Review engine. Given the enabled projects and the time since
+ * the last review, it ingests only the windowed sessions (capped at 24h),
  * detects collaboration friction from the actual transcripts, and turns the
  * strongest patterns into concrete AGENTS.md / skill / context recommendations
  * with ready-to-apply file patches.
@@ -220,8 +223,8 @@ function fmtDuration(ms: number): string {
   const mins = Math.max(1, Math.round(ms / 60_000));
   if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
-  const rem = mins % 60;
-  return rem === 0 ? `${hours}h` : `${hours}h ${rem}m`;
+  const remainder = mins % 60;
+  return remainder === 0 ? `${hours}h` : `${hours}h ${remainder}m`;
 }
 
 function fmtTime(ts: number): string {
@@ -510,7 +513,7 @@ function makeCandidates(agg: ProjectAgg): Candidate[] {
         id: `home-context-${agg.path}`,
         type: "risk",
         title: `Home Claude/Codex context is heavy for ${agg.name}`,
-        body: `The cycle found ${compactChars(health.globalChars)} of home-directory Claude/Codex context before project instructions. Project-specific guidance should live closer to the repo.`,
+        body: `The review found ${compactChars(health.globalChars)} of home-directory Claude/Codex context before project instructions. Project-specific guidance should live closer to the repo.`,
         action: `Move ${agg.name}-specific guidance out of home Claude/Codex memory and into project files.`,
         improvement:
           "Keeping home context global and project context local makes the next session's instruction stack easier to reason about.",
@@ -567,7 +570,7 @@ function makeCandidates(agg: ProjectAgg): Candidate[] {
     const line =
       agg.frustrationQuotes.length > 0
         ? ruleFromFriction(topic, agg.frustrationQuotes[0])
-        : `Focus areas this cycle: ${topics.slice(0, 3).join(", ") || "the active workflow"}.`;
+        : `Focus areas this review: ${topics.slice(0, 3).join(", ") || "the active workflow"}.`;
     out.push({
       severity: 70 + agg.corrections * 4,
       finding: baseFinding(agg, {
@@ -736,7 +739,7 @@ function baseFinding(
           : "The agent has the context it needs and stops guessing or repeating failures.",
     userBenefit:
       "You spend fewer turns correcting assumptions, repeated questions, or missed state.",
-    reflection: `Whether ${agg.name}'s ${fields.category === "agentsmd" ? "corrections" : fields.category === "skill" ? "repeated task" : "friction"} drops in the next cycle.`,
+    reflection: `Whether ${agg.name}'s ${fields.category === "agentsmd" ? "corrections" : fields.category === "skill" ? "repeated task" : "friction"} drops in the next review.`,
     confidence:
       fields.evidence.length > 0 &&
       (agg.corrections >= 2 || agg.toolFailures >= 2)
@@ -771,14 +774,14 @@ function selectFindings(aggs: ProjectAgg[]): Finding[] {
 }
 
 /**
- * Close the loop: a goal accepted in an earlier cycle is measured here. We
+ * Close the loop: a goal accepted in an earlier review is measured here. We
  * compare the target project's alignment/corrections now against the baseline
- * captured when the goal was accepted, advance it a cycle, and conclude with a
- * verdict once there's enough signal. This is what makes the *next* cycle
+ * captured when the goal was accepted, advance it a review, and conclude with a
+ * verdict once there's enough signal. This is what makes the *next* review
  * measure whether a change actually helped.
  */
 function gradeCarriedExperiments(
-  prev: DreamReport | null,
+  prev: HealthReport | null,
   insights: ProjectInsight[]
 ): Experiment[] {
   const running = (prev?.experiments ?? []).filter(
@@ -786,8 +789,8 @@ function gradeCarriedExperiments(
   );
   return running.map((exp) => {
     const progress = Math.min(1, (exp.progress ?? 0) + 1 / 3);
-    const cycles = Math.round(progress * 3);
-    const progressLabel = `${cycles} / 3 cycles measured`;
+    const reviews = Math.round(progress * 3);
+    const progressLabel = `${reviews} / 3 reviews measured`;
     const now = exp.projectPath
       ? insights.find((insight) => insight.path === exp.projectPath)
       : undefined;
@@ -876,7 +879,7 @@ function totalsOf(aggs: ProjectAgg[]): Totals {
   );
 }
 
-function makeRings(t: Totals, prev: DreamReport | null): Ring[] {
+function makeRings(t: Totals, prev: HealthReport | null): Ring[] {
   // Rate-based so scores reflect collaboration quality, not window size: a long
   // productive day shouldn't score worse than a short rough one just for volume.
   const userTurns = Math.max(1, t.userTurns);
@@ -920,15 +923,15 @@ function makeRings(t: Totals, prev: DreamReport | null): Ring[] {
   ];
 }
 
-function makeRingsFromRem(
+function makeRingsFromInsight(
   t: Totals,
-  prev: DreamReport | null,
-  rem: RemAnalysisResult | null
+  prev: HealthReport | null,
+  insight: InsightAnalysisResult | null
 ): Ring[] {
   const rings = makeRings(t, prev);
-  if (!rem || rem.error || !rem.scores) return rings;
+  if (!insight || insight.error || !insight.scores) return rings;
   return rings.map((ring) => {
-    const score = rem.scores?.[ring.key];
+    const score = insight.scores?.[ring.key];
     if (score == null) return ring;
     const next = clampScore(score);
     const previous =
@@ -1126,7 +1129,7 @@ function computeWindow(
   start: number,
   end: number,
   basis: WindowBasis
-): CycleWindow {
+): ReviewWindow {
   let earliest = end;
   let latest = start;
   let turns = 0;
@@ -1149,7 +1152,7 @@ function computeWindow(
   }
   const spanMs = sessionCount > 0 ? Math.max(0, latest - earliest) : 0;
   const basisLabel =
-    basis === "since-last-cycle" ? `Since ${fmtTime(start)}` : "Last 24 hours";
+    basis === "since-last-review" ? `Since ${fmtTime(start)}` : "Last 24 hours";
   const label =
     sessions.length > 0
       ? `${basisLabel} · ${fmtDuration(spanMs)} of activity`
@@ -1191,7 +1194,7 @@ function projectInsightsOf(aggs: ProjectAgg[]): ProjectInsight[] {
 
 function contextSummaryOf(
   insights: ProjectInsight[]
-): DreamReport["contextHealth"] {
+): HealthReport["contextHealth"] {
   if (insights.length === 0) return undefined;
   const scores = insights.map((insight) => insight.contextHealth?.score ?? 100);
   const score = Math.round(
@@ -1236,28 +1239,30 @@ function contextSummaryOf(
 }
 
 function provenanceFor(input: {
-  mode: CycleProvenance["mode"];
-  generator: CycleProvenance["generator"];
+  mode: ReviewProvenance["mode"];
+  generator: ReviewProvenance["generator"];
   sources: AnalysisSource[];
   now: number;
-  rem?: RemAnalysisResult | null;
-  remConfigured: boolean;
-}): CycleProvenance {
+  insight?: InsightAnalysisResult | null;
+  insightConfigured: boolean;
+}): ReviewProvenance {
   const cli =
-    input.rem != null
+    input.insight != null
       ? {
           invoked: true,
-          status: input.rem.error ? ("failed" as const) : ("executed" as const),
-          runner: input.rem.redactionPreview.runner,
-          model: input.rem.redactionPreview.model,
-          redactions: input.rem.redactionPreview.redactions,
-          payloadChars: input.rem.redactionPreview.payloadChars,
-          projects: input.rem.redactionPreview.projects,
-          error: input.rem.error,
+          status: input.insight.error
+            ? ("failed" as const)
+            : ("executed" as const),
+          runner: input.insight.redactionPreview.runner,
+          model: input.insight.redactionPreview.model,
+          redactions: input.insight.redactionPreview.redactions,
+          payloadChars: input.insight.redactionPreview.payloadChars,
+          projects: input.insight.redactionPreview.projects,
+          error: input.insight.error,
         }
       : {
           invoked: false,
-          status: input.remConfigured
+          status: input.insightConfigured
             ? ("skipped" as const)
             : ("not-required" as const),
         };
@@ -1271,7 +1276,7 @@ function provenanceFor(input: {
   };
 }
 
-function noDataReport(now: number, kind: CycleKind): DreamReport {
+function noDataReport(now: number, kind: HealthReviewKind): HealthReport {
   const start = now - DAY_MS;
   const window = computeWindow([], start, now, "last-24h");
   const totals: Totals = {
@@ -1285,7 +1290,7 @@ function noDataReport(now: number, kind: CycleKind): DreamReport {
   };
   const rings = makeRings(totals, null);
   return {
-    id: `cycle_${now}`,
+    id: `review_${now}`,
     timestamp: now,
     kind,
     reviewStatus: "unreviewed",
@@ -1294,7 +1299,7 @@ function noDataReport(now: number, kind: CycleKind): DreamReport {
     projects: 0,
     harness: "Real local data",
     digest:
-      "No enabled projects are selected, so this real Sleep Cycle ended without demo data or sample fixtures.",
+      "No enabled projects are selected, so this real Health Review ended without demo data or sample fixtures.",
     rings,
     metrics: makeMetrics(totals, [], 0),
     findings: [],
@@ -1306,7 +1311,7 @@ function noDataReport(now: number, kind: CycleKind): DreamReport {
       band: "collaborating",
       human: {
         mood: "deep-focus",
-        question: "Which projects should Harness Dreams measure?",
+        question: "Which projects should Harness Health measure?",
         signals: ["0 enabled projects", "demo mode off"],
       },
       agent: {
@@ -1321,18 +1326,18 @@ function noDataReport(now: number, kind: CycleKind): DreamReport {
       generator: "no-data",
       sources: [],
       now,
-      remConfigured: false,
+      insightConfigured: false,
     }),
   };
 }
 
 function quietReport(
-  window: CycleWindow,
+  window: ReviewWindow,
   projects: AnalysisProject[],
-  prev: DreamReport | null,
+  prev: HealthReport | null,
   now: number,
   aggs: ProjectAgg[]
-): DreamReport {
+): HealthReport {
   const enabled = projects.filter((project) => project.enabled);
   const totals: Totals = {
     sessions: 0,
@@ -1351,9 +1356,9 @@ function quietReport(
   const digest =
     contextFindings.length > 0
       ? `No new agent activity, but the context review found ${contextFindings.length} cleanup recommendation${contextFindings.length === 1 ? "" : "s"} across ${insights.length} tracked project${insights.length === 1 ? "" : "s"}.`
-      : "No new agent activity in this window. The Sleep Cycle stayed quiet — nothing to accept or change.";
+      : "No new agent activity in this window. The Health Review stayed quiet — nothing to accept or change.";
   return {
-    id: `cycle_${now}`,
+    id: `review_${now}`,
     timestamp: now,
     reviewStatus: "unreviewed",
     rangeLabel: `${window.label} · quiet`,
@@ -1411,51 +1416,51 @@ function quietReport(
       generator: "local-ingest",
       sources: [...new Set(enabled.flatMap((project) => project.sources))],
       now,
-      remConfigured: false,
+      insightConfigured: false,
     }),
   };
 }
 
-export interface CycleOptions {
-  /** Epoch ms of the previous cycle, if any (window start, capped at 24h). */
+export interface ReviewOptions {
+  /** Epoch ms of the previous review, if any (window start, capped at 24h). */
   since?: number | null;
   now?: number;
-  prev?: DreamReport | null;
+  prev?: HealthReport | null;
   privacyMode?: PrivacyMode;
   analysisDepth?: "light" | "standard" | "deep";
-  remRunner?: RemRunnerConfig;
+  insightRunner?: InsightRunnerConfig;
   /**
-   * "sleep" (default) is the full overnight pass. "nap" is a fast Deep-Sleep-only
-   * check-in over this morning, capped to the top couple of nudges.
+   * "full" (default) is the full daily pass. "quick" is a fast same-day
+   * check-in capped to the top couple of nudges.
    */
-  kind?: CycleKind;
+  kind?: HealthReviewKind;
 }
 
 /**
- * Run a full Sleep Cycle over the enabled projects' windowed activity.
+ * Run a full Health Review over the enabled projects' windowed activity.
  * Always returns a real report. With no projects or no activity, the report is
  * explicit about that state instead of falling back to demo/sample data.
  */
-export function runSleepCycle(
+export function runHealthReview(
   projects: AnalysisProject[],
-  options: CycleOptions = {}
-): DreamReport {
+  options: ReviewOptions = {}
+): HealthReport {
   const now = options.now ?? Date.now();
   const enabled = projects.filter((project) => project.enabled);
-  if (enabled.length === 0) return noDataReport(now, options.kind ?? "sleep");
+  if (enabled.length === 0) return noDataReport(now, options.kind ?? "full");
 
   const prev = options.prev ?? null;
-  const isNap = options.kind === "nap";
+  const isQuick = options.kind === "quick";
   const floor = now - DAY_MS;
   const since = options.since ?? null;
-  // A nap reviews just this morning; a sleep reviews since the last cycle (24h cap).
-  const start = isNap
+  // A quick review covers just this morning; a full review covers since the last review (24h cap).
+  const start = isQuick
     ? Math.max(startOfDay(now), floor)
     : since && since > floor
       ? since
       : floor;
   const basis: WindowBasis =
-    isNap || (since && since > floor) ? "since-last-cycle" : "last-24h";
+    isQuick || (since && since > floor) ? "since-last-review" : "last-24h";
 
   const sessions = ingestSelectedSessions(projects, start, now);
   const window = computeWindow(sessions, start, now, basis);
@@ -1479,22 +1484,22 @@ export function runSleepCycle(
   );
   const aggs = [...aggregate(signals).values()].filter((agg) => agg.turns > 0);
   const totals = totalsOf(aggs);
-  const shouldRunRem = !isNap && Boolean(options.remRunner);
-  const rem =
-    shouldRunRem && options.remRunner
-      ? runRemAnalysis(
+  const shouldRunInsight = !isQuick && Boolean(options.insightRunner);
+  const insight =
+    shouldRunInsight && options.insightRunner
+      ? runInsightAnalysis(
           enabled,
           boundedSessions,
           options.analysisDepth ?? "standard",
-          options.remRunner
+          options.insightRunner
         )
       : null;
-  const remSucceeded = rem != null && !rem.error;
+  const insightSucceeded = insight != null && !insight.error;
   const heuristicFindings = selectFindings(aggs);
-  const allFindings = remSucceeded ? rem.findings : heuristicFindings;
-  // A nap surfaces only the top couple of quick wins.
-  const findings = isNap ? allFindings.slice(0, 2) : allFindings;
-  const rings = makeRingsFromRem(totals, prev, rem);
+  const allFindings = insightSucceeded ? insight.findings : heuristicFindings;
+  // A quick review surfaces only the top couple of quick wins.
+  const findings = isQuick ? allFindings.slice(0, 2) : allFindings;
+  const rings = makeRingsFromInsight(totals, prev, insight);
   const alignmentScore =
     rings.find((ring) => ring.key === "alignment")?.score ?? 70;
   const insights = projectInsightsOf(aggs);
@@ -1520,12 +1525,13 @@ export function runSleepCycle(
     recCount > 0
       ? `${bandPhrase} — alignment ${alignmentScore}. ${recCount} improvement${recCount === 1 ? "" : "s"} to review from ${totals.sessions} session${totals.sessions === 1 ? "" : "s"}${focus}.`
       : `${bandPhrase} — alignment ${alignmentScore}. ${totals.sessions} session${totals.sessions === 1 ? "" : "s"} reviewed, nothing to change.`;
-  const digest = remSucceeded && rem.digest ? rem.digest : fallbackDigest;
+  const digest =
+    insightSucceeded && insight.digest ? insight.digest : fallbackDigest;
 
   return {
-    id: `cycle_${now}`,
+    id: `review_${now}`,
     timestamp: now,
-    kind: options.kind ?? "sleep",
+    kind: options.kind ?? "full",
     reviewStatus: "unreviewed",
     rangeLabel: `${window.label} · ${totals.sessions} session${totals.sessions === 1 ? "" : "s"}${topTopicsAll.length > 0 ? ` · ${topTopicsAll.join(", ")}` : ""}`,
     sessions: totals.sessions,
@@ -1540,16 +1546,16 @@ export function runSleepCycle(
     projectInsights: insights,
     contextHealth,
     alignment: makeAlignment(totals, aggs, findings, alignmentScore),
-    cloudRedactionPreview: rem
-      ? { ...rem.redactionPreview, error: rem.error }
+    cloudRedactionPreview: insight
+      ? { ...insight.redactionPreview, error: insight.error }
       : undefined,
     provenance: provenanceFor({
       mode: "real",
       generator: "local-ingest",
       sources,
       now,
-      rem,
-      remConfigured: shouldRunRem,
+      insight,
+      insightConfigured: shouldRunInsight,
     }),
   };
 }

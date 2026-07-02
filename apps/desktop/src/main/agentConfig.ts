@@ -19,19 +19,19 @@ import type {
 /**
  * Reads the agent-harness config files for a project — AGENTS.md, CLAUDE.md,
  * and skills — and turns accepted recommendations into concrete, idempotent
- * file changes. This is the bridge between a Sleep Cycle's findings and "true"
+ * file changes. This is the bridge between a Health Review's findings and "true"
  * AGENTS.md / skill improvements on disk.
  */
 
 const HOME = os.homedir();
 
-/** Delimiters for the block Harness Dreams owns inside an AGENTS.md. */
-export const MANAGED_START = "<!-- harness-dreams:start -->";
-export const MANAGED_END = "<!-- harness-dreams:end -->";
-export const CLAUDE_MANAGED_START = "<!-- harness-dreams:claude:start -->";
-export const CLAUDE_MANAGED_END = "<!-- harness-dreams:claude:end -->";
-export const CONTEXT_MANAGED_START = "<!-- harness-dreams:context:start -->";
-export const CONTEXT_MANAGED_END = "<!-- harness-dreams:context:end -->";
+/** Delimiters for the managed block Harness Health owns inside an AGENTS.md. */
+export const MANAGED_START = "<!-- harness-health:start -->";
+export const MANAGED_END = "<!-- harness-health:end -->";
+export const CLAUDE_MANAGED_START = "<!-- harness-health:claude:start -->";
+export const CLAUDE_MANAGED_END = "<!-- harness-health:claude:end -->";
+export const CONTEXT_MANAGED_START = "<!-- harness-health:context:start -->";
+export const CONTEXT_MANAGED_END = "<!-- harness-health:context:end -->";
 
 export interface ProjectConfig {
   path: string;
@@ -50,7 +50,7 @@ export interface ProjectConfig {
   skills: string[];
   localSkills: string[];
   globalSkills: string[];
-  /** Project-local and global skill files with contents for cloud REM context. */
+  /** Project-local and global skill files with contents for cloud insight context. */
   skillFiles: Array<{ name: string; file: string; content: string }>;
   /** Claude/Codex project and home context inventory without full contents. */
   contextFiles: ContextSourceSummary[];
@@ -433,7 +433,7 @@ function buildManagedBlock(
     start,
     title,
     "",
-    "Apply these user-approved recommendations from the latest Sleep Cycle:",
+    "Apply these user-approved recommendations from the latest Harness Health Review:",
     "",
     ...lines.map((line) => `- ${line}`),
     end,
@@ -447,7 +447,7 @@ export function buildAgentsBlock(lines: string[]): string {
     lines,
     MANAGED_START,
     MANAGED_END,
-    "## Harness Dreams — accepted guidance"
+    "## Harness Health — accepted guidance"
   );
 }
 
@@ -456,7 +456,7 @@ export function buildClaudeBlock(lines: string[]): string {
     lines,
     CLAUDE_MANAGED_START,
     CLAUDE_MANAGED_END,
-    "## Harness Dreams — Claude guidance"
+    "## Harness Health — Claude guidance"
   );
 }
 
@@ -465,7 +465,7 @@ export function buildContextBlock(lines: string[]): string {
     lines,
     CONTEXT_MANAGED_START,
     CONTEXT_MANAGED_END,
-    "## Harness Dreams — context hygiene"
+    "## Harness Health — context hygiene"
   );
 }
 
@@ -532,7 +532,7 @@ export function skillPatch(
     "",
     `# ${taskLabel}`,
     "",
-    `Captured by Harness Dreams from a recurring task in ${projectName}.`,
+    `Captured by Harness Health from a recurring task in ${projectName}.`,
     "Fill in the steps the agent should follow so it stops re-deriving them:",
     "",
     "1. …",

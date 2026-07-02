@@ -1,6 +1,15 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { app } from "electron";
 
 import type {
   AnalysisProject,
@@ -43,6 +52,11 @@ const HOME = os.homedir();
 const MAX_CODEX_FILES = 900;
 const MAX_CLAUDE_FILES_PER_PROJECT = 80;
 const MAX_CONTENT = 2000;
+const MAX_DISCOVERY_PATH_DEPTH = 3;
+const PROJECT_DISCOVERY_CACHE_FILE =
+  "harness-health-project-discovery-cache.json";
+
+let refreshQueued = false;
 
 function truncate(text: string): string {
   return text.length > MAX_CONTENT
@@ -64,6 +78,54 @@ function safeStat(file: string): ReturnType<typeof statSync> | null {
   } catch {
     return null;
   }
+}
+
+function discoveryCachePath(): string {
+  return path.join(app.getPath("userData"), PROJECT_DISCOVERY_CACHE_FILE);
+}
+
+function readDiscoveryCache(): DiscoveredProject[] {
+  try {
+    const raw: unknown = JSON.parse(readFileSync(discoveryCachePath(), "utf8"));
+    if (!Array.isArray(raw)) return [];
+    return raw.filter((item): item is DiscoveredProject => {
+      if (!item || typeof item !== "object") return false;
+      const project = item as Record<string, unknown>;
+      return (
+        typeof project.path === "string" &&
+        typeof project.name === "string" &&
+        Array.isArray(project.sources) &&
+        typeof project.sessionCount === "number" &&
+        pathDepth(project.path) <= MAX_DISCOVERY_PATH_DEPTH
+      );
+    });
+  } catch {
+    return [];
+  }
+}
+
+function writeDiscoveryCache(projects: DiscoveredProject[]): void {
+  try {
+    const file = discoveryCachePath();
+    mkdirSync(path.dirname(file), { recursive: true });
+    const tmp = `${file}.tmp`;
+    writeFileSync(tmp, JSON.stringify(projects, null, 2), "utf8");
+    renameSync(tmp, file);
+  } catch (err) {
+    console.error(
+      "[localIngest] failed to persist project discovery cache",
+      err
+    );
+  }
+}
+
+function queueDiscoveryCacheRefresh(): void {
+  if (refreshQueued) return;
+  refreshQueued = true;
+  setTimeout(() => {
+    refreshQueued = false;
+    refreshProjectDiscoveryCache();
+  }, 100);
 }
 
 function mtimeMs(file: string): number | null {
@@ -108,6 +170,10 @@ function basename(projectPath: string): string {
   return path.basename(projectPath) || projectPath;
 }
 
+function pathDepth(projectPath: string): number {
+  return path.resolve(projectPath).split(path.sep).filter(Boolean).length;
+}
+
 function addProject(
   projects: Map<string, DiscoveredProject>,
   projectPath: string,
@@ -116,6 +182,7 @@ function addProject(
   lastActivityAt: number | null
 ): void {
   if (!projectPath) return;
+  if (pathDepth(projectPath) > MAX_DISCOVERY_PATH_DEPTH) return;
   const existing = projects.get(projectPath);
   if (existing) {
     if (!existing.sources.includes(source)) existing.sources.push(source);
@@ -370,7 +437,7 @@ function parseCodexSession(file: string): LocalSession | null {
   };
 }
 
-export function discoverAnalysisProjects(): DiscoveredProject[] {
+function scanAnalysisProjects(): DiscoveredProject[] {
   const projects = new Map<string, DiscoveredProject>();
 
   for (const dir of claudeProjectDirs()) {
@@ -411,6 +478,21 @@ export function discoverAnalysisProjects(): DiscoveredProject[] {
   return [...projects.values()].sort(
     (a, b) => (b.lastActivityAt ?? 0) - (a.lastActivityAt ?? 0)
   );
+}
+
+export function refreshProjectDiscoveryCache(): DiscoveredProject[] {
+  const projects = scanAnalysisProjects();
+  if (projects.length > 0) writeDiscoveryCache(projects);
+  return projects;
+}
+
+export function discoverAnalysisProjects(): DiscoveredProject[] {
+  const cached = readDiscoveryCache();
+  if (cached.length > 0) {
+    queueDiscoveryCacheRefresh();
+    return cached;
+  }
+  return refreshProjectDiscoveryCache();
 }
 
 function enabledPaths(projects: AnalysisProject[]): Set<string> {

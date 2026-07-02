@@ -7,20 +7,20 @@ vi.mock("./localIngest", () => ({
   ingestSelectedSessions: vi.fn(),
 }));
 
-vi.mock("./remAnalysis", () => ({
-  runRemAnalysis: vi.fn(),
+vi.mock("./insightAnalysis", () => ({
+  runInsightAnalysis: vi.fn(),
 }));
 
 const { ingestSelectedSessions } = await import("./localIngest");
-const { runRemAnalysis } = await import("./remAnalysis");
-const { runSleepCycle } = await import("./cycleEngine");
+const { runInsightAnalysis } = await import("./insightAnalysis");
+const { runHealthReview } = await import("./healthReviewEngine");
 
 const mockIngest = vi.mocked(ingestSelectedSessions);
-const mockRem = vi.mocked(runRemAnalysis);
+const mockRem = vi.mocked(runInsightAnalysis);
 
 const now = 1_790_000_000_000;
 const project: AnalysisProject = {
-  path: "/tmp/harness-dreams-real-project",
+  path: "/tmp/harness-health-real-project",
   name: "real-project",
   sources: ["codex"],
   enabled: true,
@@ -79,7 +79,7 @@ function sessionWithAttachmentMetadata(): LocalSession {
 }
 
 function expectFrictionMatchesFindings(
-  report: ReturnType<typeof runSleepCycle>
+  report: ReturnType<typeof runHealthReview>
 ): void {
   const findingIds = new Set(report.findings.map((finding) => finding.id));
   const friction = report.alignment?.friction ?? [];
@@ -91,14 +91,14 @@ function expectFrictionMatchesFindings(
   }
 }
 
-describe("runSleepCycle provenance", () => {
+describe("runHealthReview provenance", () => {
   beforeEach(() => {
     mockIngest.mockReset();
     mockRem.mockReset();
   });
 
   test("does not fabricate sample data when no projects are enabled", () => {
-    const report = runSleepCycle([], { now });
+    const report = runHealthReview([], { now });
 
     expect(report.sessions).toBe(0);
     expect(report.projects).toBe(0);
@@ -118,7 +118,7 @@ describe("runSleepCycle provenance", () => {
   test("returns a real quiet report when projects exist but no sessions match", () => {
     mockIngest.mockReturnValue([]);
 
-    const report = runSleepCycle([project], { now, privacyMode: "local" });
+    const report = runHealthReview([project], { now, privacyMode: "local" });
 
     expect(report.sessions).toBe(0);
     expect(report.projects).toBe(1);
@@ -135,14 +135,14 @@ describe("runSleepCycle provenance", () => {
     expect(mockIngest).toHaveBeenCalledOnce();
   });
 
-  test("uses successful CLI output to build a real sleep report", () => {
+  test("uses successful CLI output to build a real full review report", () => {
     mockIngest.mockReturnValue([session()]);
     const cliFinding: Finding = {
-      id: "rem-test-1",
+      id: "insight-test-1",
       type: "mistake",
       title: "CLI finding",
       body: "Codex found a durable rule gap in the real session output.",
-      improvement: "Run the real CLI before producing a Sleep Cycle report.",
+      improvement: "Run the real CLI before producing a Health Review report.",
       agentBenefit: "The agent waits for the configured runner output.",
       userBenefit: "The report is based on the actual analyzer result.",
       reflection: "Whether the next report remains CLI-derived.",
@@ -152,7 +152,7 @@ describe("runSleepCycle provenance", () => {
       evidence: "Please make the CLI run real data.",
       evidenceFile: "/tmp/codex-session.jsonl",
       action:
-        "Add rule: Run the real CLI before producing a Sleep Cycle report.",
+        "Add rule: Run the real CLI before producing a Health Review report.",
       category: "agentsmd",
       frictionType: "config-conflict",
     };
@@ -173,11 +173,11 @@ describe("runSleepCycle provenance", () => {
       },
     });
 
-    const report = runSleepCycle([project], {
+    const report = runHealthReview([project], {
       now,
       privacyMode: "local",
       analysisDepth: "standard",
-      remRunner: {
+      insightRunner: {
         provider: "codex",
         model: "test-model",
         claudePath: "claude",
@@ -222,7 +222,7 @@ describe("runSleepCycle provenance", () => {
   test("summarizes alignment signals instead of showing attachment metadata", () => {
     mockIngest.mockReturnValue([sessionWithAttachmentMetadata()]);
 
-    const report = runSleepCycle([project], {
+    const report = runHealthReview([project], {
       now,
       privacyMode: "local",
     });

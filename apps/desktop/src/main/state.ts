@@ -12,7 +12,7 @@ let state: RuntimeState = {
   progress: 0,
   stage: null,
   paused: false,
-  lastDreamAt: Date.now(),
+  lastReviewAt: Date.now(),
   hasUnreviewed: true,
 };
 

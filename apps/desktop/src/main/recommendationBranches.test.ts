@@ -12,7 +12,7 @@ import {
 const roots: string[] = [];
 
 function tempProject(): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), "harness-dreams-test-"));
+  const root = mkdtempSync(path.join(os.tmpdir(), "harness-health-test-"));
   roots.push(root);
   return root;
 }
@@ -30,7 +30,7 @@ function acceptedEntry(projectPath: string): ActionQueueEntry {
       file: path.join(projectPath, "AGENTS.md"),
       label: "AGENTS.md",
       snippet:
-        "<!-- harness-dreams:start -->\n## Harness Dreams - accepted guidance\n\n- Always run the real CLI before writing the report.\n<!-- harness-dreams:end -->\n",
+        "<!-- harness-health:start -->\n## Harness Health - accepted guidance\n\n- Always run the real CLI before writing the report.\n<!-- harness-health:end -->\n",
       creates: true,
     },
   };

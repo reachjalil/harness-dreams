@@ -32,7 +32,7 @@ describe("startOfDay", () => {
 });
 
 describe("demoActivityFor", () => {
-  test("midday clears the nap threshold, evening clears sleep, morning is quiet", () => {
+  test("midday clears the quick review threshold, evening clears full review, morning is quiet", () => {
     expect(demoActivityFor("midday")).toBeGreaterThanOrEqual(3);
     expect(demoActivityFor("evening")).toBeGreaterThanOrEqual(5);
     expect(demoActivityFor("morning")).toBeLessThan(3);

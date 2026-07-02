@@ -354,7 +354,7 @@ function branchGroup(
     git(group.repoRoot, ["rev-parse", "--short", "HEAD"]).stdout ||
     "main";
   const idSeed = group.entries.map((entry) => entry.findingId).join("-");
-  const branch = `codex/harness-dreams-${stamp}-${safeSlug(group.entries[0]?.project ?? "repo")}-${shortHash(idSeed)}`;
+  const branch = `codex/harness-health-${stamp}-${safeSlug(group.entries[0]?.project ?? "repo")}-${shortHash(idSeed)}`;
   const worktreePath = path.join(
     worktreesRoot,
     `${path.basename(group.repoRoot)}-${stamp}-${shortHash(group.repoRoot + idSeed)}`
@@ -424,13 +424,13 @@ function branchGroup(
       ? []
       : [
           "-c",
-          "user.email=harness-dreams@example.local",
+          "user.email=harness-health@example.local",
           "-c",
-          "user.name=Harness Dreams",
+          "user.name=Harness Health",
         ]),
     "commit",
     "-m",
-    "Apply Harness Dreams recommendations",
+    "Apply Harness Health recommendations",
   ]);
   if (!commit.ok) {
     return {

@@ -8,7 +8,7 @@ import type {
   AnalysisDepth,
   AnalysisProject,
   Finding,
-  RemRunnerConfig,
+  InsightRunnerConfig,
   RingKey,
 } from "../shared/types";
 import {
@@ -26,7 +26,7 @@ const MAX_ERROR_CHARS = 1400;
 const SECRET_RE =
   /\b(sk-[A-Za-z0-9_-]{20,}|[A-Za-z0-9_]*(?:TOKEN|SECRET|KEY|PASSWORD)[A-Za-z0-9_]*\s*[:=]\s*["']?[^"'\s]+|gh[pousr]_[A-Za-z0-9_]{20,})\b/g;
 
-interface RemProjectPayload {
+interface InsightProjectPayload {
   path: string;
   name: string;
   config: {
@@ -60,7 +60,7 @@ interface RemProjectPayload {
   }>;
 }
 
-interface RemJsonFinding {
+interface InsightJsonFinding {
   title?: string;
   body?: string;
   evidenceQuote?: string;
@@ -70,15 +70,15 @@ interface RemJsonFinding {
   skillName?: string;
 }
 
-interface RemJson {
+interface InsightJson {
   digest?: string;
   alignmentScore?: number;
   efficiencyScore?: number;
   effectivenessScore?: number;
-  findings?: RemJsonFinding[];
+  findings?: InsightJsonFinding[];
 }
 
-export interface RemAnalysisResult {
+export interface InsightAnalysisResult {
   findings: Finding[];
   digest?: string;
   scores?: Partial<Record<RingKey, number>>;
@@ -128,7 +128,7 @@ function runnerErrorSummary(
 }
 
 function resolveBinary(
-  provider: RemRunnerConfig["provider"],
+  provider: InsightRunnerConfig["provider"],
   configured: string
 ): string {
   if (
@@ -141,7 +141,7 @@ function resolveBinary(
   const candidates =
     provider === "codex"
       ? [
-          process.env.HARNESS_DREAMS_CODEX_BIN,
+          process.env.HARNESS_HEALTH_CODEX_BIN,
           process.env.CODEX_BIN,
           path.join(
             home,
@@ -159,7 +159,7 @@ function resolveBinary(
           "codex",
         ]
       : [
-          process.env.HARNESS_DREAMS_CLAUDE_BIN,
+          process.env.HARNESS_HEALTH_CLAUDE_BIN,
           process.env.CLAUDE_BIN,
           path.join(home, ".local", "bin", "claude"),
           "claude",
@@ -192,9 +192,12 @@ function runnerCwd(projects: AnalysisProject[]): string {
   );
 }
 
-function promptFor(payload: RemProjectPayload[], depth: AnalysisDepth): string {
+function promptFor(
+  payload: InsightProjectPayload[],
+  depth: AnalysisDepth
+): string {
   return [
-    "You are the Harness Dreams REM analyzer. Return only valid JSON.",
+    "You are the Harness Health review analyzer. Return only valid JSON.",
     "Analyze real windowed coding-agent turns plus project AGENTS.md, CLAUDE.md, and skills.",
     "Also inspect contextHealth, which summarizes project files, Claude home memory, Codex home context, rules.md, and skill counts.",
     "Find config-versus-behavior gaps where a durable rule, context doc, or skill would reduce future friction.",
@@ -217,7 +220,7 @@ function promptFor(payload: RemProjectPayload[], depth: AnalysisDepth): string {
   ].join("\n");
 }
 
-function argvFor(config: RemRunnerConfig, prompt: string): string[] {
+function argvFor(config: InsightRunnerConfig, prompt: string): string[] {
   if (config.provider === "codex") {
     return ["exec", ...(config.model ? ["--model", config.model] : []), prompt];
   }
@@ -230,19 +233,21 @@ function argvFor(config: RemRunnerConfig, prompt: string): string[] {
   ];
 }
 
-function parseJson(stdout: string): RemJson | null {
+function parseJson(stdout: string): InsightJson | null {
   try {
     const parsed = JSON.parse(stdout) as unknown;
     if (parsed && typeof parsed === "object" && "result" in parsed) {
       const result = (parsed as { result?: unknown }).result;
       if (typeof result === "string") return parseJson(result);
     }
-    return parsed && typeof parsed === "object" ? (parsed as RemJson) : null;
+    return parsed && typeof parsed === "object"
+      ? (parsed as InsightJson)
+      : null;
   } catch {
     const match = stdout.match(/\{[\s\S]*\}/);
     if (!match) return null;
     try {
-      return JSON.parse(match[0]) as RemJson;
+      return JSON.parse(match[0]) as InsightJson;
     } catch {
       return null;
     }
@@ -254,7 +259,7 @@ function scoreFrom(value: unknown): number | undefined {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-function scoresFrom(parsed: RemJson): Partial<Record<RingKey, number>> {
+function scoresFrom(parsed: InsightJson): Partial<Record<RingKey, number>> {
   const scores: Partial<Record<RingKey, number>> = {};
   const alignment = scoreFrom(parsed.alignmentScore);
   const efficiency = scoreFrom(parsed.efficiencyScore);
@@ -265,7 +270,7 @@ function scoresFrom(parsed: RemJson): Partial<Record<RingKey, number>> {
   return scores;
 }
 
-function categoryFor(target: RemJsonFinding["target"]): ActionCategory {
+function categoryFor(target: InsightJsonFinding["target"]): ActionCategory {
   if (target === "claudemd") return "claudemd";
   if (target === "contextdoc") return "contextdoc";
   if (target === "skill") return "skill";
@@ -275,7 +280,7 @@ function categoryFor(target: RemJsonFinding["target"]): ActionCategory {
 function makePayload(
   projects: AnalysisProject[],
   sessions: LocalSession[]
-): { payload: RemProjectPayload[]; redactions: number } {
+): { payload: InsightProjectPayload[]; redactions: number } {
   const count = { value: 0 };
   const byProject = new Map<string, LocalSession[]>();
   for (const session of sessions) {
@@ -355,7 +360,7 @@ function findEvidence(
 }
 
 function findingsFromJson(
-  parsed: RemJson,
+  parsed: InsightJson,
   sessions: LocalSession[]
 ): Finding[] {
   const out: Finding[] = [];
@@ -373,7 +378,7 @@ function findingsFromJson(
       category === "skill"
         ? skillPatch(
             config,
-            item.skillName?.trim() || item.title?.trim() || "rem-analysis",
+            item.skillName?.trim() || item.title?.trim() || "insight-analysis",
             rule,
             evidence.project
           )
@@ -383,13 +388,13 @@ function findingsFromJson(
             ? claudePatch(config, rule, evidence.project)
             : agentsPatch(config, "agentsmd", rule, evidence.project);
     out.push({
-      id: `rem-${index + 1}-${Buffer.from(evidence.projectPath).toString("hex").slice(0, 8)}`,
+      id: `insight-${index + 1}-${Buffer.from(evidence.projectPath).toString("hex").slice(0, 8)}`,
       type: category === "skill" ? "opportunity" : "mistake",
-      title: short(item.title || item.configGap || "REM finding", 72),
+      title: short(item.title || item.configGap || "Insight finding", 72),
       body:
         item.body ||
         item.configGap ||
-        "The REM pass found a config-versus-behavior gap.",
+        "The insight pass found a config-versus-behavior gap.",
       improvement: rule,
       agentBenefit:
         "The CLI runner writes the missing durable instruction before the next session.",
@@ -413,12 +418,12 @@ function findingsFromJson(
   return out;
 }
 
-export function runRemAnalysis(
+export function runInsightAnalysis(
   projects: AnalysisProject[],
   sessions: LocalSession[],
   depth: AnalysisDepth,
-  config: RemRunnerConfig
-): RemAnalysisResult | null {
+  config: InsightRunnerConfig
+): InsightAnalysisResult | null {
   if (sessions.length === 0) return null;
   const { payload, redactions } = makePayload(projects, sessions);
   if (payload.length === 0) return null;
@@ -433,7 +438,7 @@ export function runRemAnalysis(
     encoding: "utf8",
     timeout: config.timeoutMs,
     maxBuffer: 10 * 1024 * 1024,
-    env: { ...process.env, HARNESS_DREAMS_REM: "1" },
+    env: { ...process.env, HARNESS_HEALTH_INSIGHT: "1" },
   });
   const preview = {
     runner: `${config.provider}:${bin}`,

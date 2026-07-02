@@ -2,7 +2,7 @@ import type {
   ActionCategory,
   AlignmentBand,
   AlignmentDetail,
-  DreamReport,
+  HealthReport,
   Experiment,
   Finding,
   FindingType,
@@ -11,39 +11,39 @@ import type {
   Ring,
 } from "./types";
 
-type MongoDate = string | { $date?: string };
+type SerializedDate = string | { $date?: string };
 
-interface DreamLogRecommendation {
+interface HealthLogRecommendation {
   target?: string;
   action?: string;
   reason?: string;
 }
 
-interface DreamLogFriction {
+interface HealthLogFriction {
   type?: string;
   description?: string;
   evidence?: string;
 }
 
-interface DreamLogFrictionDelta {
+interface HealthLogFrictionDelta {
   description?: string;
   status?: string;
   days_persisting?: number;
 }
 
-interface DreamLogMindNode {
+interface HealthLogMindNode {
   topic?: string;
   weight?: number;
   is_new?: boolean;
 }
 
-interface DreamLogModelUsage {
+interface HealthLogModelUsage {
   source?: string;
   model?: string;
   session_count?: number;
 }
 
-interface DreamLogEntry {
+interface HealthLogEntry {
   _id?: { $oid?: string };
   date?: string;
   acted_on_recommendations?: string[];
@@ -51,18 +51,18 @@ interface DreamLogEntry {
   agent_question?: { question?: string; evidence?: string };
   alignment_label?: string;
   alignment_score?: number;
-  friction_deltas?: DreamLogFrictionDelta[];
-  friction_points?: DreamLogFriction[];
-  mind_map_nodes?: DreamLogMindNode[];
-  model_usage?: DreamLogModelUsage[];
-  recommendations?: DreamLogRecommendation[];
+  friction_deltas?: HealthLogFrictionDelta[];
+  friction_points?: HealthLogFriction[];
+  mind_map_nodes?: HealthLogMindNode[];
+  model_usage?: HealthLogModelUsage[];
+  recommendations?: HealthLogRecommendation[];
   seven_day_pattern?: Array<{
     date?: string;
     alignment_score?: number;
     alignment_label?: string;
   }>;
   synthesis_context?: string;
-  synthesized_at?: MongoDate;
+  synthesized_at?: SerializedDate;
 }
 
 const FRICTION_TYPE: Record<string, FrictionType> = {
@@ -87,7 +87,10 @@ function bandFor(score: number): AlignmentBand {
   return "fighting";
 }
 
-function parseDate(value: MongoDate | undefined, fallback: number): number {
+function parseDate(
+  value: SerializedDate | undefined,
+  fallback: number
+): number {
   const raw = typeof value === "string" ? value : value?.$date;
   const parsed = raw ? Date.parse(raw) : Number.NaN;
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -119,7 +122,7 @@ function findingTypeFor(category: ActionCategory, reason: string): FindingType {
   return category === "agentsmd" ? "opportunity" : "risk";
 }
 
-function makeRings(entry: DreamLogEntry): Ring[] {
+function makeRings(entry: HealthLogEntry): Ring[] {
   const alignment = pct(entry.alignment_score);
   const frictionCount = entry.friction_points?.length ?? 0;
   const persistent = (entry.friction_deltas ?? []).filter(
@@ -165,7 +168,7 @@ function makeRings(entry: DreamLogEntry): Ring[] {
   ];
 }
 
-function makeMetrics(entry: DreamLogEntry): Metric[] {
+function makeMetrics(entry: HealthLogEntry): Metric[] {
   const friction = entry.friction_points?.length ?? 0;
   const recs = entry.recommendations?.length ?? 0;
   const persisting = (entry.friction_deltas ?? []).filter(
@@ -237,13 +240,13 @@ function makeMetrics(entry: DreamLogEntry): Metric[] {
 }
 
 function recommendationFinding(
-  rec: DreamLogRecommendation,
+  rec: HealthLogRecommendation,
   index: number,
-  friction: DreamLogFriction | undefined
+  friction: HealthLogFriction | undefined
 ): Finding {
   const category = categoryFor(rec.target);
   const action = rec.action ?? "Review and tighten the agent workflow.";
-  const reason = rec.reason ?? "The Sleep Cycle found recurring friction.";
+  const reason = rec.reason ?? "The Health Review found recurring friction.";
   const frictionType = frictionTypeFor(friction?.type);
   return {
     id: `real_rec_${index + 1}`,
@@ -258,7 +261,7 @@ function recommendationFinding(
     userBenefit:
       "You spend fewer turns correcting assumptions, repeated questions, or missed state.",
     reflection:
-      "The next Sleep Cycle should verify whether this recommendation was applied and whether the same friction persisted.",
+      "The next Health Review should verify whether this recommendation was applied and whether the same friction persisted.",
     confidence: friction ? "high" : "medium",
     project: rec.target ?? "workflow",
     evidence: friction?.evidence ?? friction?.description ?? reason,
@@ -268,26 +271,27 @@ function recommendationFinding(
   };
 }
 
-function fallbackFinding(point: DreamLogFriction, index: number): Finding {
+function fallbackFinding(point: HealthLogFriction, index: number): Finding {
   return {
     id: `real_friction_${index + 1}`,
     type: point.type === "missing-skill" ? "risk" : "mistake",
     title: short(point.description ?? "Friction point"),
-    body: point.description ?? "The Sleep Cycle found a collaboration issue.",
+    body: point.description ?? "The Health Review found a collaboration issue.",
     improvement: "Convert the failure mode into explicit workflow guidance.",
     agentBenefit: "The agent can avoid repeating the same failure mode.",
     userBenefit: "You get fewer corrections on similar work.",
     reflection: "Watch whether this friction point appears again tomorrow.",
     confidence: "medium",
     project: point.type ?? "workflow",
-    evidence: point.evidence ?? point.description ?? "Dream log friction point",
+    evidence:
+      point.evidence ?? point.description ?? "Health log friction point",
     action: "Track and document this friction point",
     category: "contextdoc",
     frictionType: frictionTypeFor(point.type),
   };
 }
 
-function makeFindings(entry: DreamLogEntry): Finding[] {
+function makeFindings(entry: HealthLogEntry): Finding[] {
   const friction = entry.friction_points ?? [];
   const fromRecommendations = (entry.recommendations ?? []).map((rec, index) =>
     recommendationFinding(rec, index, friction[index])
@@ -296,12 +300,12 @@ function makeFindings(entry: DreamLogEntry): Finding[] {
   return friction.map(fallbackFinding);
 }
 
-function makeExperiments(entry: DreamLogEntry): Experiment[] {
+function makeExperiments(entry: HealthLogEntry): Experiment[] {
   return (entry.acted_on_recommendations ?? []).map((action, index) => ({
     id: `acted_${index + 1}`,
     title: short(action.replace(/^\[[^\]]+\]\s*/, ""), 82),
     hypothesis:
-      "Acted-on recommendations should reduce repeated corrections in future Sleep Cycles.",
+      "Acted-on recommendations should reduce repeated corrections in future Reviews.",
     agentBenefit:
       "The harness can compare future behavior against an already-applied recommendation.",
     userBenefit:
@@ -311,12 +315,12 @@ function makeExperiments(entry: DreamLogEntry): Experiment[] {
     metric: "friction recurrence · re-ask rate · tool success",
     status: "running",
     progress: 0.2,
-    progressLabel: "1 / 5 cycles",
+    progressLabel: "1 / 5 reviews",
   }));
 }
 
 function makeAlignment(
-  entry: DreamLogEntry,
+  entry: HealthLogEntry,
   findings: Finding[],
   score: number
 ): AlignmentDetail {
@@ -351,11 +355,11 @@ function makeAlignment(
   };
 }
 
-export function reportsFromDreamLogs(
+export function reportsFromHealthLogs(
   input: unknown,
   now = Date.now()
-): DreamReport[] {
-  const entries = Array.isArray(input) ? (input as DreamLogEntry[]) : [];
+): HealthReport[] {
+  const entries = Array.isArray(input) ? (input as HealthLogEntry[]) : [];
   return entries
     .map((entry, index) => {
       const timestamp = parseDate(
@@ -374,7 +378,7 @@ export function reportsFromDreamLogs(
         .map((node) => node.topic)
         .filter((topic): topic is string => Boolean(topic));
       return {
-        id: `dream_log_${entry._id?.$oid ?? date}`,
+        id: `health_log_${entry._id?.$oid ?? date}`,
         timestamp,
         reviewStatus:
           index === 0 ? ("unreviewed" as const) : ("reviewed" as const),
@@ -388,7 +392,7 @@ export function reportsFromDreamLogs(
         harness: "Codex execution review",
         digest:
           entry.synthesis_context ??
-          `Sleep Cycle found ${findings.length} recommendation${findings.length === 1 ? "" : "s"} across ${topics.join(", ") || "the active workflow"}.`,
+          `Health Review found ${findings.length} recommendation${findings.length === 1 ? "" : "s"} across ${topics.join(", ") || "the active workflow"}.`,
         rings,
         metrics: makeMetrics(entry),
         findings,

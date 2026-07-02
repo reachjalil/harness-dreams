@@ -7,7 +7,7 @@
 export type TimeOfDay = "morning" | "midday" | "evening" | "night";
 
 /**
- * Bucket a clock time into a part of the day. Midday is the lunch/nap zone.
+ * Bucket a clock time into a part of the day. Midday is the lunch/quick review zone.
  * morning 5–11 · midday 11–16 · evening 16–22 · night otherwise.
  */
 export function timeOfDay(date: Date): TimeOfDay {
@@ -18,7 +18,7 @@ export function timeOfDay(date: Date): TimeOfDay {
   return "night";
 }
 
-/** Midnight (local) for the day containing `ms`. Used as the nap window start. */
+/** Midnight (local) for the day containing `ms`. Used as the quick review window start. */
 export function startOfDay(ms: number): number {
   const date = new Date(ms);
   date.setHours(0, 0, 0, 0);
@@ -26,9 +26,9 @@ export function startOfDay(ms: number): number {
 }
 
 /**
- * Synthetic "sessions since the last cycle" for Demo Mode, scaled by time of
+ * Synthetic "sessions since the last review" for Demo Mode, scaled by time of
  * day so flipping the demo switcher actually triggers the matching moment: a
- * quiet morning, a lunch worth a nap, a full evening worth a sleep cycle.
+ * quiet morning, a lunch worth a quick review, a full evening worth a health review.
  */
 export function demoActivityFor(tod: TimeOfDay): number {
   switch (tod) {

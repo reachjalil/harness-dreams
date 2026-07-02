@@ -14,15 +14,15 @@ import { nextDemoReport, seedDemoReports } from "../shared/mock";
 import type {
   ActionCategory,
   ActionQueueEntry,
-  CycleKind,
-  DreamReport,
+  HealthReviewKind,
+  HealthReport,
   Experiment,
   Finding,
   GoalDisposition,
   ReviewDecisions,
   SyncedReviewDecision,
 } from "../shared/types";
-import { runSleepCycle } from "./cycleEngine";
+import { runHealthReview } from "./healthReviewEngine";
 import {
   applyAcceptedRecommendationsAsBranches,
   applyAcceptedRecommendationsDirectly,
@@ -30,19 +30,19 @@ import {
 import { getConfig } from "./store";
 
 /**
- * Persistent Dream Report history (newest first). Real mode starts empty when
+ * Persistent Health Report history (newest first). Real mode starts empty when
  * no local history exists; demo mode uses its own fixture-backed history file.
  */
 
-type Listener = (reports: DreamReport[]) => void;
+type Listener = (reports: HealthReport[]) => void;
 
-let reports: DreamReport[] = [];
+let reports: HealthReport[] = [];
 let reportsPath = "";
 const listeners = new Set<Listener>();
-const REPORTS_FILE = "harness-dreams-reports.json";
-const DEMO_REPORTS_FILE = "harness-dreams-demo-reports.json";
+const REPORTS_FILE = "harness-health-reports.json";
+const DEMO_REPORTS_FILE = "harness-health-demo-reports.json";
 
-function normalized(items: DreamReport[]): DreamReport[] {
+function normalized(items: HealthReport[]): HealthReport[] {
   return items.map((report, index) => {
     if (report.reviewStatus === "reviewed" || report.reviewedAt) {
       return { ...report, reviewStatus: "reviewed" as const };
@@ -89,7 +89,7 @@ function reportFileForCurrentMode(): string {
   );
 }
 
-function seedFromSample(): DreamReport[] {
+function seedFromSample(): HealthReport[] {
   if (getConfig().demoMode) return seedDemoReports(Date.now());
   return [];
 }
@@ -98,42 +98,42 @@ export function initReports(): void {
   reportsPath = reportFileForCurrentMode();
   const persisted = readJsonFile(reportsPath);
   reports = normalized(
-    Array.isArray(persisted) ? (persisted as DreamReport[]) : seedFromSample()
+    Array.isArray(persisted) ? (persisted as HealthReport[]) : seedFromSample()
   );
   persistReports();
 }
 
-export function resetReports(): DreamReport[] {
+export function resetReports(): HealthReport[] {
   reports = normalized(seedFromSample());
   publish();
   return reports;
 }
 
-export function syncReportsForConfig(): DreamReport[] {
+export function syncReportsForConfig(): HealthReport[] {
   const nextPath = reportFileForCurrentMode();
   if (nextPath === reportsPath) return getReports();
   reportsPath = nextPath;
   const persisted = readJsonFile(reportsPath);
   reports = normalized(
-    Array.isArray(persisted) ? (persisted as DreamReport[]) : seedFromSample()
+    Array.isArray(persisted) ? (persisted as HealthReport[]) : seedFromSample()
   );
   publish();
   return reports;
 }
 
-export function getReports(): DreamReport[] {
+export function getReports(): HealthReport[] {
   return normalized(reports);
 }
 
-export function getLatest(): DreamReport | null {
+export function getLatest(): HealthReport | null {
   return getReports()[0] ?? null;
 }
 
 /**
- * Record a freshly-completed Sleep Cycle. In real mode this always delegates to
+ * Record a freshly-completed Health Review. In real mode this always delegates to
  * the real engine and never falls back to sample/mock report generation.
  */
-export function addDream(kind: CycleKind = "sleep"): DreamReport {
+export function addHealthReview(kind: HealthReviewKind = "full"): HealthReport {
   const now = Date.now();
   const prev = reports[0] ?? null;
   if (getConfig().demoMode) {
@@ -150,13 +150,13 @@ export function addDream(kind: CycleKind = "sleep"): DreamReport {
     return fresh;
   }
   const config = getConfig();
-  const base = runSleepCycle(config.projects ?? [], {
+  const base = runHealthReview(config.projects ?? [], {
     since: prev?.timestamp ?? null,
     now,
     prev,
     privacyMode: config.privacyMode,
     analysisDepth: config.analysisDepth,
-    remRunner: config.remRunner,
+    insightRunner: config.insightRunner,
     kind,
   });
   const fresh = {
@@ -204,9 +204,9 @@ function goalTitleFromFinding(finding: Finding): string {
 
 function experimentFromFinding(
   finding: Finding,
-  report: DreamReport
+  report: HealthReport
 ): Experiment {
-  // Snapshot the target project now, so the next cycle can measure movement.
+  // Snapshot the target project now, so the next review can measure movement.
   const insight = report.projectInsights?.find(
     (project) => project.path === finding.projectPath
   );
@@ -222,7 +222,7 @@ function experimentFromFinding(
     metric: "alignment · re-ask rate · tool success",
     status: "running",
     progress: 0,
-    progressLabel: "0 / 3 cycles measured",
+    progressLabel: "0 / 3 reviews measured",
     projectPath: finding.projectPath,
     category: finding.category,
     baseline: insight
@@ -236,7 +236,7 @@ function experimentFromFinding(
 }
 
 function applyAcceptedExperiments(
-  report: DreamReport,
+  report: HealthReport,
   entries: ActionQueueEntry[]
 ): Experiment[] {
   const acceptedIds = new Set(
@@ -267,7 +267,7 @@ function applyAcceptedExperiments(
 export function revertConfigUpdate(
   reportId: string,
   findingId: string
-): DreamReport | null {
+): HealthReport | null {
   let changed = false;
   reports = reports.map((report) => {
     if (report.id !== reportId) return report;
@@ -326,7 +326,7 @@ export function setGoalDisposition(
   reportId: string,
   experimentId: string,
   disposition: GoalDisposition | null
-): DreamReport | null {
+): HealthReport | null {
   const target = reports.find((report) => report.id === reportId);
   if (!target) return null;
 
@@ -353,7 +353,7 @@ export function setGoalDisposition(
 }
 
 function queueFromDecisions(
-  report: DreamReport,
+  report: HealthReport,
   decisions: ReviewDecisions = {}
 ): ActionQueueEntry[] {
   const entries: ActionQueueEntry[] = [];
@@ -400,7 +400,7 @@ function applyApprovedGuidance(
     return entries.map((entry, index) => {
       if (entry.state !== "accepted" || entry.reviewBranch) return entry;
       const slug = entry.project.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const branch = `demo/harness-dreams-${slug}`;
+      const branch = `demo/harness-health-${slug}`;
       return {
         ...entry,
         reviewBranch: {
@@ -433,11 +433,11 @@ function applyApprovedGuidance(
   );
 }
 
-/** Explicit user review. Only the newest cycle is reviewable. */
+/** Explicit user review. Only the newest review is reviewable. */
 export function markReportReviewed(
   id?: string,
   decisions: ReviewDecisions = {}
-): DreamReport | null {
+): HealthReport | null {
   reports = normalized(reports);
   const latest = reports[0] ?? null;
   if (latest?.reviewStatus !== "unreviewed") return null;
@@ -457,7 +457,7 @@ export function markReportReviewed(
   return marked;
 }
 
-function decisionTime(report: DreamReport, entry: ActionQueueEntry): number {
+function decisionTime(report: HealthReport, entry: ActionQueueEntry): number {
   return entry.decidedAt ?? report.reviewedAt ?? report.timestamp;
 }
 
@@ -482,7 +482,7 @@ function decisionEntryForFinding(
 }
 
 function orderedDecisionEntries(
-  report: DreamReport,
+  report: HealthReport,
   byFinding: Map<string, ActionQueueEntry>
 ): ActionQueueEntry[] {
   const ordered = report.findings
@@ -502,7 +502,7 @@ function orderedDecisionEntries(
  */
 export function mergeRemoteReviewDecisions(incoming: SyncedReviewDecision[]): {
   applied: number;
-  reports: DreamReport[];
+  reports: HealthReport[];
 } {
   if (incoming.length === 0) return { applied: 0, reports: getReports() };
 
