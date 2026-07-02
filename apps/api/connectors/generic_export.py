@@ -1,5 +1,5 @@
 """
-Watches ~/.dream/exports/ for manually dropped conversation exports.
+Watches ~/.harness-health/exports/ for manually dropped conversation exports.
 Supports:
   - *.json  → { source?, turns: [{role, content, timestamp?}] }
   - *.md    → treated as a single-turn note
@@ -17,7 +17,7 @@ from ingestion.normalizer import (
     NormalizedSession, Turn, compute_metadata, truncate_content
 )
 
-_DEFAULT_EXPORT_FOLDER = Path.home() / ".dream" / "exports"
+_DEFAULT_EXPORT_FOLDER = Path.home() / ".harness-health" / "exports"
 
 
 def _now() -> datetime:

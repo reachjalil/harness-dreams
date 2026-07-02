@@ -1,7 +1,7 @@
 """
 Two-stage synthesis pipeline:
-  Stage 1 — Observer: reads raw sessions + configs + yesterday's DreamLog → DayObservation
-  Stage 2 — Synthesizer: reads DayObservation + past 7 days → DreamLog (saved to MongoDB)
+  Stage 1 — Observer: reads raw sessions + configs + yesterday's HealthLog → DayObservation
+  Stage 2 — Synthesizer: reads DayObservation + past 7 days → HealthLog
 """
 import os
 import json
@@ -10,11 +10,10 @@ from datetime import datetime, timezone
 from pydantic_ai import Agent
 from dotenv import load_dotenv
 
-from db import get_db
 from ingestion.pipeline import IngestResult
 from ingestion.normalizer import NormalizedSession
 from connectors.agent_configs import AgentConfig
-from synthesis.schema import DayObservation, DreamLog
+from synthesis.schema import DayObservation, HealthLog
 from synthesis.prompt import OBSERVER_PROMPT, SYNTHESIZER_PROMPT
 
 load_dotenv()
@@ -43,9 +42,9 @@ def _format_config(c: AgentConfig) -> str:
 
 def _format_yesterday(doc: dict | None) -> str:
     if not doc:
-        return "## Yesterday's DreamLog\n\nNo baseline — this is Day 1."
+        return "## Yesterday's HealthLog\n\nNo baseline — this is Day 1."
     lines = [
-        f"## Yesterday's DreamLog ({doc.get('date', 'unknown')})",
+        f"## Yesterday's HealthLog ({doc.get('date', 'unknown')})",
         f"Alignment: {doc.get('alignment_score', '?')} ({doc.get('alignment_label', '?')})",
         f"Your mood: {doc.get('your_mood', {}).get('label', '?')}",
         f"Agent mood: {doc.get('agent_mood', {}).get('label', '?')}",
@@ -119,7 +118,7 @@ def _build_synthesizer_context(
         ]
 
     parts = [
-        f"Synthesize the DreamLog for {date}.",
+        f"Synthesize the HealthLog for {date}.",
         f"\n## DayObservation (from Observer agent)\n\n```json\n{obs_json}\n```",
     ]
     if yesterday_recs:
@@ -132,27 +131,15 @@ def _build_synthesizer_context(
 
 # ── Main entry point ──────────────────────────────────────────────────────────
 
-async def synthesize(result: IngestResult, date: str | None = None) -> DreamLog:
+async def synthesize(result: IngestResult, date: str | None = None) -> HealthLog:
     target_date = date or datetime.now(timezone.utc).date().isoformat()
-
-    db = get_db()
-
-    # Yesterday's full DreamLog for diff analysis
-    yesterday_doc = await db.dream_logs.find_one(
-        {"date": {"$lt": target_date}},
-        sort=[("date", -1)],
-    )
-
-    # Past 7 days (lightweight) for trend
-    past_docs = await db.dream_logs.find(
-        {"date": {"$lt": target_date}},
-        {"date": 1, "alignment_score": 1, "alignment_label": 1},
-    ).sort("date", -1).limit(7).to_list(7)
+    yesterday_doc = None
+    past_docs: list[dict] = []
 
     os.environ["GOOGLE_API_KEY"] = os.environ["GEMINI_API_KEY"]
 
     # ── Stage 1: Observer ─────────────────────────────────────────────────────
-    print("  [Stage 1] Observer reading sessions + configs + yesterday's dream...")
+    print("  [Stage 1] Observer reading sessions + configs + yesterday's health...")
     observer = Agent(
         model="google:gemini-2.5-flash",
         output_type=DayObservation,
@@ -167,26 +154,17 @@ async def synthesize(result: IngestResult, date: str | None = None) -> DreamLog:
     print(f"  [Stage 1] Done. Topics: {observation.topics_raw}")
 
     # ── Stage 2: Synthesizer ──────────────────────────────────────────────────
-    print("  [Stage 2] Synthesizer producing DreamLog...")
+    print("  [Stage 2] Synthesizer producing HealthLog...")
     synthesizer = Agent(
         model="google:gemini-2.5-flash",
-        output_type=DreamLog,
+        output_type=HealthLog,
         system_prompt=SYNTHESIZER_PROMPT,
         retries=2,
     )
     synth_context = _build_synthesizer_context(observation, yesterday_doc, past_docs, target_date)
-    dream_result = await synthesizer.run(synth_context)
-    dream_log = dream_result.output
-    dream_log.date = target_date
-    print(f"  [Stage 2] Done. Alignment: {dream_log.alignment_score:.2f} ({dream_log.alignment_label})")
+    health_result = await synthesizer.run(synth_context)
+    health_log = health_result.output
+    health_log.date = target_date
+    print(f"  [Stage 2] Done. Alignment: {health_log.alignment_score:.2f} ({health_log.alignment_label})")
 
-    # ── Save to MongoDB ───────────────────────────────────────────────────────
-    doc = dream_log.model_dump()
-    doc["synthesized_at"] = datetime.now(timezone.utc)
-    await db.dream_logs.update_one(
-        {"date": target_date},
-        {"$set": doc},
-        upsert=True,
-    )
-
-    return dream_log
+    return health_log

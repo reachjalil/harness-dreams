@@ -1,6 +1,6 @@
 """
-Reads all local agent data into memory. Nothing is written to MongoDB here.
-MongoDB only receives the final DreamLog produced by the synthesis agent.
+Reads all local agent data into memory. Nothing is written to cloud storage here.
+Cloud sync receives only encrypted reports produced by the desktop app.
 
 Returns:
   IngestResult.sessions — NormalizedSession objects from all connectors

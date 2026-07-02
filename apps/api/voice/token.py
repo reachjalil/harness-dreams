@@ -6,13 +6,13 @@ from livekit.api import AccessToken, RoomAgentDispatch, RoomConfiguration, Video
 LIVEKIT_URL = os.environ.get("LIVEKIT_URL", "ws://localhost:7880")
 API_KEY = os.environ.get("LIVEKIT_API_KEY", "devkey")
 API_SECRET = os.environ.get("LIVEKIT_API_SECRET", "secret")
-AGENT_NAME = "dream-voice"
+AGENT_NAME = "health-voice"
 
 
 def create_participant_token() -> tuple[str, str]:
     """Returns (jwt, room_name). Room name is unique per session so dispatch always fires."""
     identity = f"user-{uuid.uuid4().hex[:8]}"
-    room_name = f"dream-{uuid.uuid4().hex[:8]}"
+    room_name = f"health-{uuid.uuid4().hex[:8]}"
     token = (
         AccessToken(api_key=API_KEY, api_secret=API_SECRET)
         .with_identity(identity)

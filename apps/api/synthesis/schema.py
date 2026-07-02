@@ -87,7 +87,7 @@ class DayObservation(BaseModel):
     # Commit vs session drift
     commit_drift: str            # what was discussed vs what was actually shipped
 
-    # Delta analysis vs yesterday's DreamLog
+    # Delta analysis vs yesterday's HealthLog
     config_changes_observed: list[str]   # configs that look different from yesterday
     friction_observed: list[str]         # friction patterns seen today
     yesterday_recs_followed: list[str]   # recommendations that appear to have been acted on
@@ -98,9 +98,9 @@ class DayObservation(BaseModel):
     day_summary: str
 
 
-# ── Final output: DreamLog ────────────────────────────────────────────────────
+# ── Final output: HealthLog ────────────────────────────────────────────────────
 
-class DreamLog(BaseModel):
+class HealthLog(BaseModel):
     date: str
 
     # Mind map

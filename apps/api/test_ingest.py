@@ -36,7 +36,7 @@ async def main():
             print(f"  - {e}")
     else:
         print("No errors.")
-    print("\n(Nothing written to MongoDB — data stays local until synthesis.)")
+    print("\nNothing written to cloud storage — data stays local until sync.")
 
 
 asyncio.run(main())

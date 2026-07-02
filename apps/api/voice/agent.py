@@ -1,5 +1,5 @@
 """
-Dream voice agent — runs as a LiveKit Agents worker process.
+Harness Health voice agent — runs as a LiveKit Agents worker process.
 
 Start with:
     cd apps/api && .venv/bin/python -m voice.agent dev
@@ -7,15 +7,11 @@ Start with:
 Requires livekit-server running locally:
     livekit-server --dev
 """
-import asyncio
 import os
-from datetime import datetime, timezone
 from dotenv import load_dotenv
 from livekit import agents
 from livekit.agents import AgentServer, AgentSession, Agent, ConversationItemAddedEvent
 from livekit.plugins import google
-
-from db import get_db
 
 load_dotenv()
 os.environ.setdefault("GOOGLE_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
@@ -25,17 +21,17 @@ API_KEY = "devkey"
 API_SECRET = "secret"
 
 _INSTRUCTIONS = """\
-You are Dream — a voice AI that helps developers process and clean up the mess \
+You are the Harness Health Coach — a voice AI that helps developers process and clean up the mess \
 left behind by their coding agent sessions.
 
-Your job is to act like REM sleep for a developer's messy agent history: \
+Your job is to act like AI insight analysis for a developer's messy agent history: \
 turn raw, noisy session logs into signal. You help them figure out what to keep, \
 what to discard, what went wrong, and how to set up their next session better.
 
 You focus on two things:
 1. Cleanup — helping the developer triage their agent history: dead ends to drop, \
 decisions worth saving, context that should carry forward, and clutter that's just noise.
-2. Dreaming — processing what happened so tomorrow's sessions start cleaner. \
+2. Running — processing what happened so tomorrow's sessions start cleaner. \
 You surface patterns: where agents got lost, where the developer had to re-explain things, \
 where momentum stalled, and what a better handoff would have looked like.
 
@@ -51,7 +47,7 @@ Voice rules:
 """
 
 
-class DreamVoiceAgent(Agent):
+class HealthVoiceAgent(Agent):
     def __init__(self) -> None:
         super().__init__(instructions=_INSTRUCTIONS)
 
@@ -59,24 +55,14 @@ class DreamVoiceAgent(Agent):
 server = AgentServer()
 
 
-@server.rtc_session(agent_name="dream-voice")
-async def dream_voice(ctx: agents.JobContext):
+@server.rtc_session(agent_name="health-voice")
+async def health_voice(ctx: agents.JobContext):
     session = AgentSession(
         llm=google.realtime.RealtimeModel(
             voice="Puck",
             temperature=0.8,
             instructions=_INSTRUCTIONS,
         )
-    )
-
-    db = get_db()
-    room_name = ctx.room.name
-    now = datetime.now(timezone.utc)
-
-    await db.voice_sessions.update_one(
-        {"room_name": room_name},
-        {"$setOnInsert": {"room_name": room_name, "started_at": now, "messages": []}},
-        upsert=True,
     )
 
     @session.on("conversation_item_added")
@@ -86,21 +72,13 @@ async def dream_voice(ctx: agents.JobContext):
         role = getattr(msg, "role", None)
         if not text or role not in ("user", "assistant"):
             return
-        asyncio.ensure_future(
-            db.voice_sessions.update_one(
-                {"room_name": room_name},
-                {
-                    "$push": {"messages": {"role": role, "content": text, "at": datetime.now(timezone.utc)}},
-                    "$set": {"updated_at": datetime.now(timezone.utc)},
-                },
-            )
-        )
+        print(f"[voice] {role}: {text[:160]}")
 
-    await session.start(room=ctx.room, agent=DreamVoiceAgent())
+    await session.start(room=ctx.room, agent=HealthVoiceAgent())
 
     await session.generate_reply(
         instructions=(
-            "Greet the user in one short sentence. You're Dream. "
+            "Greet the user in one short sentence. You're the Harness Health Coach. "
             "Your job is to help them clean up their agent session history and figure out what's worth keeping."
         )
     )

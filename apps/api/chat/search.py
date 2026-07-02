@@ -2,7 +2,7 @@
 Chat history search service.
 
 Searches across all coding agent session sources using keyword matching.
-Used as a tool by the Dream chat agent so it can look up specific conversations
+Used as a tool by the Health chat agent so it can look up specific conversations
 on demand rather than loading everything into context.
 
 Strategy by source:
@@ -383,7 +383,7 @@ async def _scan_opencode(compiled: re.Pattern, max_results: int) -> list[SearchM
 # Public API
 # ---------------------------------------------------------------------------
 
-_PI_EXPORT_DIR = Path(os.getenv("PI_EXPORT_DIR", str(Path.home() / ".dream" / "exports" / "pi")))
+_PI_EXPORT_DIR = Path(os.getenv("PI_EXPORT_DIR", str(Path.home() / ".harness-health" / "exports" / "pi")))
 
 _GREP_SOURCE_MAP: dict[str, list[tuple[Path, str, object]]] = {
     "claude-code": [

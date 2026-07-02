@@ -8,7 +8,7 @@ the generic exports folder, plus supports Pi's own data export format.
 How to export from Pi:
   1. Go to pi.ai → Settings → Privacy → Download your data
   2. Pi sends a ZIP containing conversations.json
-  3. Extract and drop conversations.json into ~/.dream/exports/pi/
+  3. Extract and drop conversations.json into ~/.harness-health/exports/pi/
 
 Supported export formats:
   A. Pi official export — conversations.json:
@@ -31,7 +31,7 @@ from ingestion.normalizer import (
     NormalizedSession, Turn, compute_metadata, truncate_content,
 )
 
-_DEFAULT_PI_EXPORT_DIR = Path.home() / ".dream" / "exports" / "pi"
+_DEFAULT_PI_EXPORT_DIR = Path.home() / ".harness-health" / "exports" / "pi"
 
 _ROLE_MAP = {
     "human": "user",
