@@ -7,6 +7,16 @@ Turborepo + Biome + TypeScript monorepo (see the root `README.md`,
 `pnpm-workspace.yaml`, `turbo.json`). The architecture is in
 [17-architecture.md](17-architecture.md).
 
+## Current extraction decision
+
+The only extracted runtime package today is `packages/core`, which owns the
+shared sync protocol and crypto helpers used by desktop, mobile, and the
+Cloudflare Worker. The Phase 5 review checked
+`apps/desktop/src/shared/healthLogAnalysis.ts` and
+`apps/desktop/src/main/insightAnalysis.ts` for site/mobile consumers and found
+none. Those modules stay desktop-local until another app imports them; extracting
+them now would create package surface area without a caller.
+
 ## Target layout
 
 ```
