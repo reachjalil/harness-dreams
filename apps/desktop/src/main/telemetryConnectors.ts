@@ -12,6 +12,7 @@ import type {
   NormalizedEvent,
   NormalizedEventKind,
 } from "../shared/types";
+import { logger } from "./logger";
 import type { TelemetryStore } from "./telemetryStore";
 
 export const CONNECTOR_VERSION = "2026-06-29.realtime-v1";
@@ -81,6 +82,15 @@ const ASSISTANT_MESSAGE_TYPES = new Set(["assistant", "assistant_message"]);
 const STAT_CONCURRENCY = 64;
 const DISCOVERY_BATCH_SIZE = 250;
 const DISCOVERY_BATCH_DELAY_MS = 6;
+const TRANSIENT_READ_CODES = new Set([
+  "EBUSY",
+  "EAGAIN",
+  "EMFILE",
+  "ENFILE",
+  "ENOENT",
+  "EPERM",
+]);
+const TRANSIENT_READ_ATTEMPTS = 3;
 
 const DISCOVERY_WORKER_SOURCE = `
 const { existsSync } = require("node:fs");
@@ -213,6 +223,41 @@ async function walkJsonl(root, source, progressState) {
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function errorCode(error: unknown): string | undefined {
+  return typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+    ? error.code
+    : undefined;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withTransientReadRetry<T>(
+  operation: () => Promise<T>
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < TRANSIENT_READ_ATTEMPTS; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      const finalAttempt = attempt === TRANSIENT_READ_ATTEMPTS - 1;
+      const code = errorCode(error);
+      if (finalAttempt || !code || !TRANSIENT_READ_CODES.has(code)) {
+        throw error;
+      }
+      await delay(25 * 2 ** attempt);
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Transient file read failed.");
 }
 
 function str(value: unknown): string | undefined {
@@ -854,14 +899,16 @@ async function readFileSlice(
   const length = Math.max(0, end - start);
   if (length === 0) return "";
 
-  const handle = await open(filePath, "r");
-  try {
-    const buffer = Buffer.alloc(length);
-    const { bytesRead } = await handle.read(buffer, 0, length, start);
-    return buffer.subarray(0, bytesRead).toString("utf8");
-  } finally {
-    await handle.close();
-  }
+  return withTransientReadRetry(async () => {
+    const handle = await open(filePath, "r");
+    try {
+      const buffer = Buffer.alloc(length);
+      const { bytesRead } = await handle.read(buffer, 0, length, start);
+      return buffer.subarray(0, bytesRead).toString("utf8");
+    } finally {
+      await handle.close();
+    }
+  });
 }
 
 function completeJsonlPrefix(raw: string): {
@@ -893,7 +940,8 @@ export async function parseTelemetryFile(
   events: NormalizedEvent[];
   changed: boolean;
 }> {
-  const info = fileInfo ?? (await stat(file.filePath));
+  const info =
+    fileInfo ?? (await withTransientReadRetry(() => stat(file.filePath)));
   const canResume =
     cursor &&
     cursor.connectorVersion === CONNECTOR_VERSION &&
@@ -982,9 +1030,12 @@ export async function ingestTelemetryFiles(
   const snapshots = (
     await mapConcurrent(files, STAT_CONCURRENCY, async (file) => {
       try {
-        return { file, info: await stat(file.filePath) };
+        return {
+          file,
+          info: await withTransientReadRetry(() => stat(file.filePath)),
+        };
       } catch (err) {
-        console.warn("[telemetry] failed to stat", file.filePath, err);
+        logger.warn("[telemetry] failed to stat", file.filePath, err);
         return null;
       }
     })
@@ -1014,7 +1065,7 @@ export async function ingestTelemetryFiles(
       updatedCursors.push(parsed.cursor);
       cursorsUpdated += 1;
     } catch (err) {
-      console.warn("[telemetry] failed to ingest", file.filePath, err);
+      logger.warn("[telemetry] failed to ingest", file.filePath, err);
     }
   }
   await store.upsertCursors(updatedCursors);

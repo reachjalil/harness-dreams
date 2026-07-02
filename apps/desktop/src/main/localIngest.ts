@@ -16,6 +16,7 @@ import type {
   AnalysisSource,
   DiscoveredProject,
 } from "../shared/types";
+import { logger } from "./logger";
 
 export type Role = "user" | "assistant";
 
@@ -112,7 +113,7 @@ function writeDiscoveryCache(projects: DiscoveredProject[]): void {
     writeFileSync(tmp, JSON.stringify(projects, null, 2), "utf8");
     renameSync(tmp, file);
   } catch (err) {
-    console.error(
+    logger.error(
       "[localIngest] failed to persist project discovery cache",
       err
     );

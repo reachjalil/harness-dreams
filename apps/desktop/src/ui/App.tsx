@@ -4,6 +4,7 @@ import Browse from "./Browse";
 import Chat from "./Chat";
 import { CloudSyncDialog } from "./CloudSyncDialog";
 import ConfigUpdates from "./ConfigUpdates";
+import { PageBoundary } from "./ErrorBoundary";
 import Review from "./Review";
 import { alignmentSplit, band, Sidebar, type Tab } from "./components";
 import Lab from "./Lab";
@@ -116,41 +117,59 @@ function MainShell({ hd }: { hd: HarnessHealth }): ReactElement {
             className={`scroll-inner${tab === "today" ? " scroll-inner-dash" : ""}`}
           >
             {tab === "today" ? (
-              <Today
-                hd={hd}
-                report={reportForProgress}
-                pendingReview={unreviewedReport ?? null}
-                onOpenGoals={() => setTab("lab")}
-                onRunHealthReview={runHealthReview}
-                onRunQuickReview={runQuickReview}
-                onOpenReview={() => {
-                  if (hd.reports[0]) selectReview(hd.reports[0].id);
-                  else navigate("review");
-                }}
-              />
+              <PageBoundary name="Today">
+                <Today
+                  hd={hd}
+                  report={reportForProgress}
+                  pendingReview={unreviewedReport ?? null}
+                  onOpenGoals={() => setTab("lab")}
+                  onRunHealthReview={runHealthReview}
+                  onRunQuickReview={runQuickReview}
+                  onOpenReview={() => {
+                    if (hd.reports[0]) selectReview(hd.reports[0].id);
+                    else navigate("review");
+                  }}
+                />
+              </PageBoundary>
             ) : null}
             {tab === "browse" ? (
-              <Browse hd={hd} report={reportForProgress} />
+              <PageBoundary name="Browse">
+                <Browse hd={hd} report={reportForProgress} />
+              </PageBoundary>
             ) : null}
             {tab === "review" ? (
-              <Review
-                hd={hd}
-                report={selected}
-                reports={hd.reports}
-                selectedId={selectedId}
-                onSelectReview={selectReview}
-                onBackToList={() => setSelectedId(null)}
-                onOpenImprovements={() => setTab("lab")}
-                onRunHealthReview={runHealthReview}
-              />
+              <PageBoundary name="Review">
+                <Review
+                  hd={hd}
+                  report={selected}
+                  reports={hd.reports}
+                  selectedId={selectedId}
+                  onSelectReview={selectReview}
+                  onBackToList={() => setSelectedId(null)}
+                  onOpenImprovements={() => setTab("lab")}
+                  onRunHealthReview={runHealthReview}
+                />
+              </PageBoundary>
             ) : null}
-            {tab === "lab" ? <Lab hd={hd} report={reportForProgress} /> : null}
+            {tab === "lab" ? (
+              <PageBoundary name="Lab">
+                <Lab hd={hd} report={reportForProgress} />
+              </PageBoundary>
+            ) : null}
             {tab === "config" ? (
-              <ConfigUpdates hd={hd} reports={hd.reports} />
+              <PageBoundary name="Config Updates">
+                <ConfigUpdates hd={hd} reports={hd.reports} />
+              </PageBoundary>
             ) : null}
-            {tab === "chat" ? <Chat /> : null}
+            {tab === "chat" ? (
+              <PageBoundary name="Chat">
+                <Chat />
+              </PageBoundary>
+            ) : null}
             {tab === "settings" ? (
-              <Settings hd={hd} onRunHealthReview={runHealthReview} />
+              <PageBoundary name="Settings">
+                <Settings hd={hd} onRunHealthReview={runHealthReview} />
+              </PageBoundary>
             ) : null}
           </div>
         </div>

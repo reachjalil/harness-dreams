@@ -24,6 +24,7 @@ import {
   type TelemetryFileRef,
 } from "./telemetryConnectors";
 import { scanHarnessConfig } from "./harnessConfigScanner";
+import { logger } from "./logger";
 import { getConfig, onConfigChange } from "./store";
 import { openTelemetryStore, type TelemetryStore } from "./telemetryStore";
 
@@ -206,7 +207,7 @@ function refreshConfigArtifactsInBackground(now: number): void {
       }).then(emitSnapshot);
     })
     .catch((err) => {
-      console.warn("[telemetry] config artifact scan failed", err);
+      logger.warn("[telemetry] config artifact scan failed", err);
     })
     .finally(() => {
       configArtifactRefresh = null;

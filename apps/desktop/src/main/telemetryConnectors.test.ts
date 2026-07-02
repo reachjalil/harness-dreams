@@ -1,7 +1,19 @@
 import { appendFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
+const electronMock = vi.hoisted(() => {
+  const osModule = require("node:os") as typeof import("node:os");
+  const pathModule = require("node:path") as typeof import("node:path");
+  return { logsDir: pathModule.join(osModule.tmpdir(), "hd-telemetry-logs") };
+});
+
+vi.mock("electron", () => ({
+  app: {
+    getPath: () => electronMock.logsDir,
+  },
+}));
 
 import {
   discoverTelemetryFiles,

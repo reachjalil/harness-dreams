@@ -5,6 +5,7 @@ import { initCloudSync, shutdownCloudSync } from "./cloudSync";
 import { createController, initOrchestration } from "./controller";
 import { initDeviceSyncServer, shutdownDeviceSyncServer } from "./deviceSync";
 import { registerIpc } from "./ipc";
+import { logger } from "./logger";
 import { initReports } from "./reports";
 import { getState } from "./state";
 import { getConfig, initStore, setConfig } from "./store";
@@ -92,7 +93,7 @@ if (!app.requestSingleInstanceLock()) {
     .whenReady()
     .then(bootstrap)
     .catch((err) => {
-      console.error("[app] failed to start", err);
+      logger.error("[app] failed to start", err);
     });
 
   // Menu-bar app: stay alive with no visible windows (macOS-first).
@@ -162,13 +163,13 @@ function bootstrap(): void {
     broadcastIngestStatus(status);
   });
   void initTelemetryService().catch((err) => {
-    console.error("[telemetry] failed to start", err);
+    logger.error("[telemetry] failed to start", err);
   });
 
   // First run → open onboarding. Otherwise stay quietly in the menu bar.
   if (!getConfig().onboarded) showMain();
 
-  console.log(
+  logger.info(
     `[hd] ready — menu-bar tray initialized, phase=${getState().phase}, onboarded=${getConfig().onboarded}`
   );
 }

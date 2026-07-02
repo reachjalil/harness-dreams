@@ -18,6 +18,7 @@ import type {
 } from "../shared/types";
 import { sanitizeReportForCloud } from "./cloudRedaction";
 import { registerPeerPairingSession } from "./cloudSync";
+import { logger } from "./logger";
 import { getReports } from "./reports";
 import { getConfig, setConfig } from "./store";
 import { getTelemetrySnapshot } from "./telemetry";
@@ -182,12 +183,12 @@ export function initDeviceSyncServer(): void {
     void handleDevSyncRequest(request, response);
   });
   devSyncServer.listen(DEV_SYNC_PORT, "127.0.0.1", () => {
-    console.log(
+    logger.info(
       `[device-sync] dev pairing endpoint listening on http://127.0.0.1:${DEV_SYNC_PORT}`
     );
   });
   devSyncServer.on("error", (err) => {
-    console.warn("[device-sync] dev pairing endpoint unavailable", err);
+    logger.warn("[device-sync] dev pairing endpoint unavailable", err);
   });
 }
 

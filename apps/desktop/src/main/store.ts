@@ -13,6 +13,7 @@ import { DEFAULT_SIGNAL_API_BASE_URL } from "@harness-health/core";
 
 import { AppConfigSchema } from "../shared/schemas";
 import type { AppConfig } from "../shared/types";
+import { logger } from "./logger";
 
 /**
  * Tiny dependency-free config store: a single validated JSON file in the
@@ -101,7 +102,7 @@ function persist(): void {
     writeFileSync(tmp, JSON.stringify(config, null, 2), "utf8");
     renameSync(tmp, filePath);
   } catch (err) {
-    console.error("[store] failed to persist config", err);
+    logger.error("[store] failed to persist config", err);
   }
 }
 
@@ -159,7 +160,7 @@ export function initStore(): AppConfig {
       persist();
     }
   } catch (err) {
-    console.error("[store] invalid config, using defaults", err);
+    logger.error("[store] invalid config, using defaults", err);
     config = withRuntimeDefaults(DEFAULT_CONFIG);
   }
   return config;

@@ -27,6 +27,7 @@ import {
   applyAcceptedRecommendationsAsBranches,
   applyAcceptedRecommendationsDirectly,
 } from "./recommendationBranches";
+import { logger } from "./logger";
 import { getConfig } from "./store";
 
 /**
@@ -68,7 +69,7 @@ function persistReports(): void {
     writeFileSync(tmp, JSON.stringify(reports, null, 2), "utf8");
     renameSync(tmp, reportsPath);
   } catch (err) {
-    console.error("[reports] failed to persist reports", err);
+    logger.error("[reports] failed to persist reports", err);
   }
 }
 
@@ -77,7 +78,7 @@ function readJsonFile(file: string): unknown | null {
     if (!existsSync(file)) return null;
     return JSON.parse(readFileSync(file, "utf8"));
   } catch (err) {
-    console.error("[reports] failed to read", file, err);
+    logger.error("[reports] failed to read", file, err);
     return null;
   }
 }
