@@ -4,6 +4,10 @@ build
 .turbo
 .cache
 coverage
+.wrangler/
+
+# Local health-review evidence can include private session paths/snippets.
+/.harness-health-evidence/
 
 # Swift / Xcode build artifacts
 .build/
@@ -38,5 +42,7 @@ tmp/
 /.agents/
 /.claude/
 /AGENTS.md
+/CLAUDE.md
 !/.harness/
 !/.harness/**
+/.harness/**/.DS_Store
