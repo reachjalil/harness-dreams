@@ -87,18 +87,6 @@ importers:
       '@harness-health/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@health-sdk/domain':
-        specifier: link:../../../health-sdk/packages/domain
-        version: link:../../../health-sdk/packages/domain
-      '@health-sdk/harness-desktop-ui':
-        specifier: link:../../../health-sdk/packages/harness-desktop-ui
-        version: link:../../../health-sdk/packages/harness-desktop-ui
-      '@health-sdk/tokens':
-        specifier: link:../../../health-sdk/packages/tokens
-        version: link:../../../health-sdk/packages/tokens
-      '@health-sdk/ui-react':
-        specifier: link:../../../health-sdk/packages/ui-react
-        version: link:../../../health-sdk/packages/ui-react
       chokidar:
         specifier: ^5.0.0
         version: 5.0.0

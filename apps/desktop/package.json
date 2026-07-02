@@ -37,10 +37,6 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.3",
-    "@health-sdk/domain": "link:../../../health-sdk/packages/domain",
-    "@health-sdk/harness-desktop-ui": "link:../../../health-sdk/packages/harness-desktop-ui",
-    "@health-sdk/tokens": "link:../../../health-sdk/packages/tokens",
-    "@health-sdk/ui-react": "link:../../../health-sdk/packages/ui-react",
     "@harness-health/core": "workspace:*",
     "chokidar": "^5.0.0",
     "electron-squirrel-startup": "^1.0.1",
