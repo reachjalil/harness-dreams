@@ -218,9 +218,9 @@ export function Sidebar(props: {
   alignment: number;            // 0..100, the persistent signature number
   band: AlignmentBand;          // "collaborating" | "friction" | "fighting"
   phase: HealthReviewPhase;            // status dot + label
-  lastDreamAt: number | null;
+  lastReviewAt: number | null;
   unreviewed: number;          // badge count on Review (0 = hidden)
-  onDreamNow: () => void;
+  onRunHealthReview: () => void;
 }): ReactElement;
 
 export function NavItem(props: {

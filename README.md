@@ -21,6 +21,9 @@ pnpm --filter @harness-health/desktop start
 Requirements: macOS, Node.js 22.12 or newer, and pnpm. Corepack will use the
 pnpm version pinned by this repo.
 
+Some local checkouts may still be named `harness-dreams` for historical
+reasons. The directory name is not a package or product name.
+
 ## Stack
 
 - **Package manager:** pnpm (workspaces + catalogs)
@@ -32,8 +35,12 @@ pnpm version pinned by this repo.
 ## Layout
 
 ```
-packages/   # shared, reusable libraries (@harness-health/*)
-apps/       # deployable applications and services
+packages/core   # shared sync protocol, schemas, and crypto helpers
+apps/desktop    # Electron app and local Health Review engine
+apps/cloud      # Cloudflare Worker + Durable Objects for sync/backup/voice
+apps/mobile     # React Native companion app
+apps/site       # Astro site
+apps/ios        # native iOS/watchOS prototype
 ```
 
 ## Getting started
@@ -45,6 +52,18 @@ pnpm lint        # biome lint + format check
 pnpm build       # build all packages via turbo
 pnpm test        # run tests
 ```
+
+Common app commands:
+
+```bash
+pnpm --filter @harness-health/desktop start
+pnpm --filter @harness-health/cloud dev
+pnpm --filter @harness-health/site dev
+```
+
+For local Worker secrets, copy `apps/cloud/.dev.vars.example` to
+`apps/cloud/.dev.vars`. The real `.dev.vars` file is ignored and must stay
+local-only.
 
 ## Adding a package
 

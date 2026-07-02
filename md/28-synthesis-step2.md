@@ -31,7 +31,7 @@ Local PGlite telemetry store
         |
         v
 Health review engine
-  apps/desktop/src/main/healthReviewEngine.ts
+  apps/desktop/src/main/healthReview/engine.ts
         |
         +--> optional redacted CLI insight pass
         |    apps/desktop/src/main/insightAnalysis.ts
@@ -75,7 +75,7 @@ Key files:
 
 | File | Role |
 |---|---|
-| `apps/desktop/src/main/healthReviewEngine.ts` | Main report generator |
+| `apps/desktop/src/main/healthReview/engine.ts` | Main report generator |
 | `apps/desktop/src/main/insightAnalysis.ts` | Optional redacted CLI insight pass |
 | `apps/desktop/src/main/reports.ts` | Report storage, decisions, and accepted guidance |
 | `apps/desktop/src/main/recommendationBranches.ts` | Review branch creation for accepted guidance |

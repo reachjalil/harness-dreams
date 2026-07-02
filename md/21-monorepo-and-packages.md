@@ -1,104 +1,120 @@
 # 21 · Monorepo & Packages
 
-*Status: 🟡 Draft*
+*Status: 🟢 Current layout / 🟡 Future extraction candidates*
 
-How the product maps onto **this** repository, which is already a pnpm +
-Turborepo + Biome + TypeScript monorepo (see the root `README.md`,
-`pnpm-workspace.yaml`, `turbo.json`). The architecture is in
-[17-architecture.md](17-architecture.md).
+This repo is the Harness Health pnpm workspace. It is still checked out locally
+as `harness-dreams` on some machines for historical reasons; that directory name
+is not a product or package name and should not be renamed mid-flight. Runtime
+packages, app names, docs, and user-facing copy use Harness Health.
 
-## Current extraction decision
+## As-Built Layout
 
-The only extracted runtime package today is `packages/core`, which owns the
-shared sync protocol and crypto helpers used by desktop, mobile, and the
-Cloudflare Worker. The Phase 5 review checked
-`apps/desktop/src/shared/healthLogAnalysis.ts` and
-`apps/desktop/src/main/insightAnalysis.ts` for site/mobile consumers and found
-none. Those modules stay desktop-local until another app imports them; extracting
-them now would create package surface area without a caller.
-
-## Target layout
-
-```
+```text
 harness-health/
 ├── packages/
-│   ├── core/            # shared types + domain model + utils  (exists; repurpose)
-│   ├── store/           # SQLite schema + repositories
-│   ├── connectors/      # harness adapters: claude-code, codex, cursor
-│   ├── ingest/          # raw → normalized Event/Session pipeline
-│   ├── metrics/         # vitals, baselines, deltas, classifiers
-│   ├── llm/             # Claude API client, prompt library, redaction, budgets
-│   ├── review-engine/    # Deterministic Vitals + Insight + assemble → HealthReport
-│   ├── experiments/     # enablement, attribution, grading
-│   └── config/          # read/diff/write AGENTS.md, skills, mcp, memory
+│   └── core/                 # shared sync protocol, schemas, crypto helpers
 ├── apps/
-│   ├── desktop/         # Tauri v2 menu-bar app + React/TS UI
-│   └── cli/             # headless review runner (CI, automation, testing)
-└── md/                  # this documentation set
+│   ├── desktop/              # Electron menu-bar app + React UI
+│   ├── cloud/                # Cloudflare Worker + Durable Objects sync backend
+│   ├── mobile/               # React Native companion app
+│   ├── site/                 # Astro marketing/docs site
+│   └── ios/                  # native iOS/watchOS work-in-progress
+├── md/                       # product and architecture docs
+├── marketing/                # marketing source assets/copy
+└── .harness/                 # source-owned agent configuration
 ```
 
-All packages are `@harness-health/<name>` (matching the existing
-`@harness-health/core`).
+All package names use the `@harness-health/*` scope. The only shared runtime
+library today is `@harness-health/core`.
 
-## Package responsibilities & dependencies
+## Package Responsibilities
 
-| Package | Depends on | Exposes |
-|---|---|---|
-| `core` | — | domain types, `Event`/`Session`/`Finding`/`Experiment` types, utils |
-| `store` | `core` | SQLite migrations + typed repositories |
-| `connectors` | `core` | `Connector` impls (claude-code first) |
-| `ingest` | `core`, `connectors`, `store` | `ingest(window)` → normalized rows |
-| `metrics` | `core`, `store` | `computeVitals(window, scope)`, classifiers |
-| `llm` | `core` | Claude client, prompt templates, redaction, budget guard |
-| `review-engine` | `core`, `store`, `metrics`, `llm` | `runHealthReview(window)` → `HealthReport` |
-| `experiments` | `core`, `store`, `config`, `metrics` | enable/attribute/grade |
-| `config` | `core`, `store` | read/diff/apply config + memory changes (consent) |
-| `apps/desktop` | all packages | the app shell + UI |
-| `apps/cli` | `review-engine`, `ingest`, `store`, `experiments` | `harness-health review` etc. |
+| Workspace | Responsibility |
+|---|---|
+| `packages/core` | Pairing-link schema, WebRTC signaling envelopes, snapshot-backup encryption, auth-token derivation, frame limits, ICE response schemas |
+| `apps/desktop` | Electron main process, local telemetry ingestion, PGlite telemetry store, Health Review engine, report persistence, accepted guidance application, private device sync client, React UI |
+| `apps/cloud` | Cloudflare Worker routes, SignalRoom Durable Object, SnapshotBackupRoom Durable Object, ICE/TURN config, voice-token minting |
+| `apps/mobile` | Companion mobile/watch-facing UI and sync client |
+| `apps/site` | Public site and docs pages |
+| `apps/ios` | Native Apple-platform prototype/work-in-progress |
 
-Dependency direction stays acyclic: `core` at the bottom, `review-engine`
-orchestrates, apps sit on top.
+## Desktop Internal Modules
 
-## Why this maps cleanly to the existing repo
+The desktop app currently keeps most domain logic local because no other app
+imports it yet:
 
-- The repo already uses **pnpm workspaces + catalogs**, **Turborepo** tasks
-  (`build`/`check`/`test`/`dev`), **Biome**, **Changesets**, and TS project
-  references — exactly the toolchain this layout wants. New packages just follow
-  the existing `packages/core` template (`package.json` with `@harness-health/`
-  scope, `tsconfig.json` extending `tsconfig.base.json`, `src/`).
-- The existing `core` package is the seed; the rest are added the same way.
-- `apps/cli` lets the **entire engine run headless** — critical for testing the
-  review pipeline in CI without the desktop shell (the existing CI workflow runs
-  `lint`/`check`/`build`/`test` across the workspace).
+| Module | Current owner |
+|---|---|
+| `apps/desktop/src/main/healthReview/` | Health Review orchestration, rule generation, scoring helpers |
+| `apps/desktop/src/main/telemetry*.ts` | Local telemetry discovery, ingestion, storage, analytics |
+| `apps/desktop/src/main/agentConfig.ts` | Read/write AGENTS.md, CLAUDE.md, rules.md, and skills with managed blocks |
+| `apps/desktop/src/main/reports.ts` | Report history, review decisions, remote decision merge |
+| `apps/desktop/src/main/cloudSync.ts` | Private sync status, encrypted snapshot backup, backup key rotation |
+| `apps/desktop/src/main/deviceSync.ts` | Local dev pairing endpoint and pairing payload creation |
+| `apps/desktop/src/shared/healthLogAnalysis.ts` | Legacy health-log JSON adapter, desktop-local until another app imports it |
+| `apps/desktop/src/main/insightAnalysis.ts` | Optional redacted CLI insight pass, main-process only |
 
-## The Tauri app within the monorepo
+## Why Only `core` Is Extracted Today
 
-`apps/desktop` is a Tauri v2 app:
-- **Frontend**: React + TypeScript (Vite), consuming the TS packages directly —
-  reuses the monorepo's types end-to-end.
-- **Rust shell**: tray/menu-bar, windows, notifications, login-item, updater,
-  file-access prompts.
-- **Engine execution**: the TS engine runs as a **Node sidecar** invoked by the
-  Rust shell (keeps heavy work off the UI). Alternatively, the engine compiles to
-  a sidecar binary. (Decision detail in [22-tech-decisions-adr.md](22-tech-decisions-adr.md).)
+`packages/core` is extracted because it is genuinely shared by desktop, mobile,
+and the Cloudflare Worker. It owns the protocol contract that must stay identical
+across runtimes.
 
-> If the team prefers a pure-TS stack, the Electron fallback (ADR-002) keeps
-> everything in TypeScript at the cost of footprint. Either way the
-> `packages/*` engine is identical and unchanged.
+The Phase 5 extraction review checked `healthLogAnalysis.ts` and
+`insightAnalysis.ts` for site/mobile consumers and found none. They stay
+desktop-local until another app imports them. Extracting them now would add
+package surface area without a real caller.
 
-## Tooling conventions (inherit from repo)
+## Tooling Conventions
 
-- **Catalogs** for shared dep versions (`zod`, `typescript`, `vitest`, etc.) in
-  `pnpm-workspace.yaml`.
-- **Turbo** task graph: `review-engine` `build` depends on `^build`, etc.
-- **Biome** for lint/format (config already present).
-- **Changesets** for versioning shared packages.
-- **Vitest** for unit tests; fixture transcripts under each package's `src`.
+- `pnpm` workspaces and catalog versions live in `pnpm-workspace.yaml`.
+- Turborepo runs workspace `check`, `test`, and `build` tasks.
+- Biome owns format and lint.
+- Vitest owns unit and Worker integration tests.
+- Durable agent configuration is generated from `.harness`; edit source files
+  there, then run `pnpm harness:validate`, `pnpm harness:preview`, and
+  `pnpm harness:activate`.
 
-## Build/run targets
+## Current Verification Targets
 
-- `pnpm dev` — run desktop app in dev (Tauri dev) + watch packages.
-- `pnpm --filter @harness-health/cli dev -- review --since=yesterday` — headless
-  review for testing.
-- `pnpm test` — workspace tests (engine fixtures + redaction + metrics).
-- `pnpm build` — build packages + desktop app bundle.
+```bash
+pnpm lint
+pnpm check
+pnpm test
+pnpm build
+pnpm --filter @harness-health/cloud exec wrangler deploy --dry-run
+```
+
+Desktop-only development:
+
+```bash
+pnpm --filter @harness-health/desktop start
+pnpm --filter @harness-health/desktop check
+pnpm --filter @harness-health/desktop test
+```
+
+Cloud Worker development:
+
+```bash
+cp apps/cloud/.dev.vars.example apps/cloud/.dev.vars
+pnpm --filter @harness-health/cloud dev
+```
+
+`apps/cloud/.dev.vars` is ignored and must stay local-only.
+
+## Possible Future Extraction Appendix
+
+Do not execute this split until there are real cross-app callers or a file has
+become too costly to maintain in place. The old nine-package target is now a
+future option, not the current plan:
+
+- `store`: shared database schema/repositories if mobile or CLI needs local DB
+  parity.
+- `connectors`: harness adapters if a headless CLI or mobile import needs them.
+- `ingest`: raw transcript to normalized event/session pipeline.
+- `metrics`: reusable vitals, baselines, classifiers.
+- `llm`: shared hosted/local insight runner clients and redaction.
+- `review-engine`: shared deterministic review assembly.
+- `experiments`: attribution and grading logic.
+- `config`: shared AGENTS.md/CLAUDE.md/skills diff/apply helpers.
+- `cli`: headless review runner if CI or automation needs it.

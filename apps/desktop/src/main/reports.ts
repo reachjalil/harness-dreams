@@ -22,7 +22,7 @@ import type {
   ReviewDecisions,
   SyncedReviewDecision,
 } from "../shared/types";
-import { runHealthReview } from "./healthReviewEngine";
+import { runHealthReview } from "./healthReview/engine";
 import {
   applyAcceptedRecommendationsAsBranches,
   applyAcceptedRecommendationsDirectly,

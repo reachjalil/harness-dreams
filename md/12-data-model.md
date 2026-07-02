@@ -11,9 +11,9 @@ team/fleet features without reshaping the core.
 ```
 Harness ──< Project ──< Session ──< Event
                             │
-DreamSession ──< Finding    │   (a review reads Sessions/Events in a window)
-     │      └─< Experiment   │
-     └─< VitalsSnapshot ─────┘
+ReviewRun ──< Finding       │   (a review reads Sessions/Events in a window)
+     │    └─< Experiment    │
+     └─< VitalsSnapshot ────┘
 Experiment ──< ExperimentObservation
 ConfigArtifact (AGENTS.md, skill, mcp, settings, memory)  ── proposed → ConfigChange
 ```
@@ -57,7 +57,7 @@ A normalized atomic occurrence within a session. The workhorse table.
 `file_edit`, `command_run`, `error`, `guardrail_hit`, `permission_decision`,
 `skill_invocation`, `mcp_call`, `mode_change`, `title`, `meta`.
 
-### DreamSession
+### ReviewRun
 One analysis run.
 - `id`, `windowStart`, `windowEnd`, `triggeredBy` (`scheduled|idle|manual|catchup`)
 - `status`, `stageTimings`, `tokenSpend`, `cost`
@@ -67,13 +67,13 @@ One analysis run.
 
 ### VitalsSnapshot
 Computed metrics for a window (see [13-metrics-catalog.md](13-metrics-catalog.md)).
-- `id`, `dreamSessionId`, `scope` (global | project | harness | model)
+- `id`, `reviewRunId`, `scope` (global | project | harness | model)
 - `metrics{}` (metricKey → value), `baselines{}` (metricKey → baseline value)
 - `deltas{}` (metricKey → Δ + significance hint)
 
 ### Finding
 See [07-feature-findings-and-actions.md](07-feature-findings-and-actions.md).
-- `id`, `dreamSessionId`, `type`, `title`, `body`, `confidence`, `impact`
+- `id`, `reviewRunId`, `type`, `title`, `body`, `confidence`, `impact`
 - `evidence[]` (sessionId + event refs + optional diff), `scope`
 - `proposedAction` (kind + payload), `state`, `stateChangedAt`
 
@@ -102,7 +102,7 @@ Links a session to a running experiment as treated/untreated.
   fields. This keeps us local-first and avoids duplicating secret-bearing data.
 - **Normalized store**: local **SQLite** (one DB in the app's support dir) for
   `Event`, `Session`, `VitalsSnapshot`, `Finding`, `Experiment`, etc. Indexed by
-  `(harness, project, ts)` and `(dreamSession)`.
+  `(harness, project, ts)` and `(reviewRun)`.
 - **Artifacts/diffs**: stored with backups for undo.
 - **Retention**: configurable; raw stays where the harness put it, normalized
   store prunes on a user-set horizon.

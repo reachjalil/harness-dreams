@@ -1,97 +1,112 @@
 # 17 · Architecture
 
-*Status: 🟡 Draft*
+*Status: 🟢 Current implementation*
 
-System architecture and how components map onto this monorepo. The concrete
-package list is in [21-monorepo-and-packages.md](21-monorepo-and-packages.md);
-the big technology choices and their rationale are in
-[22-tech-decisions-adr.md](22-tech-decisions-adr.md).
+Harness Health is a local-first Electron desktop app with optional private device
+sync through Cloudflare Workers and Durable Objects. The concrete workspace
+layout is in [21-monorepo-and-packages.md](21-monorepo-and-packages.md); privacy
+boundaries are in [20-privacy-and-security.md](20-privacy-and-security.md).
 
-## High-level shape
+## High-Level Shape
 
-A **local-first desktop application** with three runtime roles, all on the user's
-machine, no server:
+```text
+macOS desktop
+  ├─ Electron main process
+  │   ├─ config store and report history
+  │   ├─ telemetry connectors and PGlite telemetry store
+  │   ├─ Health Review engine
+  │   ├─ accepted guidance writes / review branches
+  │   └─ private sync + encrypted snapshot backup client
+  ├─ React renderer
+  │   ├─ Today, Review, Browse, Goals, Config, Chat, Settings
+  │   └─ context-isolated preload API with Zod-validated IPC
+  └─ local files
+      ├─ ~/.codex, ~/.claude, Cursor state
+      └─ project AGENTS.md, CLAUDE.md, rules.md, skills
 
-```
- ┌──────────────────────────────────────────────────────────────────┐
- │                        macOS machine (local)                       │
- │                                                                    │
- │  ┌────────────┐   triggers   ┌─────────────────────────────────┐  │
- │  │  Menu-bar  │ ───────────► │        Core (TS engine)         │  │
- │  │   App UI   │ ◄─────────── │  ingest · metrics · review ·     │  │
- │  │  (webview) │   reports    │  experiments · config · store   │  │
- │  └────────────┘              └───────────────┬─────────────────┘  │
- │        │                                     │                    │
- │        │ reads/writes (consent)              │ reads (read-only)  │
- │        ▼                                     ▼                    │
- │  ┌────────────┐                    ┌───────────────────────┐      │
- │  │  SQLite    │                    │  Harness data on disk │      │
- │  │  (norm.    │                    │  ~/.claude/** , etc.  │      │
- │  │   store)   │                    └───────────────────────┘      │
- │  └────────────┘                                                   │
- │        │ Insight only, redacted, opt-in                               │
- └────────┼───────────────────────────────────────────────────────-─┘
-          ▼
-   Claude API (cloud)  — the only outbound call, gated by privacy settings
+Cloudflare edge (optional)
+  ├─ Worker HTTP routes
+  ├─ SignalRoom Durable Object for WebRTC signaling
+  ├─ SnapshotBackupRoom Durable Object for encrypted backup packages
+  ├─ /ice route with STUN plus optional TURN env config
+  └─ LiveKit voice-token route when configured
 ```
 
-## Runtime roles
+Raw transcripts and project files stay on the desktop. Cloudflare is not the
+review source of truth; it relays signaling and stores opaque encrypted snapshot
+packages only when sync/backup is enabled.
 
-1. **Menu-bar app (shell + UI).** The macOS tray app: status glance, report
-   window, settings. Built with Tauri v2 (Rust shell) + a web UI (React/TS). See
-   [18-macos-app.md](18-macos-app.md).
-2. **Core engine (logic).** Pure-TypeScript packages doing ingestion, metrics,
-   reviewing, experiments, config, and persistence. Runs in the app's
-   Node/sidecar context and is reusable headless via the CLI.
-3. **Scheduler/daemon.** Triggers reviews on schedule/idle even when the window is
-   closed. Implemented as a background task within the app (kept alive as a
-   menu-bar agent) and/or a `launchd` agent for reliability.
+## Runtime Roles
 
-## Component responsibilities
+| Runtime | Main responsibilities |
+|---|---|
+| Electron main | Owns local state, file access, telemetry ingestion, review generation, private sync, and IPC validation |
+| React renderer | Presents the app UI and calls the preload API; no Node integration |
+| `packages/core` | Shared pairing, signaling, ICE, and backup crypto contract |
+| Cloudflare Worker | HTTP API surface for signaling, backup, ICE, and voice tokens |
+| SignalRoom DO | Ephemeral WebSocket relay with frame-size and replay-window checks |
+| SnapshotBackupRoom DO | Per-user encrypted snapshot package storage, keep-20 pruning, TTL/alarm cleanup |
+| Mobile/watch clients | Pair through desktop-created links and sync sanitized report snapshots/decisions |
 
-| Component | Package (see `21`) | Responsibility |
+## Local Review Flow
+
+1. Desktop telemetry service discovers supported local harness files.
+2. `telemetryConnectors.ts` parses Codex/Claude-style JSONL into normalized
+   events with cursors.
+3. `telemetryStore.ts` stores normalized events locally in PGlite.
+4. `telemetryAnalytics.ts` builds live vitals for the Today dashboard.
+5. `healthReview/engine.ts` generates a `HealthReport` from local sessions,
+   project config state, accepted goals, and optional redacted CLI insight.
+6. `reports.ts` persists reports and review decisions.
+7. Accepted recommendations write managed config blocks directly or through a
+   reviewable Git worktree branch.
+
+## Private Device Sync Flow
+
+1. Desktop creates a pairing link with a pairing secret in the URL fragment.
+2. SignalRoom relays encrypted WebRTC signaling between desktop and companion
+   clients. Durable Object storage is not the conversation transcript.
+3. Devices exchange sanitized report snapshots and review decisions over WebRTC.
+4. Mobile/watch decisions merge on desktop with newest-per-finding wins.
+5. If encrypted backup is enabled, desktop uploads an encrypted snapshot package
+   to SnapshotBackupRoom as a fallback for reconnects or new devices.
+
+## Encrypted Backup Flow
+
+- Desktop derives the snapshot encryption key from the user backup key,
+  `cloudUserId`, and backup epoch.
+- Encrypted packages include a `keyId`; desktop retains old keys for rotation
+  compatibility.
+- The Worker stores only opaque package metadata and ciphertext.
+- Backup upload retries use persisted backoff state so app restarts do not lose
+  retry intent.
+- SnapshotBackupRoom keeps the latest 20 packages and removes expired rows by
+  alarm cleanup.
+
+## Network Surfaces
+
+| Surface | Enabled by | Content boundary |
 |---|---|---|
-| Connectors | `connectors` | discover + parse harness data (read-only) |
-| Ingestion | `ingest` | normalize raw → `Event`/`Session`, incremental cursors |
-| Metrics | `metrics` | compute vitals, baselines, deltas, classifiers |
-| Review engine | `review-engine` | Deterministic Vitals + Insight + assemble → `HealthReport` |
-| Experiments | `experiments` | enablement, attribution, grading |
-| Config | `config` | read/diff/write AGENTS.md, skills, MCP, memory (consent) |
-| LLM | `llm` | Claude API client, prompt library, redaction, budgets |
-| Store | `store` | SQLite schema + repositories |
-| Core | `core` | shared types/domain model/utilities |
-| Desktop | `apps/desktop` | Tauri menu-bar app + UI |
-| CLI | `apps/cli` | headless review runner (CI, automation, testing) |
+| Optional CLI insight runner | User config | Redacted local payload sent to configured local CLI command |
+| SignalRoom WebSocket | Private device sync | Encrypted signaling envelopes, bounded size, replay checked |
+| SnapshotBackupRoom HTTP | Encrypted backup | Opaque encrypted snapshot packages and auth hash |
+| `/ice` | Pairing/sync | STUN/TURN server config only |
+| `/voice/token` | Voice chat config | LiveKit access token minted from Worker secrets |
 
-## Key data flows
+## Isolation
 
-**Ingest → Review → Report**
-1. Scheduler fires → Review job starts.
-2. `ingest` pulls new events via `connectors` into `store` (incremental).
-3. `review-engine` runs Deterministic Vitals (`metrics`) then Insight (`llm`, redacted).
-4. Report persisted to `store`; UI notified; menu-bar state updated.
+- Electron uses context isolation, sandboxed renderer, preload-only API access,
+  Zod-validated IPC, and Electron fuses.
+- Renderer pages are wrapped in error boundaries so a page crash does not white
+  out the app.
+- Main-process logs are written to `app.getPath("logs")`; renderer console usage
+  is not treated as product telemetry.
+- Local file reads use narrow known paths and retry transient read failures.
 
-**Reflection → Action**
-1. User accepts a finding / enables an experiment in the UI.
-2. `config`/`experiments` apply the change (diff + backup + consent) to the real
-   harness files.
-3. Subsequent sessions are ingested; the next review grades the effect.
+## What Is Not Present
 
-## Process & isolation
-
-- **The engine never blocks the UI**: reviews run off the UI thread (sidecar
-  process / worker). The UI subscribes to job state.
-- **Read-only by default**: only `config`/`experiments` write, and only the
-  harness's own files, only on consent, always with backups.
-- **The only network egress** is the LLM client, gated by the privacy setting
-  and redaction layer (`20`). Everything else is local.
-
-## Why local-first (not a server)
-
-- Data is sensitive (code + secrets) → keep it on the device (`20`).
-- No accounts, no infra, no latency for the user.
-- The Claude API call is the single, explicit, redacted exception — and can be
-  swapped for a local model later.
-
-Team/fleet features (`03`) would later add an *optional* sync layer; the data
-model (`12`) is already shaped to allow it without a rewrite.
+- No active `apps/api` Python/FastAPI service.
+- No automatic Worker deploy on push; CI performs dry-run deploy only.
+- No hosted product telemetry or content analytics SDK.
+- No broad package split beyond `packages/core` until there are real cross-app
+  consumers.

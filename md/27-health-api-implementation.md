@@ -14,7 +14,7 @@ There is no active local FastAPI process and no runtime service under
 | Local telemetry ingestion | `apps/desktop/src/main/telemetryConnectors.ts` |
 | Normalized telemetry store | `apps/desktop/src/main/telemetryStore.ts` |
 | Live telemetry analytics | `apps/desktop/src/main/telemetryAnalytics.ts` |
-| Health review generation | `apps/desktop/src/main/healthReviewEngine.ts` |
+| Health review generation | `apps/desktop/src/main/healthReview/engine.ts` |
 | Optional CLI insight analysis | `apps/desktop/src/main/insightAnalysis.ts` |
 | Review persistence and decisions | `apps/desktop/src/main/reports.ts` |
 | App config persistence | `apps/desktop/src/main/store.ts` |

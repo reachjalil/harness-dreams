@@ -1,97 +1,134 @@
 # 20 · Privacy & Security
 
-*Status: 🟢 Locked (principles) / 🟡 Draft (mechanisms)*
+*Status: 🟢 Principles / 🟢 Current mechanisms*
 
-Harness Health reads the most sensitive data a developer has: full transcripts of
-their coding sessions, including source code, file paths, commands, and
-potentially secrets. Privacy is not a feature here — it's the license to operate.
-These principles are **locked**; the mechanisms that implement them are draft.
+Harness Health reads sensitive developer data: coding-agent transcripts, file
+paths, commands, project instructions, and sometimes secret-looking text. The
+product remains local-first. Cloudflare sync is optional and designed so the
+edge never needs raw report content.
 
-## Principles (locked)
+## Principles
 
-1. **Local-first.** All raw data stays on the user's machine. Ingestion,
-   storage, and Deterministic Vitals are 100% local and work offline.
-2. **Cloud is opt-in and minimal.** The only egress is the Insight LLM call, and only
-   if the user enables it. It sends **redacted excerpts**, not whole transcripts.
-3. **No telemetry of user content. Ever.** We do not phone home with the user's
-   code, prompts, metrics, or usage. (Optional, clearly-labeled, content-free
-   product analytics could be considered later — off by default.)
-4. **Consent for every write.** Nothing is written to the user's config/memory
-   without a previewed diff and explicit approval, with a backup and undo.
-5. **Never write or transmit secrets.** `.env`, credentials, ignored files, and
-   detected secrets are excluded from egress and never written.
-6. **User owns and can purge everything.** One action wipes the normalized store
-   and all derived artifacts.
+1. **Local-first by default.** Raw transcripts, normalized telemetry, reports,
+   and review decisions live on the desktop unless the user enables sync/backup.
+2. **No raw transcript cloud storage.** Cloudflare receives signaling envelopes
+   and opaque encrypted backup packages, not raw local transcripts.
+3. **Cloud insight is opt-in.** Optional CLI insight analysis receives a redacted
+   local payload only when configured.
+4. **Consent for writes.** Accepted guidance changes write managed blocks or
+   review branches only after user review.
+5. **Secrets stay local.** `.env`, ignored files, credentials, and detected
+   secrets are excluded from cloud payloads and masked in sanitized reports.
+6. **User can purge local state.** Config, reports, telemetry, and pairing state
+   are local app data.
 
-## Data classification
+## Data Classification
 
 | Data | Sensitivity | Handling |
 |---|---|---|
-| Raw transcripts (`~/.claude/**`) | high (code+secrets) | read in place, local only; pointers stored, bodies retained only if user opts in |
-| Normalized events/metrics | medium | local SQLite; numbers + pointers, minimal text |
-| Redacted Insight excerpts | medium | only data sent to cloud, only if cloud Insight is on |
-| Findings/experiments/reports | medium | local; reference evidence by pointer |
-| Config/memory files | high | written only on consent, with backups |
-| Secrets / `.env` / credentials | critical | never read into egress, never written, never displayed in full |
+| Raw transcripts (`~/.codex`, `~/.claude`, Cursor state) | High | Read locally; bodies are not uploaded; raw-text retention is configurable |
+| Normalized telemetry | Medium | Stored in local PGlite; used for live vitals and reviews |
+| Reports/findings/experiments | Medium | Stored locally; sanitized before sync/backup |
+| Config/memory files | High | Read locally; writes use managed blocks, direct edit or review branch |
+| Pairing secrets | Critical | Fragment-only in pairing links; hashed in config where needed |
+| Backup keys | Critical | Generated/stored locally; rotated with retained local key records |
+| Snapshot backups | Medium encrypted blob | Encrypted on desktop; Worker stores opaque ciphertext only |
+| Worker secrets | Critical | LiveKit/TURN/etc. set through Wrangler/Cloudflare secrets |
 
-## Redaction layer (for cloud Insight)
+## Desktop Security Boundary
 
-When cloud Insight is enabled, the `llm` package runs every excerpt through
-redaction **before** any network call:
+- Electron renderer is sandboxed and context-isolated.
+- Renderer talks to main through preload APIs and Zod-validated IPC.
+- Main owns filesystem access, sync, and config writes.
+- Electron fuses are enabled.
+- Main-process logs go to `app.getPath("logs")`; they are local files, not
+  remote telemetry.
+- Transient file read failures during telemetry ingest are retried before being
+  skipped/logged.
+- React page error boundaries keep renderer failures contained to the affected
+  page surface.
 
-- **Secret scanning**: detect API keys, tokens, private keys, connection strings,
-  high-entropy strings → replace with typed placeholders (`<SECRET:aws_key>`).
-- **Path/identity minimization**: optionally hash or relativize absolute paths
-  and usernames.
-- **Excerpt minimization**: send the **smallest** span needed for the finding
-  (the engine cites event IDs; only the cited spans are sent), not whole files.
-- **Allowlist of fields**: only fields needed for analysis leave the machine;
-  raw `content` is summarized/snippetized, not shipped wholesale.
-- **Preview**: settings show *exactly* what a redacted excerpt looks like before
-  the user enables cloud Insight. No surprises.
+## Redaction For Cloud Sync And Backup
 
-If redaction can't confidently clean a span, it's **dropped, not sent**.
+`apps/desktop/src/main/cloudRedaction.ts` sanitizes reports before companion
+sync or backup packaging:
 
-## Local-only mode
+- local absolute paths are replaced with `[redacted path]`;
+- secret-like tokens and `KEY`/`TOKEN`/`SECRET` assignments are replaced with
+  `[redacted secret]`;
+- code fences are replaced with `[redacted code block]`;
+- transcript evidence and evidence file paths are replaced with a local-retained
+  evidence marker;
+- patch snippets, project paths, and review-branch worktree paths are removed
+  from synced report data.
 
-A first-class mode where **no data ever leaves the device**:
-- Deterministic Vitals (all vitals/trends) works fully.
-- Insight either (a) runs against a **local model** (e.g. Ollama) — future, or (b) is
-  disabled, leaving a vitals-and-trends-only report.
-- This must be a viable, clearly-supported configuration, not a degraded
-  afterthought — some users will never enable cloud.
+The sanitized report is what goes into WebRTC report snapshots and encrypted
+snapshot backup payloads.
 
-## Secret handling specifics
+## Private Device Sync
 
-- Secrets are excluded at **three** layers: ingestion (don't retain), evidence
-  display (mask), and egress (scan + drop).
-- We honor the repo's `.gitignore`/`.env` conventions as a hint for "do not
-  touch."
-- Config writes (`09`) explicitly refuse to write to ignored/secret files.
+SignalRoom is a Cloudflare Durable Object used as an ephemeral WebSocket relay:
 
-## Threat model (brief)
+- signaling envelopes are encrypted by the peers using the pairing secret;
+- envelope freshness is checked with the shared replay window from
+  `packages/core`;
+- frame size is capped at 64KB;
+- the pairing secret travels in the URL fragment, not the query string;
+- the Worker is a relay, not the report source of truth.
+
+Desktop and companion devices exchange report snapshots and review decisions
+over WebRTC. Review decisions merge on desktop with newest-per-finding wins.
+
+## Encrypted Snapshot Backup
+
+SnapshotBackupRoom is a Cloudflare Durable Object used only when encrypted backup
+is enabled:
+
+- desktop derives the backup encryption key locally;
+- package `keyId` supports backup-key rotation and retained old keys;
+- the Worker authenticates with a backup-key-derived bearer hash;
+- stored rows are opaque ciphertext packages with revision metadata;
+- uploads retry with persisted backoff state on desktop;
+- SnapshotBackupRoom keeps the newest 20 packages and uses alarms to clean
+  expired packages;
+- package size is capped at 2MB.
+
+Disabling backup clears desktop backup key state and asks the Worker to delete
+the user's backup packages when possible.
+
+## ICE, TURN, And Voice
+
+The Worker `/ice` route returns Google STUN by default and can append TURN
+servers from `TURN_URL`, `TURN_USERNAME`, and `TURN_CREDENTIAL`. These values
+are configuration secrets, not user report content.
+
+LiveKit voice tokens are minted by `apps/cloud/src/server/voice.ts` when LiveKit
+secrets are configured. The retired Python API no longer owns voice tokens.
+
+## Optional CLI Insight
+
+`apps/desktop/src/main/insightAnalysis.ts` can invoke a configured local CLI
+runner with a redacted payload. It is off unless configured, bounded by timeout,
+and treats transcripts as data. It does not execute commands from transcript
+content.
+
+## Threat Model
 
 | Threat | Mitigation |
 |---|---|
-| Secret leakage to cloud | redaction + drop-on-doubt + local-only mode |
-| Malicious/compromised config write | diff + consent + backup + undo; marked blocks |
-| Local store theft | OS-level disk encryption assumed; option to encrypt the store; easy purge |
-| Prompt injection via transcript content | Insight treats transcript text as **data, not instructions**; structured outputs; no tool execution from Insight |
-| Over-broad file access | request least privilege; explain; scope to harness dirs |
-| Supply-chain (deps) | minimal deps, lockfile, review; no remote code execution from analysis |
+| Secret leakage to companion/cloud | report sanitizer, fragment-only pairing secrets, local backup keys |
+| Replay or oversized signaling frames | shared replay window and 64KB frame cap |
+| Backup package disclosure | desktop-side encryption, key rotation, opaque Worker storage |
+| Unauthorized backup writes | backup-key-derived bearer token |
+| Malicious config write | previewed accepted recommendations, managed blocks, direct/branch apply metadata, revert support |
+| Renderer compromise | sandbox, context isolation, preload-only API, validated IPC |
+| Local store theft | OS disk protection assumed; local purge remains available |
 
-## Security posture
+## What The User Controls
 
-- The analysis pipeline **never executes** code/commands found in transcripts.
-- Config writes are constrained to known artifact types/paths and always
-  reversible.
-- The app is signed/notarized (`18`); updates are signed.
-- No inbound network surface (no server, no listening port).
-
-## What the user sees & controls
-
-- A clear privacy choice at onboarding (local-only vs cloud Insight).
-- A redaction preview.
-- Per-setting toggles: raw-text retention, path minimization, cloud Insight, product
-  analytics (off by default).
-- One-click **purge all data** and **revert all changes**.
+- Local-only use with no private sync/backup.
+- Private device sync on/off.
+- Encrypted backup on/off and backup-key rotation.
+- Raw-text retention setting for telemetry.
+- Accepted/rejected review decisions before any config write.
+- App data reset/purge controls.
