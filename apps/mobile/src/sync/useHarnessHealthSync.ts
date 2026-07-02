@@ -4,7 +4,7 @@ import {
   PEER_MESSAGE_SCHEMA_VERSION,
   RTC_PROTOCOL_VERSION,
   decryptSignalEnvelope,
-  decryptSnapshotBackupPackage,
+  decryptSnapshotBackupPackageWithKeys,
   encryptSignalEnvelope,
   iceResponseV1Schema,
   peerSyncMessageV1Schema,
@@ -245,8 +245,11 @@ export function useHarnessHealthSync(): HarnessHealthSyncState {
           await response.json()
         );
         if (!body.package) return false;
-        const payload = await decryptSnapshotBackupPackage({
-          backupKey: current.backupKey,
+        const payload = await decryptSnapshotBackupPackageWithKeys({
+          keys: [
+            { keyId: current.backupKeyId, backupKey: current.backupKey },
+            ...(current.backupRetainedKeys ?? []),
+          ],
           package: body.package,
         });
         const nextSnapshot = await applySnapshotPayloadToSqlite(
@@ -258,6 +261,7 @@ export function useHarnessHealthSync(): HarnessHealthSyncState {
           desktopDeviceId: payload.desktopDeviceId,
           desktopDeviceName: payload.desktopDeviceName,
           backupEpochId: payload.epochId,
+          backupKeyId: body.package.keyId,
           lastRevision: Math.max(current.lastRevision, payload.revision),
         };
         await persistPairing(nextPairing);

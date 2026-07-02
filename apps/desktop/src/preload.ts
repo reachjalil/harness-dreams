@@ -66,6 +66,8 @@ const api = {
       ipcRenderer.invoke(Invoke.CloudSyncPairDevice, input),
     removeDevice: (deviceId: string): Promise<CloudSyncDevice[]> =>
       ipcRenderer.invoke(Invoke.CloudSyncRemoveDevice, deviceId),
+    rotateBackupKey: (): Promise<CloudSyncStatus> =>
+      ipcRenderer.invoke(Invoke.CloudSyncRotateBackupKey),
   },
   peerHost: {
     state: (): Promise<PeerHostState> =>

@@ -15,6 +15,8 @@ import { createVoiceToken } from "./server/voice";
 
 export { SignalRoom, SnapshotBackupRoom };
 
+const GOOGLE_STUN_SERVER = { urls: "stun:stun.l.google.com:19302" };
+
 const app = new Hono<{ Bindings: Env }>().basePath(
   HARNESS_HEALTH_RTC_BASE_PATH
 );
@@ -34,19 +36,47 @@ app.get("/users/:cloudUserId/ws", (context) => {
 
 app.get("/ice", (context) => {
   const configured = context.env.RTC_ICE_SERVERS_JSON?.trim();
-  const parsed = configured
-    ? z.array(iceServerSchema).safeParse(JSON.parse(configured))
-    : {
-        success: true as const,
-        data: [{ urls: "stun:stun.l.google.com:19302" }],
-      };
-  if (!parsed.success) {
-    return jsonError("RTC_ICE_SERVERS_JSON is invalid.", 500, parsed.error);
+  const iceServers: Array<z.infer<typeof iceServerSchema>> = [
+    GOOGLE_STUN_SERVER,
+  ];
+  if (configured) {
+    let raw: unknown;
+    try {
+      raw = JSON.parse(configured);
+    } catch (error) {
+      return jsonError("RTC_ICE_SERVERS_JSON is invalid JSON.", 500, error);
+    }
+    const parsed = z.array(iceServerSchema).safeParse(raw);
+    if (!parsed.success) {
+      return jsonError("RTC_ICE_SERVERS_JSON is invalid.", 500, parsed.error);
+    }
+    iceServers.push(...parsed.data);
+  }
+
+  const turnUrl = context.env.TURN_URL?.trim();
+  const turnUsername = context.env.TURN_USERNAME?.trim();
+  const turnCredential = context.env.TURN_CREDENTIAL?.trim();
+  if (turnUrl || turnUsername || turnCredential) {
+    if (!turnUrl || !turnUsername || !turnCredential) {
+      return jsonError(
+        "TURN_URL, TURN_USERNAME, and TURN_CREDENTIAL must be configured together.",
+        500
+      );
+    }
+    const urls = turnUrl
+      .split(",")
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+    iceServers.push({
+      urls: urls.length === 1 ? urls[0] : urls,
+      username: turnUsername,
+      credential: turnCredential,
+    });
   }
   return json(
     iceResponseV1Schema.parse({
       version: RTC_PROTOCOL_VERSION,
-      iceServers: parsed.data,
+      iceServers,
     })
   );
 });

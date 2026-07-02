@@ -73,6 +73,8 @@ const PREVIEW_CONFIG: AppConfig = {
     devices: [],
     backupEnabled: false,
     backupKey: "",
+    backupKeyId: "",
+    backupRetainedKeys: [],
     backupEpochId: "",
     backupRetentionDays: 30,
   },
@@ -106,7 +108,11 @@ const PREVIEW_CLOUD_STATUS: CloudSyncStatus = {
   backupEnabled: false,
   backupConfigured: false,
   backupRevision: 0,
+  backupKeyId: "",
   lastBackedUpAt: null,
+  lastBackupFailureAt: null,
+  nextBackupRetryAt: null,
+  backupRetryAttempt: 0,
 };
 
 function previewTelemetry(now = Date.now()): LiveTelemetrySnapshot {
@@ -795,6 +801,19 @@ export function useHarnessHealth(): HarnessHealth {
           cloudSync: { ...current.cloudSync, devices },
         });
         return devices;
+      },
+      rotateBackupKey: async () => {
+        const next: CloudSyncStatus = {
+          ...(cloudSyncStatus ?? PREVIEW_CLOUD_STATUS),
+          backupEnabled: true,
+          backupConfigured: true,
+          backupKeyId: `preview-key-${Date.now()}`,
+          backupRevision: 0,
+          lastBackedUpAt: null,
+          message: "Preview backup key rotated.",
+        };
+        setCloudSyncStatus(next);
+        return next;
       },
     }),
     [cloudSyncStatus, config]

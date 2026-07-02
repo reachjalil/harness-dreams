@@ -7,7 +7,9 @@ import {
   decodePairingLink,
   decryptSignalEnvelope,
   decryptSnapshotBackupPackage,
+  decryptSnapshotBackupPackageWithKeys,
   encodePairingLink,
+  encryptedSnapshotPackageV1Schema,
   encryptSignalEnvelope,
   encryptSnapshotBackupPackage,
   generateSecret,
@@ -33,6 +35,7 @@ describe("@harness-health/core private sync", () => {
       pairingSecret: "super-secret-pairing-material-123",
       backupEnabled: true,
       backupEpochId: "epoch-1",
+      backupKeyId: "snapshot-key-1",
       backupKey: "super-secret-backup-material-123",
     });
 
@@ -47,6 +50,7 @@ describe("@harness-health/core private sync", () => {
     expect(decodePairingLink(pairingUrl).backupKey).toBe(
       "super-secret-backup-material-123"
     );
+    expect(decodePairingLink(pairingUrl).backupKeyId).toBe("snapshot-key-1");
   });
 
   test("builds signaling websocket URLs without fragment secrets", () => {
@@ -160,5 +164,53 @@ describe("@harness-health/core private sync", () => {
         package: { ...pkg, revision: 11 },
       })
     ).rejects.toThrow();
+  });
+
+  test("decrypts snapshot backups with retained keys and defaults old key ids", async () => {
+    const oldKey = generateSecret();
+    const currentKey = generateSecret();
+    const oldPkg = encryptedSnapshotPackageV1Schema.parse({
+      version: 1,
+      cloudUserId: "user-1",
+      epochId: "epoch-1",
+      revision: 1,
+      baseRevision: 0,
+      kind: "snapshot.update",
+      authorDeviceId: "desktop-1",
+      nonce: "nonce-material",
+      ciphertext: "opaque-ciphertext",
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 60_000,
+    });
+    expect(oldPkg.keyId).toBe("snapshot-v1");
+
+    const currentPkg = await encryptSnapshotBackupPackage({
+      backupKey: currentKey,
+      cloudUserId: "user-1",
+      epochId: "epoch-2",
+      revision: 2,
+      authorDeviceId: "desktop-1",
+      keyId: "snapshot-key-2",
+      payload: {
+        schemaVersion: 1,
+        cloudUserId: "user-1",
+        epochId: "epoch-2",
+        revision: 2,
+        desktopDeviceId: "desktop-1",
+        desktopDeviceName: "MacBook",
+        ops: [{ op: "setMeta", key: "revision", value: "2" }],
+        createdAt: Date.now(),
+      },
+    });
+
+    await expect(
+      decryptSnapshotBackupPackageWithKeys({
+        package: currentPkg,
+        keys: [
+          { keyId: "snapshot-v1", backupKey: oldKey },
+          { keyId: "snapshot-key-2", backupKey: currentKey },
+        ],
+      })
+    ).resolves.toMatchObject({ revision: 2 });
   });
 });

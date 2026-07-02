@@ -44,3 +44,6 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Cloudflare Worker deploy dry run
+        run: pnpm --filter @harness-health/cloud exec wrangler deploy --dry-run

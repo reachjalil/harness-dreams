@@ -251,6 +251,7 @@ export async function createCloudSyncPairing(input: {
     pairingSecret: secret,
     backupEnabled: config.backupEnabled,
     backupEpochId: config.backupEnabled ? config.backupEpochId : undefined,
+    backupKeyId: config.backupEnabled ? config.backupKeyId : undefined,
     backupKey: config.backupEnabled ? config.backupKey : undefined,
   });
   const QRCode = await import("qrcode");

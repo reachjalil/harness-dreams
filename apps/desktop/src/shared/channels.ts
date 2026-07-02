@@ -15,6 +15,7 @@ export const Invoke = {
   CloudSyncNow: "cloudSync:syncNow",
   CloudSyncPairDevice: "cloudSync:pairDevice",
   CloudSyncRemoveDevice: "cloudSync:removeDevice",
+  CloudSyncRotateBackupKey: "cloudSync:rotateBackupKey",
   PeerHostState: "peerHost:state",
   PeerHostPairingAccepted: "peerHost:pairingAccepted",
   PeerHostApplyDecisions: "peerHost:applyDecisions",

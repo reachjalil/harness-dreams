@@ -720,12 +720,27 @@ export default function Settings({
                 <div className="settings-row-hint">
                   Last encrypted backup:{" "}
                   {syncTimeLabel(cloudStatus?.lastBackedUpAt)} · revision{" "}
-                  {cloudStatus?.backupRevision ?? 0}
+                  {cloudStatus?.backupRevision ?? 0} · key{" "}
+                  {shortId(cloudStatus?.backupKeyId ?? "")}
+                  {cloudStatus?.nextBackupRetryAt
+                    ? ` · retry ${syncTimeLabel(cloudStatus.nextBackupRetryAt)}`
+                    : ""}
                 </div>
               </div>
-              <code className="mono-chip">
-                {cloudStatus?.backupConfigured ? "ON" : "SETUP"}
-              </code>
+              <div className="row">
+                <code className="mono-chip">
+                  {cloudStatus?.backupConfigured ? "ON" : "SETUP"}
+                </code>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    void hd.cloudSync.rotateBackupKey();
+                  }}
+                >
+                  <Icon name="sync" size={16} />
+                  Rotate key
+                </Button>
+              </div>
             </div>
           ) : null}
           <div className="settings-row">

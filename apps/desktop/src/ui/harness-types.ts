@@ -69,6 +69,13 @@ export interface CloudSyncDevice {
   lastAckedRevision?: number;
 }
 
+export interface BackupKeyRecord {
+  keyId: string;
+  backupKey: string;
+  backupEpochId: string;
+  retiredAt: number;
+}
+
 export interface CloudSyncPairing {
   pairingId: string;
   pairingUrl: string;
@@ -99,12 +106,21 @@ export interface CloudSyncConfig {
   backupEnabled: boolean;
   /** Local-only snapshot backup encryption key. Shared only through QR/WebRTC. */
   backupKey: string;
+  /** Identifier for the current snapshot backup key. */
+  backupKeyId: string;
+  /** Locally retained retired keys for decrypting older backup packages. */
+  backupRetainedKeys: BackupKeyRecord[];
   /** Rotated when backup access is reset/revoked. */
   backupEpochId: string;
   /** Encrypted backup retention window. */
   backupRetentionDays: number;
   lastBackupAt?: number;
   lastBackupRevision?: number;
+  lastBackupFailureAt?: number;
+  lastBackupFailureRevision?: number;
+  nextBackupRetryAt?: number;
+  backupRetryAttempt?: number;
+  lastBackupError?: string;
 }
 
 export type CloudSyncState =
@@ -141,7 +157,11 @@ export interface CloudSyncStatus {
   backupEnabled: boolean;
   backupConfigured: boolean;
   backupRevision: number;
+  backupKeyId: string;
   lastBackedUpAt: number | null;
+  lastBackupFailureAt: number | null;
+  nextBackupRetryAt: number | null;
+  backupRetryAttempt: number;
   lastError?: string;
 }
 
@@ -176,6 +196,7 @@ export interface PeerHostState {
   backupEnabled: boolean;
   backupEpochId: string;
   backupKey: string;
+  backupKeyId: string;
 }
 
 export interface PeerHostPairingAccepted {

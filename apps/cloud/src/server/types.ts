@@ -6,4 +6,7 @@ export interface Env {
   LIVEKIT_API_SECRET?: string;
   LIVEKIT_URL?: string;
   LIVEKIT_AGENT_NAME?: string;
+  TURN_URL?: string;
+  TURN_USERNAME?: string;
+  TURN_CREDENTIAL?: string;
 }

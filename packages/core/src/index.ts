@@ -26,6 +26,7 @@ export const pairingLinkV1Schema = z.object({
   pairingSecret: z.string().min(24),
   backupEnabled: z.boolean().optional(),
   backupEpochId: z.string().min(1).optional(),
+  backupKeyId: z.string().min(1).max(128).optional(),
   backupKey: z.string().min(24).optional(),
 });
 export type PairingLinkV1 = z.infer<typeof pairingLinkV1Schema>;
@@ -204,7 +205,7 @@ export const encryptedSnapshotPackageV1Schema = z.object({
   baseRevision: z.number().int().nonnegative(),
   kind: z.literal("snapshot.update"),
   authorDeviceId: z.string().min(1).max(128),
-  keyId: z.string().min(1).max(128),
+  keyId: z.string().min(1).max(128).default("snapshot-v1"),
   nonce: z.string().min(12),
   ciphertext: z.string().min(1),
   createdAt: z.number().int().positive(),
@@ -273,6 +274,7 @@ export function encodePairingLink(input: PairingLinkV1): string {
   });
   if (parsed.backupEnabled) params.set("backupEnabled", "1");
   if (parsed.backupEpochId) params.set("backupEpochId", parsed.backupEpochId);
+  if (parsed.backupKeyId) params.set("backupKeyId", parsed.backupKeyId);
   const fragment = new URLSearchParams({
     pairingSecret: parsed.pairingSecret,
   });
@@ -293,6 +295,7 @@ export function decodePairingLink(value: string): PairingLinkV1 {
     pairingSecret: fragment.get("pairingSecret"),
     backupEnabled: url.searchParams.get("backupEnabled") === "1",
     backupEpochId: url.searchParams.get("backupEpochId") ?? undefined,
+    backupKeyId: url.searchParams.get("backupKeyId") ?? undefined,
     backupKey: fragment.get("backupKey") ?? undefined,
   });
 }
@@ -640,4 +643,36 @@ export async function decryptSnapshotBackupPackage(input: {
   return snapshotBackupPayloadV1Schema.parse(
     JSON.parse(utf8String(new Uint8Array(plaintext)))
   );
+}
+
+export interface SnapshotBackupKeyCandidate {
+  keyId?: string;
+  backupKey: string;
+}
+
+export async function decryptSnapshotBackupPackageWithKeys(input: {
+  keys: SnapshotBackupKeyCandidate[];
+  package: EncryptedSnapshotPackageV1;
+}): Promise<SnapshotBackupPayloadV1> {
+  const pkg = encryptedSnapshotPackageV1Schema.parse(input.package);
+  const preferred = input.keys.filter((candidate) =>
+    candidate.keyId
+      ? candidate.keyId === pkg.keyId
+      : pkg.keyId === "snapshot-v1"
+  );
+  const candidates = preferred.length > 0 ? preferred : input.keys;
+  let lastError: unknown;
+  for (const candidate of candidates) {
+    try {
+      return await decryptSnapshotBackupPackage({
+        backupKey: candidate.backupKey,
+        package: pkg,
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Encrypted snapshot backup could not be decrypted.");
 }

@@ -43,6 +43,12 @@ const CloudSyncDeviceSchema = z.object({
   revokedAt: z.number().optional(),
   lastAckedRevision: z.number().int().min(0).optional(),
 });
+const BackupKeyRecordSchema = z.object({
+  keyId: z.string().min(1),
+  backupKey: z.string().min(1),
+  backupEpochId: z.string().min(1),
+  retiredAt: z.number(),
+});
 const CloudSyncSchema = z.object({
   enabled: z.boolean(),
   paidPlan: z.boolean(),
@@ -54,10 +60,17 @@ const CloudSyncSchema = z.object({
   devices: z.array(CloudSyncDeviceSchema),
   backupEnabled: z.boolean(),
   backupKey: z.string(),
+  backupKeyId: z.string(),
+  backupRetainedKeys: z.array(BackupKeyRecordSchema),
   backupEpochId: z.string(),
   backupRetentionDays: z.number().int().min(1).max(365),
   lastBackupAt: z.number().optional(),
   lastBackupRevision: z.number().int().min(0).optional(),
+  lastBackupFailureAt: z.number().optional(),
+  lastBackupFailureRevision: z.number().int().min(0).optional(),
+  nextBackupRetryAt: z.number().optional(),
+  backupRetryAttempt: z.number().int().min(0).optional(),
+  lastBackupError: z.string().optional(),
 });
 const TelemetryPricePointSchema = z.object({
   inputPerMTok: z.number().min(0),

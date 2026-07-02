@@ -60,6 +60,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     devices: [],
     backupEnabled: false,
     backupKey: "",
+    backupKeyId: "",
+    backupRetainedKeys: [],
     backupEpochId: "",
     backupRetentionDays: 30,
   },
@@ -106,6 +108,18 @@ function persist(): void {
 function withRuntimeDefaults(next: AppConfig): AppConfig {
   const cloudSync = next.cloudSync ?? DEFAULT_CONFIG.cloudSync;
   const backupEnabled = Boolean(cloudSync.backupEnabled);
+  const backupKey =
+    backupEnabled && !cloudSync.backupKey
+      ? randomBytes(32).toString("base64url")
+      : cloudSync.backupKey || "";
+  const backupKeyId =
+    backupEnabled && !cloudSync.backupKeyId
+      ? `snapshot-${randomUUID()}`
+      : cloudSync.backupKeyId || "";
+  const backupEpochId =
+    backupEnabled && !cloudSync.backupEpochId
+      ? randomUUID()
+      : cloudSync.backupEpochId || "";
   return {
     ...next,
     cloudSync: {
@@ -120,14 +134,10 @@ function withRuntimeDefaults(next: AppConfig): AppConfig {
       deviceName: cloudSync.deviceName || hostname() || "Desktop",
       devices: cloudSync.devices ?? [],
       backupEnabled,
-      backupKey:
-        backupEnabled && !cloudSync.backupKey
-          ? randomBytes(32).toString("base64url")
-          : cloudSync.backupKey || "",
-      backupEpochId:
-        backupEnabled && !cloudSync.backupEpochId
-          ? randomUUID()
-          : cloudSync.backupEpochId || "",
+      backupKey,
+      backupKeyId,
+      backupRetainedKeys: cloudSync.backupRetainedKeys ?? [],
+      backupEpochId,
       backupRetentionDays:
         cloudSync.backupRetentionDays ||
         DEFAULT_CONFIG.cloudSync.backupRetentionDays,

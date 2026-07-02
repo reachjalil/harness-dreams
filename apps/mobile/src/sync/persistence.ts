@@ -40,6 +40,7 @@ export function parsePairingUrl(input: string): Pairing | null {
       pendingDecisions: [],
       backupEnabled: decoded.backupEnabled,
       backupEpochId: decoded.backupEpochId,
+      backupKeyId: decoded.backupKeyId,
       backupKey: decoded.backupKey,
     };
   } catch {
@@ -60,6 +61,7 @@ export async function loadPairing(): Promise<Pairing | null> {
     deviceName: parsed.deviceName || "iPhone",
     lastRevision: parsed.lastRevision ?? 0,
     pendingDecisions: parsed.pendingDecisions ?? [],
+    backupRetainedKeys: parsed.backupRetainedKeys ?? [],
   };
 }
 

@@ -1,3 +1,5 @@
+import { randomBytes, randomUUID } from "node:crypto";
+
 import {
   encryptSnapshotBackupPackage,
   peerReviewDecisionBatchV1Schema,
@@ -40,11 +42,16 @@ type Listener = (status: CloudSyncStatus) => void;
 const listeners = new Set<Listener>();
 const pairingSessions = new Map<string, PeerHostPairingSession>();
 const activeConnections = new Set<string>();
+const MAX_BACKUP_UPLOAD_ATTEMPTS = 5;
+const MAX_BACKUP_RETRY_DELAY_MS = 2 * 60 * 1000;
+const BASE_BACKUP_RETRY_DELAY_MS = 5 * 1000;
+const RETAINED_BACKUP_KEY_COUNT = 5;
 
 let initialized = false;
 let iceMode: CloudSyncStatus["iceMode"] = "unknown";
 let backupUploadInFlight = false;
 let backupUploadAgain = false;
+let backupRetryTimer: ReturnType<typeof setTimeout> | null = null;
 let status: CloudSyncStatus = makeStatus(resolveConfig());
 
 function env(name: string): string {
@@ -86,6 +93,52 @@ function backupConfigured(config: CloudSyncConfig): boolean {
       config.deviceId &&
       config.backupKey &&
       config.backupEpochId
+  );
+}
+
+function generateBackupKey(): string {
+  return randomBytes(32).toString("base64url");
+}
+
+function generateBackupKeyId(): string {
+  return `snapshot-${randomUUID()}`;
+}
+
+function activeBackupKeyId(config: CloudSyncConfig): string {
+  return config.backupKeyId || "snapshot-v1";
+}
+
+function clearBackupRetryTimer(): void {
+  if (backupRetryTimer) clearTimeout(backupRetryTimer);
+  backupRetryTimer = null;
+}
+
+function scheduleBackupRetryTimer(
+  nextRetryAt: number | null | undefined
+): void {
+  clearBackupRetryTimer();
+  if (!nextRetryAt) return;
+  const delay = Math.max(0, nextRetryAt - Date.now());
+  backupRetryTimer = setTimeout(() => {
+    backupRetryTimer = null;
+    void pushEncryptedSnapshotBackup("retry");
+  }, delay);
+}
+
+function retryDelayMs(attempt: number): number {
+  const base = Math.min(
+    BASE_BACKUP_RETRY_DELAY_MS * 2 ** Math.max(0, attempt - 1),
+    MAX_BACKUP_RETRY_DELAY_MS
+  );
+  return Math.min(
+    MAX_BACKUP_RETRY_DELAY_MS,
+    Math.round(base * (0.75 + Math.random() * 0.5))
+  );
+}
+
+function retryGateBypassed(reason: string): boolean {
+  return (
+    reason === "manual-sync" || reason === "retry" || reason === "key-rotation"
   );
 }
 
@@ -136,9 +189,53 @@ function buildSnapshotBackupPayload(
         key: "desktopDeviceName",
         value: config.deviceName,
       },
+      {
+        op: "setMeta",
+        key: "backupKeyId",
+        value: activeBackupKeyId(config),
+      },
     ],
     createdAt: Date.now(),
   };
+}
+
+function persistBackupFailure(input: {
+  config: CloudSyncConfig;
+  revision: number;
+  reason: string;
+  error: string;
+}): void {
+  const now = Date.now();
+  const sameRevision =
+    input.config.lastBackupFailureRevision === input.revision &&
+    input.reason !== "manual-sync" &&
+    input.reason !== "key-rotation";
+  const priorAttempt = sameRevision
+    ? (input.config.backupRetryAttempt ?? 0)
+    : 0;
+  const attempt = Math.min(priorAttempt + 1, MAX_BACKUP_UPLOAD_ATTEMPTS);
+  const exhausted = attempt >= MAX_BACKUP_UPLOAD_ATTEMPTS;
+  const nextRetryAt = exhausted ? 0 : now + retryDelayMs(attempt);
+  setConfig({
+    cloudSync: {
+      lastBackupFailureAt: now,
+      lastBackupFailureRevision: input.revision,
+      backupRetryAttempt: attempt,
+      nextBackupRetryAt: nextRetryAt,
+      lastBackupError: input.error,
+    },
+  });
+  scheduleBackupRetryTimer(nextRetryAt || null);
+  updateStatus({
+    state: "offline",
+    message: exhausted
+      ? "Encrypted backup fallback failed after retries. Manual sync can try again."
+      : "Encrypted backup fallback could not be updated; retry scheduled.",
+    lastError: input.error,
+    lastBackupFailureAt: now,
+    nextBackupRetryAt: nextRetryAt || null,
+    backupRetryAttempt: attempt,
+  });
 }
 
 async function pushEncryptedSnapshotBackup(reason: string): Promise<void> {
@@ -150,13 +247,30 @@ async function pushEncryptedSnapshotBackup(reason: string): Promise<void> {
     });
     return;
   }
+  if (
+    config.nextBackupRetryAt &&
+    config.nextBackupRetryAt > Date.now() &&
+    !retryGateBypassed(reason)
+  ) {
+    scheduleBackupRetryTimer(config.nextBackupRetryAt);
+    updateStatus({
+      message: "Encrypted backup fallback retry is scheduled.",
+      nextBackupRetryAt: config.nextBackupRetryAt,
+      backupRetryAttempt: config.backupRetryAttempt ?? 0,
+      lastBackupFailureAt: config.lastBackupFailureAt ?? null,
+      lastError: config.lastBackupError,
+    });
+    return;
+  }
   if (backupUploadInFlight) {
     backupUploadAgain = true;
     return;
   }
   backupUploadInFlight = true;
+  let attemptedRevision = currentRevision();
   try {
     const payload = buildSnapshotBackupPayload(config);
+    attemptedRevision = payload.revision;
     if (
       config.lastBackupRevision &&
       config.lastBackupRevision >= payload.revision &&
@@ -175,6 +289,7 @@ async function pushEncryptedSnapshotBackup(reason: string): Promise<void> {
       revision: payload.revision,
       authorDeviceId: config.deviceId,
       payload,
+      keyId: activeBackupKeyId(config),
       expiresAt: Date.now() + config.backupRetentionDays * 24 * 60 * 60 * 1000,
     });
     const response = await fetch(
@@ -200,8 +315,14 @@ async function pushEncryptedSnapshotBackup(reason: string): Promise<void> {
       cloudSync: {
         lastBackupAt: now,
         lastBackupRevision: payload.revision,
+        lastBackupFailureAt: 0,
+        lastBackupFailureRevision: 0,
+        backupRetryAttempt: 0,
+        nextBackupRetryAt: 0,
+        lastBackupError: "",
       },
     });
+    clearBackupRetryTimer();
     updateStatus({
       message:
         activeConnections.size > 0
@@ -209,13 +330,17 @@ async function pushEncryptedSnapshotBackup(reason: string): Promise<void> {
           : "Encrypted cloud fallback snapshot is current.",
       lastBackedUpAt: now,
       backupRevision: payload.revision,
+      lastBackupFailureAt: null,
+      nextBackupRetryAt: null,
+      backupRetryAttempt: 0,
       lastError: undefined,
     });
   } catch (error) {
-    updateStatus({
-      state: "offline",
-      message: "Encrypted backup fallback could not be updated.",
-      lastError: error instanceof Error ? error.message : String(error),
+    persistBackupFailure({
+      config,
+      revision: attemptedRevision,
+      reason,
+      error: error instanceof Error ? error.message : String(error),
     });
   } finally {
     backupUploadInFlight = false;
@@ -250,16 +375,28 @@ async function clearEncryptedSnapshotBackup(
     setConfig({
       cloudSync: {
         backupKey: "",
+        backupKeyId: "",
+        backupRetainedKeys: [],
         backupEpochId: "",
         lastBackupAt: 0,
         lastBackupRevision: 0,
+        lastBackupFailureAt: 0,
+        lastBackupFailureRevision: 0,
+        backupRetryAttempt: 0,
+        nextBackupRetryAt: 0,
+        lastBackupError: "",
       },
     });
+    clearBackupRetryTimer();
     updateStatus({
       backupEnabled: false,
       backupConfigured: false,
       backupRevision: 0,
       lastBackedUpAt: null,
+      backupKeyId: "",
+      lastBackupFailureAt: null,
+      nextBackupRetryAt: null,
+      backupRetryAttempt: 0,
     });
   }
 }
@@ -305,7 +442,12 @@ function makeStatus(config: CloudSyncConfig): CloudSyncStatus {
     backupEnabled: config.backupEnabled,
     backupConfigured: backupConfigured(config),
     backupRevision: config.lastBackupRevision ?? 0,
+    backupKeyId: activeBackupKeyId(config),
     lastBackedUpAt: config.lastBackupAt ?? null,
+    lastBackupFailureAt: config.lastBackupFailureAt || null,
+    nextBackupRetryAt: config.nextBackupRetryAt || null,
+    backupRetryAttempt: config.backupRetryAttempt ?? 0,
+    lastError: config.lastBackupError || undefined,
   };
 }
 
@@ -329,7 +471,15 @@ function updateStatus(patch: Partial<CloudSyncStatus>): CloudSyncStatus {
     backupEnabled: config.backupEnabled,
     backupConfigured: backupConfigured(config),
     backupRevision: config.lastBackupRevision ?? status.backupRevision ?? 0,
+    backupKeyId: activeBackupKeyId(config),
     lastBackedUpAt: config.lastBackupAt ?? status.lastBackedUpAt ?? null,
+    lastBackupFailureAt:
+      config.lastBackupFailureAt || status.lastBackupFailureAt || null,
+    nextBackupRetryAt:
+      config.nextBackupRetryAt || status.nextBackupRetryAt || null,
+    backupRetryAttempt:
+      config.backupRetryAttempt ?? status.backupRetryAttempt ?? 0,
+    lastError: config.lastBackupError || status.lastError,
     ...patch,
   };
   for (const listener of listeners) listener(status);
@@ -387,6 +537,7 @@ export function getPeerHostState(): PeerHostState {
     backupEnabled: config.backupEnabled,
     backupEpochId: config.backupEpochId,
     backupKey: config.backupEnabled ? config.backupKey : "",
+    backupKeyId: config.backupEnabled ? activeBackupKeyId(config) : "",
   };
 }
 
@@ -545,6 +696,52 @@ export async function syncCloudNow(): Promise<CloudSyncStatus> {
   });
 }
 
+export function rotateCloudBackupKey(): CloudSyncStatus {
+  const config = resolveConfig();
+  const now = Date.now();
+  const retained = config.backupKey
+    ? [
+        {
+          keyId: activeBackupKeyId(config),
+          backupKey: config.backupKey,
+          backupEpochId: config.backupEpochId || "snapshot-v1",
+          retiredAt: now,
+        },
+        ...config.backupRetainedKeys,
+      ].slice(0, RETAINED_BACKUP_KEY_COUNT)
+    : config.backupRetainedKeys;
+  setConfig({
+    cloudSync: {
+      enabled: true,
+      backupEnabled: true,
+      backupKey: generateBackupKey(),
+      backupKeyId: generateBackupKeyId(),
+      backupRetainedKeys: retained,
+      backupEpochId: randomUUID(),
+      lastBackupAt: 0,
+      lastBackupRevision: 0,
+      lastBackupFailureAt: 0,
+      lastBackupFailureRevision: 0,
+      backupRetryAttempt: 0,
+      nextBackupRetryAt: 0,
+      lastBackupError: "",
+    },
+    companionSyncInterest: true,
+  });
+  clearBackupRetryTimer();
+  void pushEncryptedSnapshotBackup("key-rotation");
+  return updateStatus({
+    state: "syncing",
+    message: "Backup key rotated. Re-uploading the latest encrypted snapshot.",
+    backupRevision: 0,
+    lastBackedUpAt: null,
+    lastBackupFailureAt: null,
+    nextBackupRetryAt: null,
+    backupRetryAttempt: 0,
+    lastError: undefined,
+  });
+}
+
 function reconfigureCloudSync(): void {
   const config = resolveConfig();
   resetStatusForConfig();
@@ -555,6 +752,9 @@ function reconfigureCloudSync(): void {
     closePeerHost();
   }
   if (config.backupEnabled) {
+    if (config.nextBackupRetryAt && config.nextBackupRetryAt > Date.now()) {
+      scheduleBackupRetryTimer(config.nextBackupRetryAt);
+    }
     void pushEncryptedSnapshotBackup("config");
   } else if (config.backupKey) {
     void clearEncryptedSnapshotBackup(config);
@@ -579,6 +779,7 @@ export function initCloudSync(): void {
 }
 
 export async function shutdownCloudSync(): Promise<void> {
+  clearBackupRetryTimer();
   closePeerHost();
   activeConnections.clear();
   pairingSessions.clear();

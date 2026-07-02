@@ -12,6 +12,7 @@ import {
   applyPeerReviewDecisionBatch,
   getCloudSyncStatus,
   getPeerHostState,
+  rotateCloudBackupKey,
   syncCloudNow,
   updatePeerHostConnection,
 } from "./cloudSync";
@@ -79,6 +80,7 @@ export function registerIpc(controller: Controller): void {
   handleTrusted(Invoke.CloudSyncRemoveDevice, (_event, deviceId: unknown) =>
     removeCloudSyncDevice(z.string().parse(deviceId))
   );
+  handleTrusted(Invoke.CloudSyncRotateBackupKey, () => rotateCloudBackupKey());
   handleTrusted(Invoke.PeerHostState, () => getPeerHostState());
   handleTrusted(Invoke.PeerHostPairingAccepted, (_event, input: unknown) =>
     acceptPeerHostPairing(

@@ -20,7 +20,12 @@ export interface Pairing {
   pendingDecisions: PendingDecision[];
   backupEnabled?: boolean;
   backupEpochId?: string;
+  backupKeyId?: string;
   backupKey?: string;
+  backupRetainedKeys?: Array<{
+    keyId?: string;
+    backupKey: string;
+  }>;
 }
 
 export interface PendingDecision {
