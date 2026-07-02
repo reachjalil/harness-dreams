@@ -1,0 +1,12 @@
+# Local Cloudflare Worker development only.
+# Copy this file to .dev.vars and fill in local-only secrets.
+
+LIVEKIT_API_KEY=replace-with-local-livekit-api-key
+LIVEKIT_API_SECRET=replace-with-local-livekit-api-secret
+LIVEKIT_URL=wss://example.livekit.cloud
+LIVEKIT_AGENT_NAME=health-voice
+
+# Optional future TURN configuration.
+# TURN_URL=turn:turn.example.com:3478
+# TURN_USERNAME=replace-with-local-turn-username
+# TURN_CREDENTIAL=replace-with-local-turn-credential

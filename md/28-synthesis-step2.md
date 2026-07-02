@@ -1,336 +1,124 @@
-# Review Agent — Step 2: Synthesis
+# Health Review Synthesis
+
+> Current implementation note. The old Python API design is archived at
+> `archive/python-api`; this document describes the active desktop and Worker
+> implementation.
 
 ## What This Step Does
 
-Synthesis is where raw ingestion data becomes insight. It runs after `ingest_all()` and produces
-a `HealthLog` — the only document ever written to MongoDB. Everything else (sessions, configs,
-chat content) stays local.
+Synthesis turns local agent telemetry into a `HealthReport`: vitals, alignment,
+findings, recommendations, and an optional morning briefing. The durable source
+of truth is the Electron desktop app, not a separate API service.
 
-The core design principle: **this is a continuous learning loop, not a daily summary tool.**
-Yesterday's HealthLog is the baseline the agent compares against today. Over time the agent tracks
-whether friction is resolving, whether recommendations are being followed, and whether alignment
-is improving or declining.
+The core design principle is still a continuous learning loop. Each review
+compares the latest local sessions, config state, and accepted recommendations
+against prior reviews so the app can tell whether friction is resolving,
+persisting, or getting worse.
 
----
+## Current Flow
 
-## Agent Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            IngestResult (in memory)                         │
-│          sessions (claude-code, cursor, codex, opencode, git, ...)          │
-│          configs  (CLAUDE.md, AGENTS.md, MCP, soul.md, skills, ...)         │
-└───────────────────────────────────┬─────────────────────────────────────────┘
-                                    │
-                    ┌───────────────┼───────────────┐
-                    │               │               │
-                    ▼               ▼               ▼
-             chat sessions     git commits     agent configs
-             (user turns +    (what shipped   (CLAUDE.md,
-              agent turns)     vs discussed)   MCP, skills)
-                    │               │               │
-                    └───────────────┴───────────────┘
-                                    │
-                        ┌───────────▼────────────┐
-                        │     MongoDB lookup      │
-                        │  yesterday's HealthLog   │◄── alignment_score
-                        │  (full document)        │    friction_points
-                        └───────────┬────────────┘    recommendations
-                                    │                  model_usage
-                                    │
-                    ┌───────────────▼────────────────────┐
-                    │          STAGE 1: Observer          │
-                    │       model: gemini-2.5-flash       │
-                    │       output: DayObservation        │
-                    │                                     │
-                    │  reads: sessions + configs +        │
-                    │         yesterday's HealthLog        │
-                    │                                     │
-                    │  observes:                          │
-                    │  • user prompt patterns (mood)      │
-                    │  • agent response patterns (mood)   │
-                    │  • topics worked on                 │
-                    │  • key moments (specific quotes)    │
-                    │  • commit vs session drift          │
-                    │  • config changes from yesterday    │
-                    │  • which recs were followed/ignored │
-                    │  • model usage observed             │
-                    └───────────────┬────────────────────┘
-                                    │
-                               DayObservation
-                          (structured, ~20 fields,
-                           mostly free-form text)
-                                    │
-                    ┌───────────────▼────────────────────┐
-                    │       MongoDB lookup (again)        │
-                    │   past 7 HealthLogs (lightweight)   │◄── date
-                    │   for seven_day_pattern + trends   │    alignment_score
-                    └───────────────┬────────────────────┘    alignment_label
-                                    │
-                    ┌───────────────▼────────────────────┐
-                    │        STAGE 2: Synthesizer         │
-                    │       model: gemini-2.5-flash       │
-                    │       output: HealthLog (typed)      │
-                    │                                     │
-                    │  reads: DayObservation +            │
-                    │         yesterday's recs +          │
-                    │         past 7 day patterns         │
-                    │                                     │
-                    │  produces:                          │
-                    │  • mind_map_nodes + edges           │
-                    │  • your_mood / agent_mood           │
-                    │  • your_question / agent_question   │
-                    │  • alignment_score + label          │
-                    │  • friction_points (typed)          │
-                    │  • recommendations (concrete)       │
-                    │  • config_diffs (delta layer)       │
-                    │  • friction_deltas (resolved/new)   │
-                    │  • model_usage                      │
-                    │  • acted_on_recommendations         │
-                    │  • seven_day_pattern                │
-                    │  • synthesis_context (voice brief)  │
-                    └───────────────┬────────────────────┘
-                                    │
-                                 HealthLog
-                           (Pydantic validated,
-                            auto-retry on schema fail)
-                                    │
-                    ┌───────────────▼────────────────────┐
-                    │             MongoDB                 │
-                    │   health_logs.update_one(upsert)    │
-                    │   unique index on date             │
-                    └───────────────┬────────────────────┘
-                                    │
-                        ┌───────────┴──────────────┐
-                        │                          │
-                        ▼                          ▼
-              GET /reviews/{date}          synthesis_context
-              (FastAPI endpoint)       (loaded into voice session
-                                        for morning briefing)
+```text
+Local agent traces and project config
+  ~/.claude, ~/.codex, Cursor state, project AGENTS.md, skills, rules
+        |
+        v
+Desktop telemetry connectors
+  apps/desktop/src/main/telemetryConnectors.ts
+        |
+        v
+Local PGlite telemetry store
+  apps/desktop/src/main/telemetryStore.ts
+        |
+        v
+Health review engine
+  apps/desktop/src/main/healthReviewEngine.ts
+        |
+        +--> optional redacted CLI insight pass
+        |    apps/desktop/src/main/insightAnalysis.ts
+        |
+        v
+HealthReport
+  persisted by apps/desktop/src/main/reports.ts
+        |
+        +--> desktop UI review detail
+        +--> accepted guidance patches / review branches
+        +--> optional private device sync and encrypted snapshot backup
+        +--> Worker voice token for LiveKit sessions when configured
 ```
 
----
+## Two Stages
 
-## The Continuous Learning Loop
+### Stage 1: Observe
 
-```
-Day 1                Day 2                Day 3
-─────                ─────                ─────
-observe          ┌── compare          ┌── compare
-  sessions       │     sessions +     │     sessions +
-  configs        │     Day 1 log      │     Day 2 log
-  commits        │                    │
-     │           │   friction         │   friction
-     ▼           │   persisting? ─────┼── still there?
-  HealthLog ──────┘   resolved?        │   escalating?
-  saved to           new?             │
-  MongoDB                │            │   recs followed?
-                         ▼            │   configs updated?
-                      HealthLog ───────┘
-                      saved to
-                      MongoDB
-```
+The desktop app ingests only local files and records normalized events, cursors,
+source summaries, model usage, tool outcomes, and project pointers. Raw text
+retention is disabled by default and controlled by desktop telemetry settings.
 
-**What the loop tracks over time:**
-- Friction points: how many days is the same pattern persisting?
-- Recommendations: did you act on them? Did it help?
-- Model usage: did you switch models? Did alignment improve after?
-- Config evolution: how is your CLAUDE.md changing week over week?
-
----
-
-## Neuroscience Foundation
-
-The two-stage design is grounded in how human reviewing actually works — specifically the
-distinction between deterministic observation and Insight idle, and what each pass does to the day's memories.
-
-### deterministic observation idle → Stage 1 (Observer)
-During deterministic observation, the hippocampus replays the day's events in compressed bursts to the neocortex.
-This is brute-force consolidation: extract what happened, transfer it from short-term to
-long-term storage. No synthesis yet. Just observation and extraction.
-
-The Observer mirrors this: read everything, take exhaustive notes, extract emotionally charged
-moments as `key_moments`. No schema pressure. No synthesis.
-
-### Insight idle → Stage 2 (Synthesizer)
-Insight runs on acetylcholine instead of serotonin. The prefrontal cortex (logical filtering) goes
-offline. The amygdala (emotional significance) stays on. This produces two things waking review
-can't match:
-1. **Cross-domain association**: weak links between unrelated memories become active that would
-   be filtered awake — this is why the unexpected insight arrives in the morning.
-2. **Emotional defusion**: the brain replays emotionally charged events and gradually strips the
-   charge — reviews don't amplify friction, they metabolize it.
-
-The Synthesizer mirrors this: weight topics by emotional signal intensity (not time spent),
-find cross-day patterns, name friction neutrally. Open the morning briefing with the sharpest
-non-obvious insight, close with one question — not an action list.
-
-### Key research findings applied
-
-| Finding | Applied in |
-|---|---|
-| Brain weights memories by emotional salience, not duration | Observer weights `key_moments` by rephrase count, rejections, hedge density — not turn count |
-| Insight finds cross-domain connections (emotional rhyming across unrelated topics) | Synthesizer explicitly looks for friction that rhymes emotionally across days/domains |
-| Reviews defuse emotional charge — don't amplify it | synthesis_context tone: neutral coach, not postmortem |
-| Morning hypnopompic window primes the day's cognitive frame | synthesis_context structure: sharpest insight first, one question last |
-| Continuity hypothesis: reviews reflect unresolved waking concerns | Delta layer tracks recommendations that persist unacted-on across days |
-
-Sources: Stickgold (memory consolidation), Walker (Insight/deterministic observation roles), Cartwright 2024 (emotional
-defusion), Revonsuo (threat simulation), default mode network fMRI studies (Insight brain imaging).
-
----
-
-## Why Two Stages
-
-| Concern | Single-shot | Two-stage |
-|---|---|---|
-| Schema pressure | Agent fills fields fast, skips deep reading | Observer reads freely (deterministic observation-like), no schema constraint |
-| Evidence quality | Generic observations | Observer extracts specific quotes as `key_moments` |
-| Emotional weighting | Topics weighted by time spent | Topics weighted by emotional signal intensity |
-| Cross-day patterns | Each day treated independently | Synthesizer connects today's friction to prior days |
-| Delta analysis | Mixed with synthesis | Observer handles diff; Synthesizer only structures |
-| Debuggability | Can't inspect intermediate reasoning | DayObservation is inspectable before Stage 2 runs |
-| Retry granularity | Full retry if schema fails | Only Stage 2 retries on schema failure |
-
----
-
-## Key Files
+Key files:
 
 | File | Role |
 |---|---|
-| `synthesis/schema.py` | All Pydantic models: `DayObservation`, `HealthLog`, delta sub-models |
-| `synthesis/prompt.py` | `OBSERVER_PROMPT` + `SYNTHESIZER_PROMPT` |
-| `synthesis/agent.py` | Two-stage pipeline: `synthesize(result, date) → HealthLog` |
-| `synthesis/__init__.py` | Package init |
-| `main.py` | FastAPI: `POST /synthesize`, `GET /reviews/{date}`, `GET /health` |
-| `test_synthesis.py` | End-to-end test: ingest → synthesize → print |
+| `apps/desktop/src/main/telemetry.ts` | Starts scanning, watching, and snapshot refresh |
+| `apps/desktop/src/main/telemetryConnectors.ts` | Reads supported local agent sources |
+| `apps/desktop/src/main/telemetryStore.ts` | PGlite tables for events and cursors |
+| `apps/desktop/src/main/telemetryAnalytics.ts` | Builds live metrics and insights |
 
----
+### Stage 2: Review
 
-## HealthLog Schema (what gets saved to MongoDB)
+The review engine turns observed sessions and config state into a report. It
+detects repeated corrections, hedging, context drift, skill-routing gaps, model
+usage, accepted recommendation progress, and project-level trends. When a CLI
+insight runner is enabled, only a redacted payload is sent to the configured
+local CLI command.
 
-```
-HealthLog
-├── date                        YYYY-MM-DD
-│
-├── Mind map
-│   ├── mind_map_nodes[]        topic, weight, is_new
-│   └── mind_map_edges[]        (topic_a, topic_b) pairs
-│
-├── Your side
-│   ├── your_mood               label, summary, evidence
-│   └── your_question           question, evidence
-│
-├── Agent side
-│   ├── agent_mood              label, summary, evidence
-│   └── agent_question          question, evidence
-│
-├── Alignment
-│   ├── alignment_score         0.0–1.0
-│   ├── alignment_label         aligned | mild-friction | friction | misaligned
-│   ├── friction_points[]       type, description, evidence
-│   └── recommendations[]       target, action, reason
-│
-├── Delta layer (vs yesterday)
-│   ├── config_diffs[]          file, change_type, summary
-│   ├── friction_deltas[]       description, status, days_persisting
-│   ├── model_usage[]           source, model, session_count
-│   └── acted_on_recommendations[]
-│
-└── Continuity
-    ├── seven_day_pattern[]     date, alignment_score, alignment_label
-    └── synthesis_context       2-3 paragraph voice briefing
-```
+Key files:
 
----
+| File | Role |
+|---|---|
+| `apps/desktop/src/main/healthReviewEngine.ts` | Main report generator |
+| `apps/desktop/src/main/insightAnalysis.ts` | Optional redacted CLI insight pass |
+| `apps/desktop/src/main/reports.ts` | Report storage, decisions, and accepted guidance |
+| `apps/desktop/src/main/recommendationBranches.ts` | Review branch creation for accepted guidance |
+| `apps/desktop/src/shared/types.ts` | `HealthReport`, findings, metrics, sync, and review types |
+
+## Data Boundary
+
+Local review data remains in the desktop app by default:
+
+- Normalized telemetry is stored in PGlite under the app userData directory.
+- App config and reports are stored by the Electron main process.
+- Cloudflare handles signaling and optional encrypted snapshot backup only when
+  the user enables sync or backup.
+- Voice token minting is a Worker route in `apps/cloud/src/server/voice.ts`.
 
 ## Running
 
+Use package checks and tests for the active implementation:
+
 ```bash
-# End-to-end test (ingest + synthesize for a specific date)
-cd apps/api
-python3 test_synthesis.py 2026-06-26
-
-# Start the API
-uvicorn main:app --reload --port 8000
-
-# Trigger synthesis via API
-curl -X POST http://localhost:8000/synthesize \
-  -H "Content-Type: application/json" \
-  -d '{"date": "2026-06-26"}'
-
-# Poll job status
-curl http://localhost:8000/synthesize/{job_id}
-
-# Read the result
-curl http://localhost:8000/reviews/2026-06-26
+pnpm --filter @harness-health/desktop check
+pnpm --filter @harness-health/desktop test
+pnpm --filter @harness-health/cloud check
+pnpm --filter @harness-health/cloud test
 ```
 
----
+For local Worker development:
 
-## synthesis_context Structure (Morning Briefing)
-
-The voice briefing follows a neurologically-grounded structure based on the hypnopompic window —
-the transition from idle to waking when the brain is most receptive to framing.
-
-```
-Paragraph 1 — The sharpest non-obvious insight
-  NOT: "Yesterday you worked on X."
-  YES: "The prompt engineering vs. hardcoding tension escalated into an architectural rethink —
-       following yesterday's recommendation made things worse before it made them better."
-
-Paragraph 2 — What changed from the day before
-  Delta in plain language: friction resolved, new friction, models switched,
-  configs updated, recommendations followed or ignored.
-
-Paragraph 3 — One question to carry into today
-  NOT: an action list.
-  YES: "Where does the line lie between LLM agency and explicit code-based control
-       for deterministic workflows?"
+```bash
+cp apps/cloud/.dev.vars.example apps/cloud/.dev.vars
+pnpm --filter @harness-health/cloud dev
 ```
 
-The brain waking up encodes a single goal-frame. One question activates a search mode.
-An action list activates nothing.
+`apps/cloud/.dev.vars` is local-only and ignored. Production secrets should be
+set with Wrangler secrets or the Cloudflare dashboard.
 
----
+## Review Briefing Shape
 
-## Observed Results (Jun 22–26, 2026)
+The morning briefing remains intentionally short:
 
-First 5-day run on real sessions:
+1. The sharpest non-obvious pattern from the latest review window.
+2. What changed compared with previous reviews.
+3. One question to carry into the next work session.
 
-| Date | Sessions | Alignment | Label | Your mood | Agent mood |
-|---|---|---|---|---|---|
-| Jun 22 | 14 | 0.65 | mild-friction | frustrated | iterating |
-| Jun 23 | 8 | 0.60 | mild-friction | iterating | iterating |
-| Jun 24 | 11 | 0.70 | mild-friction | iterating | iterating |
-| Jun 25 | 4 | 0.75 | mild-friction | iterating | iterating |
-| Jun 26 | 3 | 0.30 | misaligned | frustrated | uncertain |
-
-**Pattern the loop detected:**
-Alignment improved Jun 22→25 (0.65 → 0.75) as agent learned to plan before executing.
-Then dropped sharply on Jun 26 (0.50 → 0.30 after prompt update) when the same architectural
-tension peaked. The recommendation "provide a plan before executing" appeared verbatim on Jun 24,
-25, and 26 — all marked "not acted on" by the delta layer.
-
-**Cross-domain pattern (detected by updated prompts):**
-The core recurring friction across all 5 days — LLM control vs. code-enforced determinism —
-is emotionally the same tension even when manifesting in different subsystems (prompt engineering,
-git workflow, HITL events, LinkedIn state sync). The updated Synthesizer correctly identified
-this as one pattern, not five separate issues.
-
-**Before vs after prompt update (Jun 26):**
-
-| | Old prompts | Updated prompts |
-|---|---|---|
-| Alignment score | 0.50 (friction) | 0.30 (misaligned) — more accurate |
-| Top topic | "Debugging onboarding flow" | "LLM's inherent biases overriding prompt instructions" |
-| synthesis_context opens | Chronology summary | The cross-day architectural insight |
-| Closes with | Action list | One question |
-
----
-
-## What's Next (Step 3)
-
-- Gemini Live integration: load `synthesis_context` into a voice session as the morning briefing
-- Frontend dashboard: mind map visualization + 7-day alignment trend chart
-- Scheduled synthesis: cron at 6am to auto-run overnight
+The goal is not a generic summary. It is a small, testable frame for improving
+the next agent collaboration loop.

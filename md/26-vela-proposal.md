@@ -1,5 +1,10 @@
 # Review — Hackathon Proposal
 
+> Historical proposal. This predates the Harness Health desktop/Worker
+> implementation. References to Python, FastAPI, MongoDB, sponsor APIs, and
+> `apps/api` describe the abandoned proposal-era architecture, not the active
+> runtime. See `md/27-health-api-implementation.md` for the retirement record.
+
 > *You wake up. Open it. See how you and your agents were thinking yesterday — and how aligned you actually were.*
 
 ---
@@ -1083,4 +1088,3 @@ EXPORT_FOLDER=~/.review/exports
 3. **MongoDB Atlas cluster** — do you have connection string ready? Or use local MongoDB for day 1?
 4. **Gemini API key** — needed for day 2 synthesis + embeddings
 5. **Context window budget** — a full day of Claude Code sessions can be 5–10MB of JSONL. Will summarize turns > 500 tokens before synthesis rather than send raw text.
-
