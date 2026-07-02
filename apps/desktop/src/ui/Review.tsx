@@ -1,12 +1,12 @@
 import { type ReactElement, useEffect, useMemo, useState } from "react";
 
-import { DREAM_STAGES } from "../shared/stages";
+import { HEALTH_REVIEW_STAGES } from "../shared/stages";
 import type {
   ActionCategory,
   ActionQueueEntry,
   ActionState,
-  CycleReviewStatus,
-  DreamReport,
+  HealthReviewStatus,
+  HealthReport,
   Finding,
   Metric,
   RuntimeState,
@@ -18,7 +18,7 @@ import {
   Button,
   bandLabel,
   type Crumb,
-  CycleProgress,
+  ReviewProgress,
   categorize,
   FindingCard,
   FrictionChip,
@@ -29,16 +29,16 @@ import {
   SummaryCard,
 } from "./components";
 import {
-  CycleWindowBanner,
+  ReviewWindowBanner,
   MeasuredGoals,
   PatchPreview,
   ProjectBreakdown,
   RecommendationMap,
-} from "./cycleDetail";
+} from "./reviewDetail";
 import { RING_TIP, TERM } from "./explainers";
 import { Icon, type IconName } from "./icons";
 import { InfoTip } from "./Tooltip";
-import type { HarnessDreams } from "./useHarnessDreams";
+import type { HarnessHealth } from "./useHarnessHealth";
 
 // Local review state: one decision per finding. "open" means undecided.
 type Decisions = Record<string, ActionState>;
@@ -62,7 +62,7 @@ const CATEGORY_LABEL: Record<ActionCategory, string> = {
   skill: "Skill routing",
 };
 
-function decisionsFromReport(report: DreamReport | null): Decisions {
+function decisionsFromReport(report: HealthReport | null): Decisions {
   return Object.fromEntries(
     (report?.reviewDecisions ?? []).map((entry) => [
       entry.findingId,
@@ -72,34 +72,34 @@ function decisionsFromReport(report: DreamReport | null): Decisions {
 }
 
 /** Breadcrumb trail for the review wizard — depth grows as you go deeper, and
- *  "Cycle" is clickable to jump back to the overview. */
-function cycleCrumbs(
-  report: DreamReport,
+ *  "Review" is clickable to jump back to the overview. */
+function reviewCrumbs(
+  report: HealthReport,
   step: "overview" | "findings" | "queue",
   toList: () => void,
   toOverview: () => void,
   queueCount: number
 ): Crumb[] {
-  const cycleLabel = longDate(report.timestamp);
+  const reviewLabel = longDate(report.timestamp);
   if (step === "overview") {
-    return [{ label: "Sleep Cycles", onClick: toList }, { label: cycleLabel }];
+    return [{ label: "Reviews", onClick: toList }, { label: reviewLabel }];
   }
   const label =
     step === "queue"
       ? `Goal decisions${queueCount > 0 ? ` · ${queueCount}` : ""}`
       : "Review suggested goals";
   return [
-    { label: "Sleep Cycles", onClick: toList },
-    { label: cycleLabel, onClick: toOverview },
+    { label: "Reviews", onClick: toList },
+    { label: reviewLabel, onClick: toOverview },
     { label },
   ];
 }
 
-function cycleTitle(report: DreamReport): string {
-  return report.kind === "nap" ? "Nap Cycle" : "Sleep Cycle";
+function reviewTitle(report: HealthReport): string {
+  return report.kind === "quick" ? "Quick Review" : "Health Review";
 }
 
-function composite(report: DreamReport): number {
+function composite(report: HealthReport): number {
   const sum = report.rings.reduce((acc, ring) => acc + ring.score, 0);
   return Math.round(sum / Math.max(1, report.rings.length));
 }
@@ -110,7 +110,7 @@ function trendTone(delta: number): "positive" | "negative" | "neutral" {
   return "neutral";
 }
 
-function ringScore(report: DreamReport, key: string): number {
+function ringScore(report: HealthReport, key: string): number {
   return report.rings.find((r) => r.key === key)?.score ?? 0;
 }
 
@@ -122,10 +122,10 @@ function longDate(ts: number): string {
   });
 }
 
-function listCycleStatus(
-  report: DreamReport,
+function listReviewStatus(
+  report: HealthReport,
   isLatest: boolean
-): CycleReviewStatus {
+): HealthReviewStatus {
   if (report.reviewStatus === "reviewed" || report.reviewedAt) {
     return "reviewed";
   }
@@ -133,21 +133,21 @@ function listCycleStatus(
   return "expired";
 }
 
-function statusTone(status: CycleReviewStatus): "neutral" | "good" | "warn" {
+function statusTone(status: HealthReviewStatus): "neutral" | "good" | "warn" {
   if (status === "reviewed") return "good";
   if (status === "expired") return "neutral";
   return "warn";
 }
 
-function statusLabel(status: CycleReviewStatus): string {
+function statusLabel(status: HealthReviewStatus): string {
   if (status === "unreviewed") return "Needs review";
   if (status === "expired") return "Expired";
   return "Reviewed";
 }
 
-function statusHelp(status: CycleReviewStatus): string {
-  if (status === "unreviewed") return "Latest Sleep Cycle needs review";
-  if (status === "expired") return "Expired by a newer Sleep Cycle";
+function statusHelp(status: HealthReviewStatus): string {
+  if (status === "unreviewed") return "Latest Health Review needs review";
+  if (status === "expired") return "Expired by a newer Health Review";
   return "Reviewed by you";
 }
 
@@ -164,7 +164,7 @@ function fileName(file: string | undefined): string {
 }
 
 function decisionStats(
-  report: DreamReport,
+  report: HealthReport,
   decisions: Decisions
 ): {
   accepted: number;
@@ -187,7 +187,7 @@ function decisionStats(
   };
 }
 
-function reviewMetrics(report: DreamReport): Metric[] {
+function reviewMetrics(report: HealthReport): Metric[] {
   const preferred = ["reask", "tool_success", "context_load"];
   const picked = preferred
     .map((key) => report.metrics.find((metric) => metric.key === key))
@@ -209,7 +209,7 @@ function runnerLabel(runner: string | undefined): string {
   return "CLI";
 }
 
-function provenanceSummary(report: DreamReport): {
+function provenanceSummary(report: HealthReport): {
   value: string;
   sublabel: string;
 } {
@@ -248,36 +248,36 @@ function formatSchedule(time: string | undefined): string {
   return `${displayHour}:${minute} ${period}`;
 }
 
-function CycleRow({
+function ReviewRow({
   report,
   selected,
   delta,
   status,
   onSelect,
 }: {
-  report: DreamReport;
+  report: HealthReport;
   selected: boolean;
   delta: number | null;
-  status: CycleReviewStatus;
+  status: HealthReviewStatus;
   onSelect: (id: string) => void;
 }): ReactElement {
   const split = alignmentSplit(report);
   return (
     <button
       type="button"
-      className={`cycle-list-row ${status}${selected ? " selected" : ""}`}
+      className={`review-list-row ${status}${selected ? " selected" : ""}`}
       onClick={() => onSelect(report.id)}
     >
-      <span className="cycle-list-date">
-        <span className="cycle-list-main">{longDate(report.timestamp)}</span>
-        <span className="cycle-list-sub">
+      <span className="review-list-date">
+        <span className="review-list-main">{longDate(report.timestamp)}</span>
+        <span className="review-list-sub">
           {report.sessions} sessions · {report.projects} projects
         </span>
       </span>
-      <span className="cycle-list-score tnum">{composite(report)}</span>
-      <span className="cycle-list-rings">
+      <span className="review-list-score tnum">{composite(report)}</span>
+      <span className="review-list-rings">
         {report.rings.map((ring) => (
-          <span key={ring.key} className={`cycle-list-ring ${ring.key}`}>
+          <span key={ring.key} className={`review-list-ring ${ring.key}`}>
             <span>{ring.label}</span>
             <b className="tnum">{ring.score}</b>
           </span>
@@ -287,99 +287,102 @@ function CycleRow({
         {bandLabel(split.band)}
         {typeof delta === "number" ? ` ${delta >= 0 ? "+" : ""}${delta}` : ""}
       </span>
-      <span className="cycle-list-status" title={statusHelp(status)}>
+      <span className="review-list-status" title={statusHelp(status)}>
         <Pill tone={statusTone(status)}>{statusLabel(status)}</Pill>
       </span>
-      <span className="cycle-list-action" aria-hidden="true">
+      <span className="review-list-action" aria-hidden="true">
         <Icon name="chevron" size={15} />
       </span>
     </button>
   );
 }
 
-function CycleIndex({
+function ReviewIndex({
   hd,
   reports,
   selectedId,
   scheduleLabel,
-  onSelectCycle,
-  onRunSleepCycle,
+  onSelectReview,
+  onRunHealthReview,
 }: {
-  hd: HarnessDreams;
-  reports: DreamReport[];
+  hd: HarnessHealth;
+  reports: HealthReport[];
   selectedId: string | null;
   scheduleLabel: string;
-  onSelectCycle: (id: string) => void;
-  onRunSleepCycle: () => void;
+  onSelectReview: (id: string) => void;
+  onRunHealthReview: () => void;
 }): ReactElement {
   const { state } = hd;
-  const latestStatus = reports[0] ? listCycleStatus(reports[0], true) : null;
-  const unreviewedCycle =
+  const latestStatus = reports[0] ? listReviewStatus(reports[0], true) : null;
+  const unreviewedReport =
     latestStatus === "unreviewed" ? reports[0] : undefined;
   const visibleCount = Math.min(reports.length, 25);
 
   return (
     <>
       <PageHeader
-        crumbs={[{ label: "Sleep Cycles" }]}
-        subtitle="A chronological list of Sleep Cycle reports. Open a row to review the actual Sleep Cycle summary, findings, and queue."
+        crumbs={[{ label: "Reviews" }]}
+        subtitle="A chronological list of Health Review reports. Open a row to review the actual Health Review summary, findings, and queue."
         primary={
           <Button
             variant="accent"
             onClick={() =>
-              unreviewedCycle
-                ? onSelectCycle(unreviewedCycle.id)
-                : onRunSleepCycle()
+              unreviewedReport
+                ? onSelectReview(unreviewedReport.id)
+                : onRunHealthReview()
             }
-            disabled={state?.phase === "dreaming"}
+            disabled={state?.phase === "running"}
           >
-            <Icon name={unreviewedCycle ? "cycle" : "dream"} size={16} />
-            {state?.phase === "dreaming"
+            <Icon
+              name={unreviewedReport ? "review" : "healthReview"}
+              size={16}
+            />
+            {state?.phase === "running"
               ? "Running…"
-              : unreviewedCycle
-                ? "Review Sleep Cycle"
-                : "Run Sleep Cycle"}
+              : unreviewedReport
+                ? "Review Health Review"
+                : "Run Health Review"}
           </Button>
         }
       />
 
       {reports.length === 0 ? (
-        <CycleResting
+        <ReviewIdle
           scheduleLabel={scheduleLabel}
-          onDreamNow={onRunSleepCycle}
+          onRunHealthReview={onRunHealthReview}
         />
       ) : (
-        <div className="cycle-index">
-          <div className="cycle-list-toolbar">
+        <div className="review-index">
+          <div className="review-list-toolbar">
             <span>
-              {reports.length} Sleep Cycle{reports.length === 1 ? "" : "s"}
-              <InfoTip title="Sleep Cycle" text={TERM.sleepCycle} />
+              {reports.length} Health Review{reports.length === 1 ? "" : "s"}
+              <InfoTip title="Health Review" text={TERM.healthReview} />
             </span>
             <span>Newest first</span>
           </div>
-          <div className="cycle-list" role="list" aria-label="Sleep Cycles">
+          <div className="review-list" role="list" aria-label="Reviews">
             {reports.map((report, i) => {
               const prior = reports[i + 1] ?? null;
               const delta = prior
                 ? ringScore(report, "alignment") - ringScore(prior, "alignment")
                 : null;
               return (
-                <CycleRow
+                <ReviewRow
                   key={report.id}
                   report={report}
                   selected={report.id === selectedId}
                   delta={delta}
-                  status={listCycleStatus(report, i === 0)}
-                  onSelect={onSelectCycle}
+                  status={listReviewStatus(report, i === 0)}
+                  onSelect={onSelectReview}
                 />
               );
             })}
           </div>
-          <div className="cycle-list-footer">
+          <div className="review-list-footer">
             <span>
               Showing 1-{visibleCount} of {reports.length}
             </span>
-            <span className="cycle-page-controls">
+            <span className="review-page-controls">
               <button type="button" aria-label="Previous page" disabled>
                 <Icon name="chevron" size={14} />
               </button>
@@ -394,7 +397,7 @@ function CycleIndex({
   );
 }
 
-// ── Running / resting states ─────────────────────────────────────────────────
+// ── Running / idle states ─────────────────────────────────────────────────
 
 const RUN_PASSES = [
   {
@@ -416,7 +419,7 @@ const RUN_PASSES = [
     done: 0.56,
     label: "Compare",
     title: "Measure against goals",
-    text: "Current goals are compared with actual behavior so progress stays separate from raw cycle output.",
+    text: "Current goals are compared with actual behavior so progress stays separate from raw review output.",
   },
   {
     start: 0.56,
@@ -430,7 +433,7 @@ const RUN_PASSES = [
     done: 1,
     label: "Assemble",
     title: "Prepare review",
-    text: "The Sleep Cycle summary, findings, and goal decisions are packaged for the latest-cycle review.",
+    text: "The Health Review summary, findings, and goal decisions are packaged for the latest report.",
   },
 ] as const;
 
@@ -441,10 +444,10 @@ const RUN_LOGS = [
   { at: 0.28, label: "Grouped repeated corrections and re-asks" },
   { at: 0.42, label: "Compared accepted goals with observed behavior" },
   { at: 0.56, label: "Scored alignment, efficiency, and effectiveness rings" },
-  { at: 0.7, label: "Separated dashboard progress from cycle evidence" },
+  { at: 0.7, label: "Separated dashboard progress from review evidence" },
   { at: 0.82, label: "Drafted suggested goals for review only" },
-  { at: 0.92, label: "Marked older unreviewed cycles as expired" },
-  { at: 0.98, label: "Preparing latest Sleep Cycle for review" },
+  { at: 0.92, label: "Marked older unreviewed reviews as expired" },
+  { at: 0.98, label: "Preparing the latest Health Review" },
 ] as const;
 
 function runPassState(
@@ -456,12 +459,12 @@ function runPassState(
   return "pending";
 }
 
-function CycleRunning({
+function ReviewRunning({
   state,
   actions,
 }: {
   state: RuntimeState;
-  actions: HarnessDreams["actions"];
+  actions: HarnessHealth["actions"];
 }): ReactElement {
   const visibleLogs = RUN_LOGS.filter((log) => state.progress >= log.at);
   const pct = Math.round(state.progress * 100);
@@ -469,33 +472,33 @@ function CycleRunning({
   return (
     <>
       <PageHeader
-        crumbs={[{ label: "Sleep Cycles" }, { label: "Running" }]}
-        title="Running Sleep Cycle"
-        subtitle="The dream engine is replaying work, measuring current goals, and preparing the latest Sleep Cycle review."
+        crumbs={[{ label: "Reviews" }, { label: "Running" }]}
+        title="Running Health Review"
+        subtitle="The review engine is replaying work, measuring current goals, and preparing the latest Health Review."
         secondary={<Pill tone="accent">{pct}%</Pill>}
         primary={
           <Button
             variant={state.paused ? "accent" : "ghost"}
             onClick={() =>
               state.paused
-                ? void actions.resumeDream()
-                : void actions.pauseDream()
+                ? void actions.resumeHealthReview()
+                : void actions.pauseHealthReview()
             }
           >
             <Icon name={state.paused ? "play" : "pause"} size={16} />
-            {state.paused ? "Resume Sleep Cycle" : "Pause Sleep Cycle"}
+            {state.paused ? "Resume Health Review" : "Pause Health Review"}
           </Button>
         }
       />
 
       <Section
         title="Recursive learning run"
-        hint="This is execution, not review. Suggested goals appear only after the Sleep Cycle finishes."
+        hint="This is execution, not review. Suggested goals appear only after the Health Review finishes."
       >
-        <CycleProgress
+        <ReviewProgress
           progress={state.progress}
           stage={state.stage}
-          stages={DREAM_STAGES}
+          stages={HEALTH_REVIEW_STAGES}
           paused={state.paused}
         />
       </Section>
@@ -503,7 +506,7 @@ function CycleRunning({
       <div
         className="run-pass-grid"
         role="list"
-        aria-label="Sleep Cycle run passes"
+        aria-label="Health Review run passes"
       >
         {RUN_PASSES.map((pass) => {
           const status = runPassState(state.progress, pass);
@@ -529,7 +532,7 @@ function CycleRunning({
           {visibleLogs.length === 0 ? (
             <div className="run-log-row active">
               <span className="run-log-dot" />
-              <span>Starting Sleep Cycle run...</span>
+              <span>Starting Health Review run...</span>
               <b>now</b>
             </div>
           ) : (
@@ -553,26 +556,26 @@ function CycleRunning({
   );
 }
 
-function CycleResting({
+function ReviewIdle({
   scheduleLabel,
-  onDreamNow,
+  onRunHealthReview,
 }: {
   scheduleLabel: string;
-  onDreamNow: () => void;
+  onRunHealthReview: () => void;
 }): ReactElement {
   return (
     <Section
-      title="No Sleep Cycle to review yet"
-      hint="A Sleep Cycle replays a quiet work period, scores the day, and turns friction into actions you can accept."
+      title="No Health Review to review yet"
+      hint="A Health Review replays a quiet work period, scores the day, and turns friction into actions you can accept."
     >
       <div className="empty">
         <p className="muted">
-          Next Sleep Cycle is scheduled for {scheduleLabel}.
+          Next Health Review is scheduled for {scheduleLabel}.
         </p>
         <div className="row">
-          <Button variant="accent" onClick={onDreamNow}>
+          <Button variant="accent" onClick={onRunHealthReview}>
             <Icon name="play" size={16} />
-            Start a Sleep Cycle now
+            Start a Health Review now
           </Button>
         </div>
       </div>
@@ -590,7 +593,7 @@ function ReviewCompass({
   onFindings,
   onQueue,
 }: {
-  report: DreamReport;
+  report: HealthReport;
   decisions: Decisions;
   step: ReviewStep;
   onOverview: () => void;
@@ -605,7 +608,7 @@ function ReviewCompass({
       label: "Readout",
       value: composite(report),
       caption: `${report.sessions} sessions`,
-      icon: "cycle" as const,
+      icon: "review" as const,
       onClick: onOverview,
     },
     {
@@ -630,7 +633,7 @@ function ReviewCompass({
     <div
       className="review-compass"
       role="group"
-      aria-label="Sleep Cycle review progress"
+      aria-label="Health Review progress"
     >
       <div className="review-compass-line">
         <span
@@ -681,7 +684,7 @@ function ReviewOutcomePanel({
   const status = accepted
     ? "Queued to apply"
     : rejected
-      ? "Retired from this cycle"
+      ? "Retired from this review"
       : "Ready for decision";
   const target = finding.patch?.label ?? CATEGORY_LABEL[category];
   return (
@@ -732,7 +735,7 @@ function BranchPlan({
   report,
   decisions,
 }: {
-  report: DreamReport;
+  report: HealthReport;
   decisions: Decisions;
 }): ReactElement {
   const acceptedFindings = report.findings.filter(
@@ -774,7 +777,7 @@ function BranchPlan({
 
 // ── Step 1 · Overview ────────────────────────────────────────────────────────
 
-function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
+function ReportNarrative({ report }: { report: HealthReport }): ReactElement {
   const topFindings = report.findings.slice(0, 3);
   const friction = report.alignment?.friction.slice(0, 3) ?? [];
   const metrics = reviewMetrics(report);
@@ -783,13 +786,13 @@ function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
     report.provenance?.generator === "no-data"
       ? "No projects are selected, so the run has no local sessions to inspect."
       : report.sessions === 0
-        ? "No matching local sessions were found in this Sleep Cycle window."
+        ? "No matching local sessions were found in this Health Review window."
         : "No suggested goals were produced from this run.";
 
   return (
     <div className="report-grid">
       <div className="report-panel report-panel-wide">
-        <span className="report-kicker">Cycle readout</span>
+        <span className="report-kicker">Review readout</span>
         <p className="report-digest">{report.digest}</p>
         <p className="report-provenance">
           {provenance.value} · {provenance.sublabel}
@@ -832,7 +835,7 @@ function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
           <div className="report-list">
             {friction.map((point) => (
               <div key={point.findingId} className="report-list-item">
-                <Icon name="cycle" size={15} className="report-list-icon" />
+                <Icon name="review" size={15} className="report-list-icon" />
                 <span>
                   <b>{point.example}</b>
                   <small>{point.type}</small>
@@ -842,7 +845,7 @@ function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
           </div>
         ) : (
           <p className="muted">
-            No friction evidence was found for this cycle.
+            No friction evidence was found for this review.
           </p>
         )}
       </div>
@@ -862,7 +865,7 @@ function ReportNarrative({ report }: { report: DreamReport }): ReactElement {
   );
 }
 
-function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
+function ReviewOverview({ report }: { report: HealthReport }): ReactElement {
   const split = alignmentSplit(report);
   const alignmentRing = report.rings.find((ring) => ring.key === "alignment");
   const alignmentDelta = alignmentRing?.delta ?? 0;
@@ -874,7 +877,7 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
 
   return (
     <div className="review-overview">
-      {report.window ? <CycleWindowBanner info={report.window} /> : null}
+      {report.window ? <ReviewWindowBanner info={report.window} /> : null}
 
       <div className="flat-strip flat-strip-divided">
         <SummaryCard
@@ -909,7 +912,7 @@ function ReviewOverview({ report }: { report: DreamReport }): ReactElement {
       ) ? (
         <Section
           title="Did your last changes help?"
-          hint="Goals you accepted in earlier cycles, measured against this one."
+          hint="Goals you accepted in earlier reviews, measured against this one."
         >
           <MeasuredGoals experiments={report.experiments} />
         </Section>
@@ -964,7 +967,7 @@ function FrictionForFinding({
   report,
   findingId,
 }: {
-  report: DreamReport;
+  report: HealthReport;
   findingId: string;
 }): ReactElement | null {
   const point = report.alignment?.friction.find(
@@ -988,7 +991,7 @@ function ReviewFindings({
   onBackToOverview,
   onDone,
 }: {
-  report: DreamReport;
+  report: HealthReport;
   decisions: Decisions;
   activeId: string;
   decisionCount: number;
@@ -1019,7 +1022,7 @@ function ReviewFindings({
   return (
     <Section
       title="Suggested goals"
-      hint="Suggested goals live in the Sleep Cycle review. Accept the ones to carry forward, reject the rest."
+      hint="Suggested goals live in the Health Review. Accept the ones to carry forward, reject the rest."
       right={
         <Button variant="ghost" onClick={onBackToOverview}>
           <Icon name="chevron" size={16} />
@@ -1086,7 +1089,7 @@ function ReviewQueue({
   onUndo,
   onBackToFindings,
 }: {
-  report: DreamReport;
+  report: HealthReport;
   decisions: Decisions;
   onUndo: (findingId: string) => void;
   onBackToFindings: () => void;
@@ -1132,7 +1135,7 @@ function ReviewQueue({
   return (
     <Section
       title="Goal decisions"
-      hint="The accepted goals move forward; rejected suggestions retire with this Sleep Cycle."
+      hint="The accepted goals move forward; rejected suggestions retire with this Health Review."
       right={
         <Button variant="ghost" onClick={onBackToFindings}>
           <Icon name="chevron" size={16} />
@@ -1150,7 +1153,7 @@ function ReviewQueue({
         <SummaryCard
           eyebrow="Rejected"
           value={rejected}
-          sublabel="Retired with this Sleep Cycle"
+          sublabel="Retired with this Health Review"
           tip={TERM.rejected}
         />
         <SummaryCard
@@ -1169,7 +1172,7 @@ function ReviewQueue({
         <div className="empty">
           <p className="muted">
             {report.findings.length === 0
-              ? "No suggested goals were produced from this cycle."
+              ? "No suggested goals were produced from this review."
               : "No decisions yet. Step through the suggested goals to accept or reject them."}
           </p>
           {report.findings.length > 0 ? (
@@ -1216,24 +1219,24 @@ function ReviewQueue({
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default function Cycle({
+export default function Review({
   hd,
   report,
   reports,
   selectedId,
-  onSelectCycle,
+  onSelectReview,
   onBackToList,
   onOpenImprovements,
-  onRunSleepCycle,
+  onRunHealthReview,
 }: {
-  hd: HarnessDreams;
-  report: DreamReport | null;
-  reports: DreamReport[];
+  hd: HarnessHealth;
+  report: HealthReport | null;
+  reports: HealthReport[];
   selectedId: string | null;
-  onSelectCycle: (id: string) => void;
+  onSelectReview: (id: string) => void;
   onBackToList: () => void;
   onOpenImprovements: () => void;
-  onRunSleepCycle: () => void;
+  onRunHealthReview: () => void;
 }): ReactElement {
   const { state, actions } = hd;
 
@@ -1258,14 +1261,14 @@ export default function Cycle({
   if (!state) return <p className="card-hint">Loading…</p>;
 
   const scheduleLabel =
-    hd.config?.schedule.mode === "nightly"
+    hd.config?.schedule.mode === "daily"
       ? formatSchedule(hd.config.schedule.time)
       : "manual start";
 
-  if (state.phase === "dreaming") {
+  if (state.phase === "running") {
     return (
       <div className="col">
-        <CycleRunning state={state} actions={actions} />
+        <ReviewRunning state={state} actions={actions} />
       </div>
     );
   }
@@ -1273,13 +1276,13 @@ export default function Cycle({
   if (!selectedId) {
     return (
       <div className="col">
-        <CycleIndex
+        <ReviewIndex
           hd={hd}
           reports={reports}
           selectedId={selectedId}
           scheduleLabel={scheduleLabel}
-          onSelectCycle={onSelectCycle}
-          onRunSleepCycle={onRunSleepCycle}
+          onSelectReview={onSelectReview}
+          onRunHealthReview={onRunHealthReview}
         />
       </div>
     );
@@ -1288,9 +1291,9 @@ export default function Cycle({
   if (!report) {
     return (
       <div className="col">
-        <CycleResting
+        <ReviewIdle
           scheduleLabel={scheduleLabel}
-          onDreamNow={onRunSleepCycle}
+          onRunHealthReview={onRunHealthReview}
         />
       </div>
     );
@@ -1310,7 +1313,7 @@ export default function Cycle({
   const onQueue = activeId === QUEUE_ID;
   const onOverview = activeId === "__overview";
   const isLatest = report.id === reports[0]?.id;
-  const status = listCycleStatus(report, isLatest);
+  const status = listReviewStatus(report, isLatest);
   const hasFindings = report.findings.length > 0;
 
   // One step is on screen at a time so the page never grows into a long scroll.
@@ -1326,14 +1329,14 @@ export default function Cycle({
   return (
     <div className="col">
       <PageHeader
-        crumbs={cycleCrumbs(
+        crumbs={reviewCrumbs(
           report,
           step,
           onBackToList,
           () => setActiveId("__overview"),
           decisionCount
         )}
-        title={cycleTitle(report)}
+        title={reviewTitle(report)}
         subtitle={
           onOverview
             ? `${statusLabel(status)} · ${report.sessions} session${
@@ -1363,14 +1366,14 @@ export default function Cycle({
                     setActiveId(report.findings[0]?.id ?? QUEUE_ID)
                   }
                 >
-                  <Icon name="cycle" size={16} />
+                  <Icon name="review" size={16} />
                   Review {report.findings.length} suggested goals
                   <Icon name="chevron" size={16} />
                 </Button>
               ) : (
-                <Button variant="accent" onClick={onRunSleepCycle}>
-                  <Icon name="dream" size={16} />
-                  Run another cycle
+                <Button variant="accent" onClick={onRunHealthReview}>
+                  <Icon name="healthReview" size={16} />
+                  Run another review
                 </Button>
               )}
             </>
@@ -1425,7 +1428,7 @@ export default function Cycle({
             />
             <Section
               title="Carry into Goals"
-              hint="Accepted goals feed Goals so the next Sleep Cycle can measure whether they worked."
+              hint="Accepted goals feed Goals so the next Health Review can measure whether they worked."
               right={
                 <Button variant="accent" onClick={onOpenImprovements}>
                   <Icon name="improvements" size={16} />
@@ -1436,7 +1439,7 @@ export default function Cycle({
             >
               <p className="muted">
                 {acceptedGoalCount > 0
-                  ? `${acceptedGoalCount} goal${acceptedGoalCount === 1 ? "" : "s"} ready to track next Sleep Cycle.`
+                  ? `${acceptedGoalCount} goal${acceptedGoalCount === 1 ? "" : "s"} ready to track next Health Review.`
                   : "Accept a suggested goal to start tracking it."}
               </p>
             </Section>

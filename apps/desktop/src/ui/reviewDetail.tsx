@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import type {
   ActionCategory,
   ConfigPatchPreview,
-  CycleWindow,
+  ReviewWindow,
   Experiment,
   ExperimentVerdict,
   Finding,
@@ -13,7 +13,7 @@ import { band, categorize } from "./components";
 import { Icon, type IconName } from "./icons";
 
 /**
- * Report-page detail components that surface the Sleep Cycle engine's richer
+ * Report-page detail components that surface the Health Review engine's richer
  * output: the activity window it reviewed, a recommendation-by-target map, the
  * per-project breakdown, and the concrete file patch a recommendation applies.
  * Kept in their own module so the report page can compose them without bloating
@@ -56,30 +56,30 @@ function compactChars(chars: number): string {
   return `${chars}`;
 }
 
-/** A banner stating exactly what slice of activity this cycle reviewed. */
-export function CycleWindowBanner({
+/** A banner stating exactly what slice of activity this review reviewed. */
+export function ReviewWindowBanner({
   info,
 }: {
-  info: CycleWindow;
+  info: ReviewWindow;
 }): ReactElement {
   const basis =
-    info.basis === "since-last-cycle"
-      ? "since your last Sleep Cycle"
+    info.basis === "since-last-review"
+      ? "since your last Health Review"
       : "last 24 hours (max)";
   return (
-    <div className="cycle-window">
-      <span className="cycle-window-icon">
-        <Icon name="cycle" size={18} />
+    <div className="review-window">
+      <span className="review-window-icon">
+        <Icon name="review" size={18} />
       </span>
-      <div className="cycle-window-main">
-        <span className="cycle-window-label">{info.label}</span>
-        <span className="cycle-window-sub">
+      <div className="review-window-main">
+        <span className="review-window-label">{info.label}</span>
+        <span className="review-window-sub">
           {info.sessionsInWindow} session
           {info.sessionsInWindow === 1 ? "" : "s"} · {info.turnsInWindow} turns
           reviewed · {basis}
         </span>
       </div>
-      <span className="cycle-window-range tnum">
+      <span className="review-window-range tnum">
         {fmtClock(info.start)} → {fmtClock(info.end)}
       </span>
     </div>
@@ -200,8 +200,8 @@ const VERDICT_LABEL: Record<ExperimentVerdict, string> = {
 };
 
 /**
- * Closes the loop: goals accepted in earlier cycles, measured against this one.
- * This is the product's third promise — "the next cycle measures whether it
+ * Closes the loop: goals accepted in earlier reviews, measured against this one.
+ * This is the product's third promise — "the next review measures whether it
  * helped" — made visible.
  */
 export function MeasuredGoals({

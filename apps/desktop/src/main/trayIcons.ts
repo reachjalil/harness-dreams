@@ -3,9 +3,9 @@ import { type NativeImage, nativeImage } from "electron";
 /**
  * Menu-bar icons drawn programmatically (no binary assets) as macOS *template*
  * images: black with an alpha mask, so the system tints them for light/dark
- * menu bars. The mark follows the Harness Dreams logo: crescent, orbit, and
- * planet. The orbit/planet keep the tray item from reading like macOS Do Not
- * Disturb while preserving the app's sleep/dream metaphor.
+ * menu bars. The mark follows the Harness Health identity: crescent, orbit,
+ * and planet. The orbit/planet keep the tray item from reading like macOS Do
+ * Not Disturb while preserving continuity with the original rest/review model.
  */
 
 const DIM = 36; // 18pt @2x
@@ -13,7 +13,7 @@ const SCALE = 2;
 const EDGE = 0.75; // anti-alias softness in px.
 const SVG = DIM / 32;
 
-export type TrayKind = "resting" | "dreaming" | "ready";
+export type TrayKind = "idle" | "running" | "ready";
 
 type AlphaFn = (x: number, y: number) => number;
 
@@ -144,8 +144,8 @@ function build(fn: AlphaFn, alphaMul = 1): NativeImage {
 }
 
 const icons: Record<TrayKind, NativeImage> = {
-  resting: build(logoMark(), 0.52),
-  dreaming: build(logoMark(), 1),
+  idle: build(logoMark(), 0.52),
+  running: build(logoMark(), 1),
   ready: build(logoMark(), 1),
 };
 
@@ -153,23 +153,23 @@ export function getTrayIcon(kind: TrayKind): NativeImage {
   return icons[kind];
 }
 
-// Pulse frames for the "dreaming" animation — the brand mark breathes in and out.
-const DREAM_FRAMES: NativeImage[] = [1, 0.82, 0.6, 0.45, 0.6, 0.82].map((a) =>
+// Pulse frames for the "running" animation — the brand mark breathes in and out.
+const REVIEW_FRAMES: NativeImage[] = [1, 0.82, 0.6, 0.45, 0.6, 0.82].map((a) =>
   build(logoMark(), a)
 );
 
-export function getDreamingFrame(i: number): NativeImage {
-  return DREAM_FRAMES[i % DREAM_FRAMES.length];
+export function getRunningFrame(i: number): NativeImage {
+  return REVIEW_FRAMES[i % REVIEW_FRAMES.length];
 }
 
 /**
- * The logo's orbit brightens as a dream progresses. Paused dims the whole mark.
+ * The logo's orbit brightens as a review progresses. Paused dims the whole mark.
  */
-export function moonForProgress(
+export function markForProgress(
   progress: number,
   paused: boolean,
-  cycleFrame = 0
+  reviewFrame = 0
 ): NativeImage {
-  const phase = paused ? null : (cycleFrame % 24) / 24;
+  const phase = paused ? null : (reviewFrame % 24) / 24;
   return build(logoMark(progress, phase), paused ? 0.45 : 1);
 }

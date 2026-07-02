@@ -1,16 +1,16 @@
 import { describe, expect, test } from "vitest";
 
-import type { DreamReport } from "../shared/types";
+import type { HealthReport } from "../shared/types";
 import { decideMoment } from "./moment";
 
-const pending = { id: "pending" } as DreamReport;
+const pending = { id: "pending" } as HealthReport;
 
 describe("decideMoment", () => {
-  test("a running cycle beats everything else", () => {
+  test("a running review beats everything else", () => {
     expect(
       decideMoment({
         tod: "morning",
-        phase: "dreaming",
+        phase: "running",
         pending,
         activity: 9,
         scheduleMode: "manual",
@@ -18,19 +18,19 @@ describe("decideMoment", () => {
     ).toBe("running");
   });
 
-  test("a pending cycle becomes the review moment", () => {
+  test("a pending report becomes the review moment", () => {
     expect(
       decideMoment({
         tod: "evening",
         phase: "ready",
         pending,
         activity: 9,
-        scheduleMode: "nightly",
+        scheduleMode: "daily",
       })
     ).toEqual({ kind: "review", ctaKind: "review" });
   });
 
-  test("midday with enough activity suggests a nap", () => {
+  test("midday with enough activity suggests a quick review", () => {
     expect(
       decideMoment({
         tod: "midday",
@@ -39,7 +39,7 @@ describe("decideMoment", () => {
         activity: 4,
         scheduleMode: "manual",
       })
-    ).toEqual({ kind: "nap", ctaKind: "nap" });
+    ).toEqual({ kind: "quick", ctaKind: "quick" });
   });
 
   test("midday below the threshold stays restful", () => {
@@ -54,7 +54,7 @@ describe("decideMoment", () => {
     ).toBe("rest");
   });
 
-  test("a full evening suggests a sleep cycle", () => {
+  test("a full evening suggests a health review", () => {
     expect(
       decideMoment({
         tod: "evening",
@@ -63,17 +63,17 @@ describe("decideMoment", () => {
         activity: 9,
         scheduleMode: "manual",
       })
-    ).toEqual({ kind: "sleep", ctaKind: "sleep" });
+    ).toEqual({ kind: "full", ctaKind: "full" });
   });
 
-  test("night on a nightly schedule goes to standby", () => {
+  test("night on a daily schedule goes to standby", () => {
     expect(
       decideMoment({
         tod: "night",
         phase: "ready",
         pending: null,
         activity: 0,
-        scheduleMode: "nightly",
+        scheduleMode: "daily",
       }).kind
     ).toBe("standby");
   });
@@ -85,7 +85,7 @@ describe("decideMoment", () => {
         phase: "ready",
         pending: null,
         activity: 2,
-        scheduleMode: "nightly",
+        scheduleMode: "daily",
       }).kind
     ).toBe("rest");
   });

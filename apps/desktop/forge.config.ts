@@ -5,15 +5,27 @@ import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import type { ForgeConfig } from "@electron-forge/shared-types";
 
+const localMacEntitlements = [
+  "com.apple.security.cs.allow-jit",
+  "com.apple.security.cs.allow-unsigned-executable-memory",
+  "com.apple.security.cs.disable-library-validation",
+];
+
 const config: ForgeConfig = {
   packagerConfig: {
-    name: "Harness Dreams",
-    appBundleId: "com.reachjalil.harnessdreams",
+    name: "Harness Health",
+    appBundleId: "com.reachjalil.harnesshealth",
     appCategoryType: "public.app-category.developer-tools",
     asar: true,
     osxSign: {
       identity: "-",
       identityValidation: false,
+      optionsForFile: (filePath) =>
+        filePath.endsWith(".app")
+          ? {
+              entitlements: localMacEntitlements,
+            }
+          : {},
     },
     // Menu-bar-only app: no Dock icon.
     extendInfo: {

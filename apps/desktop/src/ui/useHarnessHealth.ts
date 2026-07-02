@@ -10,20 +10,25 @@ import type {
   CloudSyncDevice,
   CloudSyncStatus,
   DiscoveredProject,
-  DreamReport,
+  HealthReport,
+  IngestStatus,
+  LiveTelemetrySnapshot,
   RuntimeState,
 } from "../shared/types";
 
-export interface HarnessDreams {
+export interface HarnessHealth {
   config: AppConfig | null;
   state: RuntimeState | null;
   /** Latest report (history[0]), for convenience. */
-  report: DreamReport | null;
+  report: HealthReport | null;
   /** Full session history, newest first. */
-  reports: DreamReport[];
+  reports: HealthReport[];
   cloudSyncStatus: CloudSyncStatus | null;
+  telemetrySnapshot: LiveTelemetrySnapshot | null;
+  ingestStatus: IngestStatus | null;
   patch: (patch: ConfigPatch) => void;
   cloudSync: Window["hd"]["cloudSync"];
+  telemetry: Window["hd"]["telemetry"];
   projects: Window["hd"]["projects"];
   actions: Window["hd"]["actions"];
   /** Demo-only time-of-day override (null = follow the real clock). */
@@ -37,16 +42,23 @@ const PREVIEW_CONFIG: AppConfig = {
   demoMode: true,
   showOnboardingOnLaunch: false,
   privacyMode: "local",
-  schedule: { mode: "nightly", time: "03:00" },
+  schedule: { mode: "daily", time: "03:00" },
   notifications: true,
   analysisDepth: "standard",
   guidanceApplyMode: "direct",
-  remRunner: {
+  insightRunner: {
     provider: "codex",
     model: "gpt-5.5",
     claudePath: "claude",
     codexPath: "codex",
     timeoutMs: 180_000,
+  },
+  telemetry: {
+    enabled: true,
+    watch: true,
+    retentionDays: 90,
+    rawTextRetention: false,
+    priceTable: {},
   },
   launchAtLogin: false,
   reduceMotion: false,
@@ -54,17 +66,18 @@ const PREVIEW_CONFIG: AppConfig = {
     enabled: false,
     paidPlan: false,
     devBypassPaidPlan: true,
-    atlasUri: "",
-    databaseName: "harness_dreams",
-    userId: "preview-user",
-    jwtSecret: "preview-secret",
+    cloudApiBaseUrl: "http://127.0.0.1:8787",
+    cloudUserId: "preview-user",
     deviceId: "preview-desktop",
     deviceName: "Preview Desktop",
-    syncIntervalMs: 30_000,
     devices: [],
+    backupEnabled: false,
+    backupKey: "",
+    backupEpochId: "",
+    backupRetentionDays: 30,
   },
-  cloudSyncInterest: false,
-  connectors: { claudeCode: true, codex: false, cursor: false },
+  companionSyncInterest: false,
+  connectors: { claudeCode: true, codex: true, cursor: false },
   projects: DEMO_PROJECTS,
 };
 
@@ -75,24 +88,206 @@ const PREVIEW_CLOUD_STATUS: CloudSyncStatus = {
   allowedByPlan: true,
   configured: false,
   state: "disabled",
-  message: "Cloud Sync is off.",
-  userId: "",
+  message: "Private Device Sync is off.",
+  cloudUserId: "preview-user",
   deviceId: "preview-desktop",
-  databaseName: "harness_dreams",
-  collections: {
-    cycles: "sleep_cycles",
-    decisions: "sleep_cycle_decisions",
-    devices: "sync_devices",
-  },
+  cloudApiBaseUrl: "http://127.0.0.1:8787",
   lastSyncedAt: null,
   lastPulledAt: null,
   lastPushedAt: null,
   nextSyncAt: null,
-  localSyncUrl: "http://127.0.0.1:39391",
-  cyclesPushed: 0,
+  reviewsPushed: 0,
   decisionsPushed: 0,
   remoteDecisionsApplied: 0,
+  activeConnections: 0,
+  pairingActive: false,
+  iceMode: "unknown",
+  revision: 0,
+  backupEnabled: false,
+  backupConfigured: false,
+  backupRevision: 0,
+  lastBackedUpAt: null,
 };
+
+function previewTelemetry(now = Date.now()): LiveTelemetrySnapshot {
+  const status: IngestStatus = {
+    state: "watching",
+    message: "Preview telemetry is using deterministic sample data.",
+    startedAt: now - 1_200,
+    finishedAt: now - 400,
+    filesDiscovered: 18,
+    filesChanged: 3,
+    eventsIngested: 142,
+    cursorsUpdated: 3,
+  };
+  return {
+    generatedAt: now,
+    window: {
+      start: now - 24 * 60 * 60 * 1000,
+      end: now,
+      label: "Last 24 hours",
+    },
+    baselineWindow: {
+      start: now - 15 * 24 * 60 * 60 * 1000,
+      end: now - 24 * 60 * 60 * 1000,
+      label: "Previous 14 days",
+    },
+    rings: [
+      {
+        key: "efficiency",
+        label: "Efficiency",
+        score: 78,
+        delta: 6,
+        hint: "18.4K tokens, 31% cache reuse",
+      },
+      {
+        key: "effectiveness",
+        label: "Effectiveness",
+        score: 84,
+        delta: 4,
+        hint: "92% tool success across 24 tool events",
+      },
+      {
+        key: "alignment",
+        label: "Alignment",
+        score: 73,
+        delta: -2,
+        hint: "4 re-ask proxy events in 6 sessions",
+      },
+    ],
+    metrics: [
+      {
+        key: "tokens",
+        canonicalKey: "tokens.total",
+        label: "Tokens",
+        value: "18.4K",
+        delta: 12,
+        trend: "up",
+        good: false,
+        sourceCount: 9,
+        confidence: "medium",
+        provenance: "Preview Claude/Codex usage rows.",
+      },
+      {
+        key: "cache",
+        canonicalKey: "cache.hit_ratio",
+        label: "Cache",
+        value: "31%",
+        delta: 7,
+        trend: "up",
+        good: true,
+        sourceCount: 9,
+        confidence: "medium",
+        provenance: "Preview cache-read token ratio.",
+      },
+      {
+        key: "tool_success",
+        canonicalKey: "tool.success_rate",
+        label: "Tool success",
+        value: "92%",
+        delta: 5,
+        trend: "up",
+        good: true,
+        sourceCount: 24,
+        confidence: "medium",
+        provenance: "Preview tool-result outcomes.",
+      },
+      {
+        key: "sessions",
+        canonicalKey: "sessions.active",
+        label: "Sessions",
+        value: "6",
+        delta: 0,
+        trend: "flat",
+        good: true,
+        sourceCount: 142,
+        confidence: "high",
+        provenance: "Preview distinct session ids.",
+      },
+    ],
+    insights: [
+      {
+        id: "preview-cache",
+        metricIds: ["cache.hit_ratio"],
+        type: "recommendation",
+        severity: "neutral",
+        title: "Cache reuse has room to improve",
+        explanation: "Preview data shows cache reuse below the target range.",
+        recommendation:
+          "Keep project context stable and route narrow skills explicitly.",
+        comparison: {
+          currentWindow: { start: now - 24 * 60 * 60 * 1000, end: now },
+          deltaPercent: 7,
+        },
+        confidence: "medium",
+        sourceSampleCount: 9,
+        deepLink: "metric:cache.hit_ratio",
+        createdAt: now,
+      },
+    ],
+    sources: [
+      {
+        source: "claude-code",
+        label: "Claude Code",
+        status: "watching",
+        files: 12,
+        events: 96,
+        sessions: 4,
+        lastActivityAt: now - 7 * 60 * 1000,
+      },
+      {
+        source: "codex",
+        label: "Codex",
+        status: "watching",
+        files: 6,
+        events: 46,
+        sessions: 2,
+        lastActivityAt: now - 3 * 60 * 1000,
+      },
+    ],
+    activeProjects: [
+      {
+        path: "/Users/alex/harness-health",
+        name: "harness-health",
+        sources: ["claude-code", "codex"],
+        sessions: 6,
+        events: 142,
+        tokens: 18_400,
+        corrections: 4,
+        toolFailures: 2,
+        lastActivityAt: now - 3 * 60 * 1000,
+        contextScore: 78,
+      },
+    ],
+    modelMix: [
+      {
+        model: "gpt-5.5",
+        tokens: 11_800,
+        sessions: 3,
+        source: "codex",
+        share: 0.64,
+      },
+      {
+        model: "claude-sonnet",
+        tokens: 6_600,
+        sessions: 3,
+        source: "claude-code",
+        share: 0.36,
+      },
+    ],
+    trendSeries: Array.from({ length: 14 }, (_, index) => ({
+      start: now - (13 - index) * 24 * 60 * 60 * 1000,
+      end: now - (12 - index) * 24 * 60 * 60 * 1000,
+      label: `${index + 1}`,
+      tokens: 6_000 + index * 700,
+      sessions: 2 + (index % 5),
+      corrections: index % 4,
+      toolFailures: index % 3 === 0 ? 1 : 0,
+    })),
+    configArtifacts: [],
+    status,
+  };
+}
 
 function previewGoalTitle(finding: {
   patch?: unknown;
@@ -122,7 +317,7 @@ function deepMerge<T>(base: T, patch: unknown): T {
   return out as T;
 }
 
-function normalizeReports(reports: DreamReport[]): DreamReport[] {
+function normalizeReports(reports: HealthReport[]): HealthReport[] {
   return reports.map((report, index) => {
     if (report.reviewStatus === "reviewed" || report.reviewedAt) {
       return { ...report, reviewStatus: "reviewed" as const };
@@ -135,12 +330,15 @@ function normalizeReports(reports: DreamReport[]): DreamReport[] {
 }
 
 /** Subscribes the UI to live config/state and report history. */
-export function useHarnessDreams(): HarnessDreams {
+export function useHarnessHealth(): HarnessHealth {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [state, setState] = useState<RuntimeState | null>(null);
-  const [reports, setReports] = useState<DreamReport[]>([]);
+  const [reports, setReports] = useState<HealthReport[]>([]);
   const [cloudSyncStatus, setCloudSyncStatus] =
     useState<CloudSyncStatus | null>(null);
+  const [telemetrySnapshot, setTelemetrySnapshot] =
+    useState<LiveTelemetrySnapshot | null>(null);
+  const [ingestStatus, setIngestStatus] = useState<IngestStatus | null>(null);
   const [demoTimeOfDay, setDemoTimeOfDay] = useState<TimeOfDay | null>(null);
 
   useEffect(() => {
@@ -153,11 +351,14 @@ export function useHarnessDreams(): HarnessDreams {
         progress: 0,
         stage: null,
         paused: false,
-        lastDreamAt: now,
+        lastReviewAt: now,
         hasUnreviewed: true,
       });
       setReports(normalizeReports(seedDemoReports(now)));
       setCloudSyncStatus(PREVIEW_CLOUD_STATUS);
+      const preview = previewTelemetry(now);
+      setTelemetrySnapshot(preview);
+      setIngestStatus(preview.status);
       return () => {
         active = false;
       };
@@ -171,12 +372,20 @@ export function useHarnessDreams(): HarnessDreams {
     void window.hd.cloudSync
       .status()
       .then((s) => active && setCloudSyncStatus(s));
+    void window.hd.telemetry
+      .getSnapshot()
+      .then((s) => active && setTelemetrySnapshot(s));
+    void window.hd.telemetry
+      .getIngestStatus()
+      .then((s) => active && setIngestStatus(s));
 
     const unsubs = [
       window.hd.events.onConfig(setConfig),
       window.hd.events.onState(setState),
       window.hd.events.onReports((r) => setReports(normalizeReports(r))),
       window.hd.events.onCloudSync(setCloudSyncStatus),
+      window.hd.events.onTelemetrySnapshot(setTelemetrySnapshot),
+      window.hd.events.onIngestStatus(setIngestStatus),
     ];
     return () => {
       active = false;
@@ -194,14 +403,14 @@ export function useHarnessDreams(): HarnessDreams {
 
   const previewActions = useMemo<Window["hd"]["actions"]>(
     () => ({
-      dreamNow: async () => {
-        const lastDreamAt = state?.lastDreamAt ?? Date.now();
+      runHealthReview: async () => {
+        const lastReviewAt = state?.lastReviewAt ?? Date.now();
         const running: RuntimeState = {
-          phase: "dreaming",
+          phase: "running",
           progress: 0.04,
           stage: stageForProgress(0.04).label,
           paused: false,
-          lastDreamAt,
+          lastReviewAt,
           hasUnreviewed: false,
         };
         setState(running);
@@ -209,11 +418,11 @@ export function useHarnessDreams(): HarnessDreams {
           window.setTimeout(
             () => {
               setState({
-                phase: "dreaming",
+                phase: "running",
                 progress,
                 stage: stageForProgress(progress).label,
                 paused: false,
-                lastDreamAt,
+                lastReviewAt,
                 hasUnreviewed: false,
               });
             },
@@ -236,20 +445,20 @@ export function useHarnessDreams(): HarnessDreams {
             progress: 0,
             stage: null,
             paused: false,
-            lastDreamAt: now,
+            lastReviewAt: now,
             hasUnreviewed: true,
           });
         }, 1600);
         return running;
       },
-      napNow: async () => {
-        const lastDreamAt = state?.lastDreamAt ?? Date.now();
+      runQuickReview: async () => {
+        const lastReviewAt = state?.lastReviewAt ?? Date.now();
         const running: RuntimeState = {
-          phase: "dreaming",
+          phase: "running",
           progress: 0.1,
-          stage: stageForProgress(0.1, "nap").label,
+          stage: stageForProgress(0.1, "quick").label,
           paused: false,
-          lastDreamAt,
+          lastReviewAt,
           hasUnreviewed: false,
         };
         setState(running);
@@ -257,11 +466,11 @@ export function useHarnessDreams(): HarnessDreams {
           window.setTimeout(
             () => {
               setState({
-                phase: "dreaming",
+                phase: "running",
                 progress,
-                stage: stageForProgress(progress, "nap").label,
+                stage: stageForProgress(progress, "quick").label,
                 paused: false,
-                lastDreamAt,
+                lastReviewAt,
                 hasUnreviewed: false,
               });
             },
@@ -270,7 +479,7 @@ export function useHarnessDreams(): HarnessDreams {
         });
         window.setTimeout(() => {
           const now = Date.now();
-          const nextReport = nextDemoReport(now, reports[0] ?? null, "nap");
+          const nextReport = nextDemoReport(now, reports[0] ?? null, "quick");
           setReports((current) => [
             nextReport,
             ...normalizeReports(current).map((report) =>
@@ -284,19 +493,19 @@ export function useHarnessDreams(): HarnessDreams {
             progress: 0,
             stage: null,
             paused: false,
-            lastDreamAt: now,
+            lastReviewAt: now,
             hasUnreviewed: true,
           });
         }, 900);
         return running;
       },
-      pauseDream: async () => {
+      pauseHealthReview: async () => {
         const next = {
           ...(state ?? {
-            phase: "dreaming",
+            phase: "running",
             progress: 0.42,
             stage: stageForProgress(0.42).label,
-            lastDreamAt: Date.now(),
+            lastReviewAt: Date.now(),
             hasUnreviewed: false,
           }),
           paused: true,
@@ -304,13 +513,13 @@ export function useHarnessDreams(): HarnessDreams {
         setState(next);
         return next;
       },
-      resumeDream: async () => {
+      resumeHealthReview: async () => {
         const next = {
           ...(state ?? {
-            phase: "dreaming",
+            phase: "running",
             progress: 0.42,
             stage: stageForProgress(0.42).label,
-            lastDreamAt: Date.now(),
+            lastReviewAt: Date.now(),
             hasUnreviewed: false,
           }),
           paused: false,
@@ -369,7 +578,7 @@ export function useHarnessDreams(): HarnessDreams {
                   metric: "alignment · re-ask rate · tool success",
                   status: "running" as const,
                   progress: 0,
-                  progressLabel: "0 / 3 cycles measured",
+                  progressLabel: "0 / 3 reviews measured",
                   projectPath: finding.projectPath,
                   category: finding.category,
                   baseline: insight
@@ -409,7 +618,7 @@ export function useHarnessDreams(): HarnessDreams {
             progress: 0,
             stage: null,
             paused: false,
-            lastDreamAt: Date.now(),
+            lastReviewAt: Date.now(),
           }),
           hasUnreviewed,
         } as RuntimeState;
@@ -529,12 +738,12 @@ export function useHarnessDreams(): HarnessDreams {
           lastSyncedAt: Date.now(),
           state:
             (config ?? PREVIEW_CONFIG).cloudSync.enabled &&
-            (config ?? PREVIEW_CONFIG).cloudSync.userId
+            (config ?? PREVIEW_CONFIG).cloudSync.cloudUserId
               ? "watching"
               : "disabled",
           message: (config ?? PREVIEW_CONFIG).cloudSync.enabled
             ? "Preview sync completed."
-            : "Cloud Sync is off.",
+            : "Private Device Sync is off.",
         };
         setCloudSyncStatus(next);
         return next;
@@ -545,17 +754,12 @@ export function useHarnessDreams(): HarnessDreams {
         const device: CloudSyncDevice = {
           deviceId: `preview-${kind}-${now}`,
           deviceName:
-            input?.deviceName ||
-            (kind === "watch"
-              ? "Apple Watch"
-              : kind === "ipad"
-                ? "iPad"
-                : "iPhone"),
+            input?.deviceName || (kind === "watch" ? "Apple Watch" : "iPhone"),
           kind,
           status: "pending",
-          tokenHash: "preview-token-hash",
+          secretHash: "preview-token-hash",
           createdAt: now,
-          lastTokenIssuedAt: now,
+          secretIssuedAt: now,
         };
         setConfig((current) => ({
           ...(current ?? PREVIEW_CONFIG),
@@ -569,9 +773,12 @@ export function useHarnessDreams(): HarnessDreams {
           },
         }));
         return {
-          token: "preview.jwt.token",
-          pairingUrl: "harnessdreams://pair?token=preview.jwt.token",
-          devSyncBaseUrl: "http://127.0.0.1:17382",
+          pairingId: `preview-pairing-${now}`,
+          pairingUrl:
+            "harnesshealth://pair?signalUrl=http%3A%2F%2F127.0.0.1%3A8787&cloudUserId=preview-user&pairingId=preview#pairingSecret=preview",
+          cloudApiBaseUrl: "http://127.0.0.1:8787",
+          secret: "preview-secret",
+          backupEnabled: false,
           qrDataUrl:
             "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' fill='white'/%3E%3Cpath d='M20 20h50v50H20zM110 20h50v50h-50zM20 110h50v50H20zM92 92h18v18H92zM122 92h38v18h-38zM92 122h18v38H92zM122 122h18v18h-18zM146 146h14v14h-14z' fill='black'/%3E%3C/svg%3E",
           expiresAt: now + 10 * 60 * 1000,
@@ -593,14 +800,66 @@ export function useHarnessDreams(): HarnessDreams {
     [cloudSyncStatus, config]
   );
 
+  const previewTelemetryApi = useMemo<Window["hd"]["telemetry"]>(
+    () => ({
+      getSnapshot: async () => telemetrySnapshot ?? previewTelemetry(),
+      getMetricDetail: async (metricId) => {
+        const now = Date.now();
+        return {
+          metricId,
+          label: metricId,
+          unit:
+            metricId.includes("ratio") || metricId.includes("rate")
+              ? "%"
+              : "count",
+          current: {
+            metricId,
+            value: telemetrySnapshot?.metrics[0]
+              ? Number.parseFloat(telemetrySnapshot.metrics[0].value) || 0
+              : 0,
+            unit: "count",
+            startAt: now - 24 * 60 * 60 * 1000,
+            endAt: now,
+            sourceCount: telemetrySnapshot?.status.eventsIngested ?? 0,
+          },
+          baseline: undefined,
+          samples: (telemetrySnapshot ?? previewTelemetry(now)).trendSeries.map(
+            (point) => ({
+              metricId,
+              value: point.tokens,
+              unit: "tokens",
+              startAt: point.start,
+              endAt: point.end,
+              sourceCount: point.sessions,
+            })
+          ),
+          sources: (telemetrySnapshot ?? previewTelemetry(now)).sources,
+          insights: (telemetrySnapshot ?? previewTelemetry(now)).insights,
+        };
+      },
+      refresh: async () => {
+        const next = previewTelemetry();
+        setTelemetrySnapshot(next);
+        setIngestStatus(next.status);
+        return next;
+      },
+      getIngestStatus: async () =>
+        ingestStatus ?? telemetrySnapshot?.status ?? previewTelemetry().status,
+    }),
+    [ingestStatus, telemetrySnapshot]
+  );
+
   return {
     config,
     state,
     report: reports[0] ?? null,
     reports,
     cloudSyncStatus,
+    telemetrySnapshot,
+    ingestStatus,
     patch,
     cloudSync: window.hd?.cloudSync ?? previewCloudSync,
+    telemetry: window.hd?.telemetry ?? previewTelemetryApi,
     projects: window.hd?.projects ?? previewProjects,
     actions: window.hd?.actions ?? previewActions,
     demoTimeOfDay,

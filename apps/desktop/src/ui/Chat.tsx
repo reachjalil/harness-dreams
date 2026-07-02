@@ -8,8 +8,11 @@ import {
 import { ConnectionState, Room, RoomEvent, Track } from "livekit-client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  DEFAULT_SIGNAL_API_BASE_URL,
+  signalApiUrl,
+} from "@harness-health/core";
 
-const API_URL = "http://localhost:8000";
 type Mode = "text" | "voice";
 
 interface TextMessage {
@@ -64,7 +67,9 @@ function ReplyChips({
   onSuggest: (text: string) => void;
 }): ReactElement {
   const start = (turn * 3) % REPLY_POOL.length;
-  const chips = [0, 1, 2].map((i) => REPLY_POOL[(start + i) % REPLY_POOL.length]);
+  const chips = [0, 1, 2].map(
+    (i) => REPLY_POOL[(start + i) % REPLY_POOL.length]
+  );
   return (
     <div className="chat-reply-chips">
       {chips.map((c) => (
@@ -144,8 +149,16 @@ function ToolEventRow({ item }: { item: ToolEvent }): ReactElement {
   return (
     <div className="chat-row chat-row-assistant">
       <div className="chat-ai-icon-spacer" aria-hidden="true" />
-      <div className={`chat-tool-call${item.done ? " chat-tool-call-done" : ""}`}>
-        <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <div
+        className={`chat-tool-call${item.done ? " chat-tool-call-done" : ""}`}
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
           <path d="M2 8a6 6 0 1 0 12 0A6 6 0 0 0 2 8z" strokeLinecap="round" />
           <path d="M8 5v3l2 1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -154,12 +167,25 @@ function ToolEventRow({ item }: { item: ToolEvent }): ReactElement {
           <span className="chat-tool-summary">— {item.summary}</span>
         ) : null}
         {item.done ? (
-          <svg className="chat-tool-check" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            className="chat-tool-check"
+            aria-hidden="true"
+            viewBox="0 0 12 12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path
+              d="M2 6l3 3 5-5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         ) : (
           <span className="chat-tool-dots">
-            <span /><span /><span />
+            <span />
+            <span />
+            <span />
           </span>
         )}
       </div>
@@ -190,7 +216,9 @@ function MessageRow({ item }: { item: ChatItem }): ReactElement {
     <div className="chat-row chat-row-assistant">
       <AssistantIcon />
       <div className="chat-prose">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {item.content}
+        </ReactMarkdown>
         {item.streaming ? (
           <span className="chat-cursor" aria-hidden="true" />
         ) : null}
@@ -199,7 +227,15 @@ function MessageRow({ item }: { item: ChatItem }): ReactElement {
   );
 }
 
-const SESSION_KEY = "dream-chat-session-id";
+const SESSION_KEY = "health-chat-session-id";
+
+async function configuredCloudRoute(path: string): Promise<string> {
+  const config = await window.hd?.config.get().catch(() => null);
+  return signalApiUrl(
+    config?.cloudSync.cloudApiBaseUrl || DEFAULT_SIGNAL_API_BASE_URL,
+    path
+  );
+}
 
 function TextChat(): ReactElement {
   const [items, setItems] = useState<ChatItem[]>([]);
@@ -208,31 +244,17 @@ function TextChat(): ReactElement {
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sessionIdRef = useRef<string | null>(
-    typeof localStorage !== "undefined" ? localStorage.getItem(SESSION_KEY) : null
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(SESSION_KEY)
+      : null
   );
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Load previous session on mount
   useEffect(() => {
-    const sid = sessionIdRef.current;
-    if (!sid) return;
-    fetch(`${API_URL}/chat/sessions/${sid}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((doc) => {
-        if (!doc?.messages?.length) return;
-        const loaded: TextMessage[] = doc.messages
-          .filter((m: { role: string }) => m.role === "user" || m.role === "assistant")
-          .map((m: { role: string; content: string }, i: number) => ({
-            kind: "text" as const,
-            id: `loaded-${i}`,
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          }));
-        setItems(loaded);
-      })
-      .catch(() => {});
+    sessionIdRef.current = null;
+    localStorage.removeItem(SESSION_KEY);
   }, []);
 
   const itemCount = items.length;
@@ -278,119 +300,22 @@ function TextChat(): ReactElement {
     setBusy(true);
     setThinking(true);
 
-    const abort = new AbortController();
-    abortRef.current = abort;
-
-    // Build history from text messages only (no tool events)
-    const history = [...items, userItem]
-      .filter((item): item is TextMessage => item.kind === "text")
-      .map((m) => ({ role: m.role, content: m.content }));
-
-    try {
-      const res = await fetch(`${API_URL}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, session_id: sessionIdRef.current }),
-        signal: abort.signal,
-      });
-
-      if (!res.ok || !res.body) throw new Error(`API error ${res.status}`);
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { value: chunk, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(chunk, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const payload = JSON.parse(line.slice(6));
-            if (payload.done) break;
-            if (payload.error) throw new Error(payload.error);
-            if (payload.type === "session_id") {
-              sessionIdRef.current = payload.session_id;
-              localStorage.setItem(SESSION_KEY, payload.session_id);
-            } else if (payload.type === "tool_call") {
-              setThinking(false);
-              const toolItem: ToolEvent = {
-                kind: "tool",
-                id: `tool-${Date.now()}-${payload.name}`,
-                name: payload.name,
-                label: payload.label,
-                done: false,
-              };
-              setItems((prev) => {
-                // Insert before the streaming assistant message (last item)
-                const rest = prev.slice(0, -1);
-                const last = prev[prev.length - 1];
-                return [...rest, toolItem, last];
-              });
-            } else if (payload.type === "tool_result") {
-              setItems((prev) =>
-                prev.map((item) =>
-                  item.kind === "tool" && item.name === payload.name && !item.done
-                    ? { ...item, done: true, summary: payload.summary ?? undefined }
-                    : item
-                )
-              );
-            } else if (payload.type === "status") {
-              setThinking(false);
-              const statusItem: StatusEvent = {
-                kind: "status",
-                id: `status-${Date.now()}`,
-                text: payload.text,
-              };
-              setItems((prev) => {
-                // Replace any existing status line, insert before assistant bubble
-                const withoutStatus = prev.filter((item) => item.kind !== "status");
-                const rest = withoutStatus.slice(0, -1);
-                const last = withoutStatus[withoutStatus.length - 1];
-                return [...rest, statusItem, last];
-              });
-            } else if (payload.type === "token") {
-              setThinking(false);
-              // Drop status lines once real text starts flowing
-              setItems((prev) => {
-                const next = prev.filter((item) => item.kind !== "status");
-                const last = next[next.length - 1];
-                if (last?.kind === "text" && last.role === "assistant") {
-                  next[next.length - 1] = {
-                    ...last,
-                    content: last.content + payload.data,
-                  };
-                }
-                return next;
-              });
-            }
-          } catch {
-            // skip malformed lines
-          }
-        }
+    setThinking(false);
+    setItems((prev) => {
+      const next = [...prev];
+      const last = next[next.length - 1];
+      if (last?.kind === "text" && last.role === "assistant") {
+        next[next.length - 1] = {
+          ...last,
+          streaming: false,
+          content:
+            "Text chat over private Harness Health content is disabled in the privacy-first sync model. Reports stay on this Mac and companion devices receive them only over private WebRTC sync.",
+        };
       }
-    } catch (err) {
-      setThinking(false);
-      // AbortError = user stopped — keep the partial response, no error banner
-      if (!(err instanceof Error && err.name === "AbortError")) {
-        setError(err instanceof Error ? err.message : "Something went wrong");
-        setItems((prev) => prev.filter((item) => item.kind !== "tool" || item.done).slice(0, -1));
-      }
-    } finally {
-      setThinking(false);
-      setItems((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        if (last?.kind === "text" && last.role === "assistant")
-          next[next.length - 1] = { ...last, streaming: false };
-        return next;
-      });
-      setBusy(false);
-      textareaRef.current?.focus();
-    }
+      return next;
+    });
+    setBusy(false);
+    textareaRef.current?.focus();
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>): void {
@@ -408,7 +333,8 @@ function TextChat(): ReactElement {
         ) : (
           (() => {
             const assistantTurns = items.filter(
-              (it): it is TextMessage => it.kind === "text" && it.role === "assistant"
+              (it): it is TextMessage =>
+                it.kind === "text" && it.role === "assistant"
             ).length;
             const lastItem = items[items.length - 1];
             const showChips =
@@ -419,7 +345,9 @@ function TextChat(): ReactElement {
               !lastItem.streaming;
             return (
               <>
-                {items.map((item) => <MessageRow key={item.id} item={item} />)}
+                {items.map((item) => (
+                  <MessageRow key={item.id} item={item} />
+                ))}
                 {showChips && (
                   <ReplyChips
                     turn={assistantTurns - 1}
@@ -440,7 +368,7 @@ function TextChat(): ReactElement {
           <textarea
             ref={textareaRef}
             className="chat-textarea"
-            placeholder="Ask Dream anything…"
+            placeholder="Ask Health Coach anything…"
             value={input}
             rows={1}
             onChange={(e) => {
@@ -476,7 +404,9 @@ function TextChat(): ReactElement {
           )}
         </div>
         <div className="chat-footer-row">
-          <p className="chat-footer-hint">Dream can make mistakes. Check important info.</p>
+          <p className="chat-footer-hint">
+            Health Coach can make mistakes. Check important info.
+          </p>
           {items.length > 0 && !busy && (
             <button
               type="button"
@@ -526,7 +456,9 @@ function VoiceMode(): ReactElement {
       setStatus("connecting");
       setErrorMsg(null);
       try {
-        const res = await fetch(`${API_URL}/voice/token`, { method: "POST" });
+        const res = await fetch(await configuredCloudRoute("/voice/token"), {
+          method: "POST",
+        });
         if (!res.ok) throw new Error(`Token error ${res.status}`);
         const { token, url } = (await res.json()) as {
           token: string;
@@ -597,7 +529,9 @@ function VoiceMode(): ReactElement {
     if (!room) return;
     const next = !paused;
     // Freeze/unfreeze mic
-    const pub = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+    const pub = room.localParticipant.getTrackPublication(
+      Track.Source.Microphone
+    );
     if (pub) {
       if (next) await pub.mute();
       else if (!muted) await pub.unmute();
@@ -629,7 +563,7 @@ function VoiceMode(): ReactElement {
     idle: "Starting…",
     connecting: "Connecting…",
     connected: paused ? "Paused" : "Listening",
-    "agent-speaking": paused ? "Paused" : "Dream is speaking",
+    "agent-speaking": paused ? "Paused" : "Health Coach is speaking",
     error: errorMsg ?? "Error",
   };
 

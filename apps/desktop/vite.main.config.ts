@@ -4,7 +4,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   build: {
     rollupOptions: {
-      external: ["mongodb"],
+      // PGlite loads its WASM/runtime assets relative to its published package.
+      // Keeping it external avoids Electron main-process bundle URLs that the
+      // Node filesystem loader cannot read.
+      external: ["@electric-sql/pglite"],
     },
   },
 });

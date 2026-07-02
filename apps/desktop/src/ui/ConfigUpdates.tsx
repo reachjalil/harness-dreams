@@ -3,11 +3,11 @@ import type { ReactElement } from "react";
 import type {
   ActionCategory,
   ActionQueueEntry,
-  DreamReport,
+  HealthReport,
   Finding,
 } from "../shared/types";
 import { Button, PageHeader, Pill, Section } from "./components";
-import type { HarnessDreams } from "./useHarnessDreams";
+import type { HarnessHealth } from "./useHarnessHealth";
 
 const CATEGORY_LABEL: Record<ActionCategory, string> = {
   agentsmd: "AGENTS.md rule",
@@ -18,12 +18,12 @@ const CATEGORY_LABEL: Record<ActionCategory, string> = {
 };
 
 interface ConfigUpdate {
-  report: DreamReport;
+  report: HealthReport;
   entry: ActionQueueEntry;
   finding: Finding | null;
 }
 
-function updatesFromReports(reports: DreamReport[]): ConfigUpdate[] {
+function updatesFromReports(reports: HealthReport[]): ConfigUpdate[] {
   return reports.flatMap((report) =>
     (report.reviewDecisions ?? [])
       .filter((entry) => entry.state === "accepted" && entry.patch)
@@ -132,8 +132,8 @@ export default function ConfigUpdates({
   hd,
   reports,
 }: {
-  hd: HarnessDreams;
-  reports: DreamReport[];
+  hd: HarnessHealth;
+  reports: HealthReport[];
 }): ReactElement {
   const updates = updatesFromReports(reports);
   const active = updates.filter(
@@ -154,7 +154,7 @@ export default function ConfigUpdates({
       <PageHeader
         eyebrow="Config Updates"
         title="Local file edits"
-        subtitle="Rules, markdown files, and skills changed from accepted Sleep Cycle edit requests. Goals measure outcomes; Config Updates are the file changes."
+        subtitle="Rules, markdown files, and skills changed from accepted Health Review edit requests. Goals measure outcomes; Config Updates are the file changes."
       />
 
       <div className="card goal-summary-card">
@@ -202,7 +202,7 @@ export default function ConfigUpdates({
           </div>
         ) : (
           <p className="empty">
-            No config updates yet. Accept an edit request during Sleep Cycle
+            No config updates yet. Accept an edit request during Health Review
             review to apply a local AGENTS.md, CLAUDE.md, rules, or skill
             change.
           </p>

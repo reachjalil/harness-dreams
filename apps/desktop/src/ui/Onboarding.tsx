@@ -4,13 +4,13 @@ import type {
   AnalysisProject,
   DiscoveredProject,
   PrivacyMode,
-  RemRunnerProvider,
+  InsightRunnerProvider,
   ScheduleMode,
 } from "../shared/types";
 import { CLOUD_SYNC_TAGLINE } from "./cloudSync";
 import { BrandMark, Button, Field, Segmented } from "./components";
 import { Icon } from "./icons";
-import type { HarnessDreams } from "./useHarnessDreams";
+import type { HarnessHealth } from "./useHarnessHealth";
 
 const PRIVACY_OPTIONS: { value: PrivacyMode; title: string; sub: string }[] = [
   {
@@ -28,14 +28,14 @@ const PRIVACY_OPTIONS: { value: PrivacyMode; title: string; sub: string }[] = [
 const SCHEDULE_OPTIONS: { value: ScheduleMode; title: string; sub: string }[] =
   [
     {
-      value: "nightly",
+      value: "daily",
       title: "Every night",
-      sub: "Dream automatically at 3:00 AM when your harness is idle.",
+      sub: "Run a Health Review at 3:00 AM when your harness is idle.",
     },
     {
       value: "manual",
       title: "Only when I ask",
-      sub: "No automatic dreams — start one from the menu bar anytime.",
+      sub: "No automatic reviews — start one from the menu bar anytime.",
     },
   ];
 
@@ -44,26 +44,27 @@ type ProjectSourceFilter = "all" | "claude-code" | "codex" | "code";
 export default function Onboarding({
   hd,
 }: {
-  hd: HarnessDreams;
+  hd: HarnessHealth;
 }): ReactElement {
   const { actions, patch, projects } = hd;
   const [step, setStep] = useState(0);
   const [name, setName] = useState(hd.config?.userName ?? "");
   const [privacy, setPrivacy] = useState<PrivacyMode>("local");
-  const [remProvider, setRemProvider] = useState<RemRunnerProvider>("codex");
-  const [remModel, setRemModel] = useState(
-    hd.config?.remRunner.model ?? "gpt-5.5"
+  const [insightProvider, setRemProvider] =
+    useState<InsightRunnerProvider>("codex");
+  const [insightModel, setRemModel] = useState(
+    hd.config?.insightRunner.model ?? "gpt-5.5"
   );
-  const [remClaudePath, setRemClaudePath] = useState(
-    hd.config?.remRunner.claudePath ?? "claude"
+  const [insightClaudePath, setRemClaudePath] = useState(
+    hd.config?.insightRunner.claudePath ?? "claude"
   );
-  const [remCodexPath, setRemCodexPath] = useState(
-    hd.config?.remRunner.codexPath ?? "codex"
+  const [insightCodexPath, setRemCodexPath] = useState(
+    hd.config?.insightRunner.codexPath ?? "codex"
   );
-  const [remTimeoutSeconds, setRemTimeoutSeconds] = useState(
-    Math.round((hd.config?.remRunner.timeoutMs ?? 180_000) / 1000)
+  const [insightTimeoutSeconds, setRemTimeoutSeconds] = useState(
+    Math.round((hd.config?.insightRunner.timeoutMs ?? 180_000) / 1000)
   );
-  const [schedule, setSchedule] = useState<ScheduleMode>("nightly");
+  const [schedule, setSchedule] = useState<ScheduleMode>("daily");
   const [cloudSync, setCloudSync] = useState(false);
   const [discovered, setDiscovered] = useState<DiscoveredProject[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -123,16 +124,17 @@ export default function Onboarding({
       userName: name.trim(),
       demoMode: false,
       privacyMode: privacy,
-      remRunner: {
-        provider: remProvider,
+      insightRunner: {
+        provider: insightProvider,
         model:
-          remModel.trim() || (remProvider === "codex" ? "gpt-5.5" : "opus"),
-        claudePath: remClaudePath.trim() || "claude",
-        codexPath: remCodexPath.trim() || "codex",
-        timeoutMs: Math.max(1, Math.round(remTimeoutSeconds)) * 1000,
+          insightModel.trim() ||
+          (insightProvider === "codex" ? "gpt-5.5" : "opus"),
+        claudePath: insightClaudePath.trim() || "claude",
+        codexPath: insightCodexPath.trim() || "codex",
+        timeoutMs: Math.max(1, Math.round(insightTimeoutSeconds)) * 1000,
       },
       schedule: { mode: schedule },
-      cloudSyncInterest: cloudSync,
+      companionSyncInterest: cloudSync,
       cloudSync: { enabled: cloudSync },
       projects: added,
       connectors: {
@@ -168,11 +170,11 @@ export default function Onboarding({
             <div className="onb-mark-wrap">
               <BrandMark size={66} />
             </div>
-            <h2>Harness Dreams</h2>
+            <h2>Harness Health</h2>
             <p>
-              Your harness health app. While your coding tools sleep, Harness
-              Dreams reflects on the day — so you wake up a little sharper than
-              you went to bed.
+              A local-first health app for your AI coding harness. It watches
+              live usage, explains patterns, and teaches the habits that make
+              better sessions repeatable.
             </p>
             <div className="onb-name">
               <Field label="First, what should I call you?">
@@ -192,27 +194,28 @@ export default function Onboarding({
 
         {step === 1 ? (
           <>
-            <h2>While you sleep, it works</h2>
-            <p>One quiet loop, every day.</p>
+            <h2>Build a healthier harness</h2>
+            <p>One daily loop for signals, habits, and review.</p>
             <ul className="onb-list">
               <li>
                 <span className="num">1</span>
                 <div>
-                  <b>Sleep.</b> Your harness writes a full diary of the day.
+                  <b>Measure.</b> Claude and Codex activity becomes local
+                  vitals: tokens, tools, context, model mix, and source health.
                 </div>
               </li>
               <li>
                 <span className="num">2</span>
                 <div>
-                  <b>Dream.</b> Overnight, it reviews sessions, finds patterns,
-                  and drafts suggested goals.
+                  <b>Learn.</b> Deterministic insights explain what changed and
+                  which healthy harness habit would help next.
                 </div>
               </li>
               <li>
                 <span className="num">3</span>
                 <div>
-                  <b>Reflect.</b> Each morning, a health report — accept useful
-                  findings, track goals.
+                  <b>Review.</b> Periodic Health Reviews turn friction into
+                  goals you can accept, measure, and keep or retire.
                 </div>
               </li>
             </ul>
@@ -222,7 +225,10 @@ export default function Onboarding({
         {step === 2 ? (
           <>
             <h2>Add projects</h2>
-            <p>Choose the local projects Harness Dreams should analyze.</p>
+            <p>
+              Choose the local projects Harness Health should measure and teach
+              from.
+            </p>
             <div className="onb-project-shell">
               <div className="onb-project-toolbar">
                 <div className="onb-project-count">
@@ -307,7 +313,7 @@ export default function Onboarding({
           <>
             <h2>Privacy &amp; sync</h2>
             <p>
-              Choose what leaves your Mac for analysis, and whether your cycle
+              Choose what leaves your Mac for analysis, and whether your review
               syncs to your phone and watch.
             </p>
             <div className="onb-subhead">Where analysis runs</div>
@@ -329,29 +335,31 @@ export default function Onboarding({
                 <div className="choices">
                   <button
                     type="button"
-                    className={`choice${remProvider === "claude-code" ? " selected" : ""}`}
+                    className={`choice${insightProvider === "claude-code" ? " selected" : ""}`}
                     onClick={() => setRemProvider("claude-code")}
                   >
                     <div className="choice-title">Claude Code CLI</div>
                     <div className="choice-sub">
-                      Runs `claude -p` locally with the prepared REM payload.
+                      Runs `claude -p` locally with the prepared insight
+                      payload.
                     </div>
                   </button>
                   <button
                     type="button"
-                    className={`choice${remProvider === "codex" ? " selected" : ""}`}
+                    className={`choice${insightProvider === "codex" ? " selected" : ""}`}
                     onClick={() => setRemProvider("codex")}
                   >
                     <div className="choice-title">Codex CLI</div>
                     <div className="choice-sub">
-                      Runs `codex exec` locally with the prepared REM payload.
+                      Runs `codex exec` locally with the prepared insight
+                      payload.
                     </div>
                   </button>
                 </div>
-                <div className="onb-rem-fields">
+                <div className="onb-insight-fields">
                   <Field
                     label={
-                      remProvider === "codex"
+                      insightProvider === "codex"
                         ? "Codex command"
                         : "Claude command"
                     }
@@ -359,19 +367,21 @@ export default function Onboarding({
                     <input
                       type="text"
                       value={
-                        remProvider === "codex" ? remCodexPath : remClaudePath
+                        insightProvider === "codex"
+                          ? insightCodexPath
+                          : insightClaudePath
                       }
                       onChange={(e) =>
-                        remProvider === "codex"
+                        insightProvider === "codex"
                           ? setRemCodexPath(e.target.value)
                           : setRemClaudePath(e.target.value)
                       }
                     />
                   </Field>
-                  <Field label="REM model">
+                  <Field label="Insight model">
                     <input
                       type="text"
-                      value={remModel}
+                      value={insightModel}
                       onChange={(e) => setRemModel(e.target.value)}
                     />
                   </Field>
@@ -379,7 +389,7 @@ export default function Onboarding({
                     <input
                       type="number"
                       min={1}
-                      value={remTimeoutSeconds}
+                      value={insightTimeoutSeconds}
                       onChange={(e) => {
                         const next = Number(e.target.value);
                         if (Number.isFinite(next)) setRemTimeoutSeconds(next);
@@ -400,13 +410,13 @@ export default function Onboarding({
               >
                 <div className="choice-title">
                   <Icon name="cloudsync" size={15} />
-                  Cloud Sync
-                  <span className="choice-tag">Atlas</span>
+                  Private Device Sync
+                  <span className="choice-tag">WebRTC</span>
                 </div>
                 <div className="choice-sub">
-                  Read your sleep cycle, scores, and goals on iPhone &amp; Apple
-                  Watch. Your code stays on this Mac — only the cycle signal
-                  syncs.
+                  Read your health review, scores, and goals on iPhone &amp;
+                  Apple Watch. Cloudflare only helps devices find each other
+                  while pairing.
                 </div>
               </button>
               <button
@@ -423,8 +433,8 @@ export default function Onboarding({
             </div>
             {cloudSync ? (
               <div className="onb-soon">
-                <b>Cloud Sync is one start action.</b> Add your sync settings
-                and start the desktop connection from Settings.
+                <b>Private Device Sync starts from Settings.</b> Show the QR,
+                scan it with your iPhone, and this Mac stays the sync owner.
               </div>
             ) : null}
           </>
@@ -432,7 +442,7 @@ export default function Onboarding({
 
         {step === 4 ? (
           <>
-            <h2>When should it dream?</h2>
+            <h2>When should reviews run?</h2>
             <p>You can change this anytime in Settings.</p>
             <div className="choices">
               {SCHEDULE_OPTIONS.map((option) => (
@@ -465,7 +475,7 @@ export default function Onboarding({
           </Button>
         ) : null}
         <Button variant="accent" onClick={next}>
-          {step >= lastStep ? "Enter Harness Dreams" : "Continue"}
+          {step >= lastStep ? "Enter Harness Health" : "Continue"}
         </Button>
       </div>
     </div>

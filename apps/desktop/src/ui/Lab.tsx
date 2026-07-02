@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 
 import type {
-  DreamReport,
+  HealthReport,
   Experiment,
   ExperimentStatus,
   GoalDisposition,
@@ -9,7 +9,7 @@ import type {
 } from "../shared/types";
 import { PageHeader, Pill, SummaryCard } from "./components";
 import { TERM } from "./explainers";
-import type { HarnessDreams } from "./useHarnessDreams";
+import type { HarnessHealth } from "./useHarnessHealth";
 
 const STATUS_TONE: Record<ExperimentStatus, "neutral" | "accent" | "good"> = {
   proposed: "neutral",
@@ -35,7 +35,7 @@ const VERDICT_TONE = {
   worse: "danger",
 } as const;
 
-function composite(report: DreamReport): number {
+function composite(report: HealthReport): number {
   const sum = report.rings.reduce((acc, ring) => acc + ring.score, 0);
   return Math.round(sum / Math.max(1, report.rings.length));
 }
@@ -53,7 +53,7 @@ function average(values: number[]): number | null {
 }
 
 function insightForGoal(
-  report: DreamReport,
+  report: HealthReport,
   goal: Experiment
 ): ProjectInsight | null {
   return (
@@ -64,7 +64,7 @@ function insightForGoal(
 }
 
 function uniqueTargetInsights(
-  report: DreamReport,
+  report: HealthReport,
   goals: Experiment[]
 ): ProjectInsight[] {
   const byPath = new Map<string, ProjectInsight>();
@@ -75,7 +75,7 @@ function uniqueTargetInsights(
   return [...byPath.values()];
 }
 
-function goalMeasurementText(report: DreamReport, goal: Experiment): string {
+function goalMeasurementText(report: HealthReport, goal: Experiment): string {
   const insight = insightForGoal(report, goal);
   if (!insight) {
     return "Latest window: no activity found for this goal's target project yet.";
@@ -104,7 +104,7 @@ interface GoalSignal {
   good: boolean;
 }
 
-function goalSignals(report: DreamReport, goals: Experiment[]): GoalSignal[] {
+function goalSignals(report: HealthReport, goals: Experiment[]): GoalSignal[] {
   if (goals.length === 0) return [];
   const targetInsights = uniqueTargetInsights(report, goals);
   const activeTargets = targetInsights.filter(
@@ -161,7 +161,7 @@ function goalSignals(report: DreamReport, goals: Experiment[]): GoalSignal[] {
       value: `${activeTargets.length}/${targetInsights.length || goals.length}`,
       detail:
         sessions > 0
-          ? `${sessions} sessions · ${turns} turns in this Sleep Cycle window`
+          ? `${sessions} sessions · ${turns} turns in this Health Review window`
           : "Waiting for new sessions in the goal's project",
       good: activeTargets.length > 0,
     },
@@ -267,8 +267,8 @@ function ProgressOrVerdict({ goal }: { goal: Experiment }): ReactElement {
     const pct = Math.round((goal.progress ?? 0) * 100);
     return (
       <div className="improvement-progress">
-        <div className="cycle-bar">
-          <div className="cycle-bar-fill" style={{ width: `${pct}%` }} />
+        <div className="review-bar">
+          <div className="review-bar-fill" style={{ width: `${pct}%` }} />
         </div>
         <span className="muted tnum">
           {goal.progressLabel ?? `${pct}% complete`}
@@ -359,7 +359,7 @@ function GoalCard({
   onSetDisposition,
 }: {
   goal: Experiment;
-  report: DreamReport;
+  report: HealthReport;
   onSetDisposition: (
     experimentId: string,
     disposition: GoalDisposition | null
@@ -406,8 +406,8 @@ export default function Lab({
   hd,
   report,
 }: {
-  hd: HarnessDreams;
-  report: DreamReport | null;
+  hd: HarnessHealth;
+  report: HealthReport | null;
 }): ReactElement {
   if (!report) {
     return (
@@ -448,7 +448,7 @@ export default function Lab({
       <PageHeader
         eyebrow="Goals"
         title="Current goals"
-        subtitle="Goals you accepted during Sleep Cycle review, plus the measurements that show whether they are working."
+        subtitle="Goals you accepted during Health Review, plus the measurements that show whether they are working."
       />
 
       <div className="card goal-summary-card">
@@ -470,7 +470,7 @@ export default function Lab({
                   }
                 : undefined
             }
-            sublabel="Latest Sleep Cycle score across efficiency, effectiveness, and alignment."
+            sublabel="Latest Health Review score across efficiency, effectiveness, and alignment."
             tip={TERM.composite}
           />
           <SummaryCard
@@ -494,7 +494,7 @@ export default function Lab({
 
       <GoalGroup
         title="Now measuring"
-        hint="Latest Sleep Cycle data compared with the snapshot taken when each goal was accepted."
+        hint="Latest Health Review data compared with the snapshot taken when each goal was accepted."
       >
         <div className="card goal-metrics-card">
           {signals.length > 0 ? (
@@ -506,8 +506,8 @@ export default function Lab({
           ) : (
             <p className="empty">
               No goals are actively measuring. Accept a suggested goal during
-              Sleep Cycle review to start comparing future project activity
-              against its baseline.
+              Health Review to start comparing future project activity against
+              its baseline.
             </p>
           )}
         </div>
@@ -516,12 +516,12 @@ export default function Lab({
       {currentGoals.length === 0 ? (
         <GoalGroup
           title="Current goals"
-          hint="Only accepted goals live here. New goals are accepted during Sleep Cycle review."
+          hint="Only accepted goals live here. New goals are accepted during Health Review."
         >
           <div className="card">
             <p className="empty">
-              No current goals yet. Review a Sleep Cycle and accept a suggested
-              goal to start tracking it.
+              No current goals yet. Review a Health Review and accept a
+              suggested goal to start tracking it.
             </p>
           </div>
         </GoalGroup>

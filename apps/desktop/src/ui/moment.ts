@@ -5,48 +5,52 @@
  */
 
 import type { TimeOfDay } from "../shared/timeOfDay";
-import type { DreamPhase, DreamReport, ScheduleMode } from "../shared/types";
+import type {
+  HealthReviewPhase,
+  HealthReport,
+  ScheduleMode,
+} from "../shared/types";
 
 export type MomentKind =
   | "running"
   | "review"
-  | "nap"
-  | "sleep"
+  | "quick"
+  | "full"
   | "rest"
   | "standby";
 
-export type MomentCta = "sleep" | "nap" | "review";
+export type MomentCta = "full" | "quick" | "review";
 
 export interface Moment {
   kind: MomentKind;
   ctaKind?: MomentCta;
 }
 
-/** Fresh sessions needed before we suggest a cycle. */
-export const NAP_THRESHOLD = 3;
-export const SLEEP_THRESHOLD = 5;
+/** Fresh sessions needed before we suggest a review. */
+export const QUICK_REVIEW_THRESHOLD = 3;
+export const FULL_REVIEW_THRESHOLD = 5;
 
 export interface MomentInput {
   tod: TimeOfDay;
-  phase: DreamPhase;
-  /** The latest unreviewed cycle, if one is waiting. */
-  pending: DreamReport | null;
-  /** Sessions accumulated since the last reviewed cycle. */
+  phase: HealthReviewPhase;
+  /** The latest unreviewed report, if one is waiting. */
+  pending: HealthReport | null;
+  /** Sessions accumulated since the last reviewed report. */
   activity: number;
   scheduleMode: ScheduleMode;
 }
 
 /** Pick the one thing Home should surface, first match wins. */
 export function decideMoment(input: MomentInput): Moment {
-  if (input.phase === "dreaming") return { kind: "running" };
+  if (input.phase === "running") return { kind: "running" };
   if (input.pending) return { kind: "review", ctaKind: "review" };
-  if (input.tod === "midday" && input.activity >= NAP_THRESHOLD) {
-    return { kind: "nap", ctaKind: "nap" };
+  if (input.tod === "midday" && input.activity >= QUICK_REVIEW_THRESHOLD) {
+    return { kind: "quick", ctaKind: "quick" };
   }
-  if (input.tod === "evening" && input.activity >= SLEEP_THRESHOLD) {
-    return { kind: "sleep", ctaKind: "sleep" };
+  if (input.tod === "evening" && input.activity >= FULL_REVIEW_THRESHOLD) {
+    return { kind: "full", ctaKind: "full" };
   }
-  if (input.tod === "night" && input.scheduleMode === "nightly") {
+  if (input.tod === "night" && input.scheduleMode === "daily") {
     return { kind: "standby" };
   }
   return { kind: "rest" };

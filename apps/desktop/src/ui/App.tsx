@@ -1,15 +1,16 @@
 import { type ReactElement, useEffect, useState } from "react";
 
+import Browse from "./Browse";
 import Chat from "./Chat";
 import { CloudSyncDialog } from "./CloudSyncDialog";
 import ConfigUpdates from "./ConfigUpdates";
-import Cycle from "./Cycle";
+import Review from "./Review";
 import { alignmentSplit, band, Sidebar, type Tab } from "./components";
 import Lab from "./Lab";
 import Onboarding from "./Onboarding";
 import Settings from "./Settings";
 import Today from "./Today";
-import { type HarnessDreams, useHarnessDreams } from "./useHarnessDreams";
+import { type HarnessHealth, useHarnessHealth } from "./useHarnessHealth";
 
 function Loading(): ReactElement {
   return (
@@ -22,24 +23,39 @@ function Loading(): ReactElement {
   );
 }
 
-function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
-  const [tab, setTab] = useState<Tab>("today");
+const VALID_TABS = new Set<Tab>([
+  "today",
+  "browse",
+  "review",
+  "lab",
+  "config",
+  "chat",
+  "settings",
+]);
+
+function initialTab(): Tab {
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  return tab && VALID_TABS.has(tab as Tab) ? (tab as Tab) : "today";
+}
+
+function MainShell({ hd }: { hd: HarnessHealth }): ReactElement {
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cloudSyncOpen, setCloudSyncOpen] = useState(false);
-  const unreviewedCycle =
+  const unreviewedReport =
     hd.reports[0]?.reviewStatus === "unreviewed" ? hd.reports[0] : undefined;
-  const unreviewed = unreviewedCycle ? 1 : 0;
+  const unreviewed = unreviewedReport ? 1 : 0;
   const latestReviewed =
     hd.reports.find((report) => report.reviewStatus === "reviewed") ??
     hd.reports[0] ??
     null;
 
-  // The tray's "Recent sessions" submenu can ask us to open a specific dream.
+  // The tray's "Recent sessions" submenu can ask us to open a specific review.
   useEffect(() => {
     if (!window.hd) return;
     return window.hd.events.onSelectReport((id) => {
       setSelectedId(id);
-      setTab("cycle");
+      setTab("review");
     });
   }, []);
 
@@ -47,7 +63,7 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
     ? (hd.reports.find((r) => r.id === selectedId) ?? null)
     : null;
   const reportForProgress = latestReviewed;
-  const phase = hd.state?.phase ?? "resting";
+  const phase = hd.state?.phase ?? "idle";
   const split = reportForProgress
     ? alignmentSplit(reportForProgress)
     : { human: 0, agent: 0, band: band(0) };
@@ -59,24 +75,24 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
 
   function navigate(next: Tab): void {
     setTab(next);
-    if (next === "cycle") setSelectedId(null);
+    if (next === "review") setSelectedId(null);
   }
 
-  function selectCycle(id: string): void {
+  function selectReview(id: string): void {
     setSelectedId(id);
-    setTab("cycle");
+    setTab("review");
   }
 
-  function runSleepCycle(): void {
+  function runHealthReview(): void {
     setSelectedId(null);
-    setTab("cycle");
-    void hd.actions.dreamNow();
+    setTab("review");
+    void hd.actions.runHealthReview();
   }
 
-  function runNapCycle(): void {
+  function runQuickReview(): void {
     setSelectedId(null);
-    setTab("cycle");
-    void hd.actions.napNow();
+    setTab("review");
+    void hd.actions.runQuickReview();
   }
 
   return (
@@ -89,7 +105,7 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
         alignment={alignmentScore}
         band={split.band}
         phase={phase}
-        lastDreamAt={hd.state?.lastDreamAt ?? null}
+        lastReviewAt={hd.state?.lastReviewAt ?? null}
         unreviewed={unreviewed || (hd.state?.hasUnreviewed ? 1 : 0)}
         onUpgrade={() => setCloudSyncOpen(true)}
       />
@@ -103,26 +119,29 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
               <Today
                 hd={hd}
                 report={reportForProgress}
-                pendingCycle={unreviewedCycle ?? null}
+                pendingReview={unreviewedReport ?? null}
                 onOpenGoals={() => setTab("lab")}
-                onRunSleepCycle={runSleepCycle}
-                onRunNap={runNapCycle}
-                onOpenCycle={() => {
-                  if (hd.reports[0]) selectCycle(hd.reports[0].id);
-                  else navigate("cycle");
+                onRunHealthReview={runHealthReview}
+                onRunQuickReview={runQuickReview}
+                onOpenReview={() => {
+                  if (hd.reports[0]) selectReview(hd.reports[0].id);
+                  else navigate("review");
                 }}
               />
             ) : null}
-            {tab === "cycle" ? (
-              <Cycle
+            {tab === "browse" ? (
+              <Browse hd={hd} report={reportForProgress} />
+            ) : null}
+            {tab === "review" ? (
+              <Review
                 hd={hd}
                 report={selected}
                 reports={hd.reports}
                 selectedId={selectedId}
-                onSelectCycle={selectCycle}
+                onSelectReview={selectReview}
                 onBackToList={() => setSelectedId(null)}
                 onOpenImprovements={() => setTab("lab")}
-                onRunSleepCycle={runSleepCycle}
+                onRunHealthReview={runHealthReview}
               />
             ) : null}
             {tab === "lab" ? <Lab hd={hd} report={reportForProgress} /> : null}
@@ -131,7 +150,7 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
             ) : null}
             {tab === "chat" ? <Chat /> : null}
             {tab === "settings" ? (
-              <Settings hd={hd} onRunSleepCycle={runSleepCycle} />
+              <Settings hd={hd} onRunHealthReview={runHealthReview} />
             ) : null}
           </div>
         </div>
@@ -146,7 +165,7 @@ function MainShell({ hd }: { hd: HarnessDreams }): ReactElement {
 }
 
 export default function App(): ReactElement {
-  const hd = useHarnessDreams();
+  const hd = useHarnessHealth();
   const reduceMotion = hd.config?.reduceMotion ?? false;
 
   useEffect(() => {

@@ -1,6 +1,6 @@
-# @harness-dreams/desktop
+# @harness-health/desktop
 
-Native macOS menu-bar app for Harness Dreams.
+Native macOS menu-bar app for Harness Health.
 
 ## Current status
 
@@ -10,41 +10,39 @@ early access invites, and the signed app build are coming soon.
 Until then, run it locally from the repo:
 
 ```bash
-git clone https://github.com/reachjalil/harness-dreams.git
-cd harness-dreams
+git clone https://github.com/reachjalil/harness-health.git
+cd harness-health
 corepack enable
 pnpm install
-pnpm --filter @harness-dreams/desktop start
+pnpm --filter @harness-health/desktop start
 ```
 
 This starts the Electron app in development mode.
 
-## MongoDB Atlas Cloud Sync
+## Private Device Sync
 
-The desktop app can sync the Sleep Cycle signal to MongoDB Atlas so phone and
-watch clients can read cycle history and write action choices back.
+The desktop app is the only durable source of truth for Health Review reports.
+Companion devices use Cloudflare only as an ephemeral WebRTC signaling room;
+reports and review decisions move directly over WebRTC data channels.
 
-Configure it in `Settings -> Cloud Sync`, or launch with environment variables:
+Configure it in `Settings -> Private Device Sync`, or launch with environment
+variables:
 
 ```bash
-HARNESS_DREAMS_MONGODB_URI="mongodb+srv://..."
-HARNESS_DREAMS_MONGODB_DB="harness_dreams"
-HARNESS_DREAMS_CLOUD_USER_ID="your-shared-user-id"
-pnpm --filter @harness-dreams/desktop start
+HARNESS_HEALTH_CLOUD_API_BASE_URL="https://sync.example.com"
+pnpm --filter @harness-health/desktop start
 ```
 
-Collections created by the desktop client:
-
-- `sleep_cycles`: sanitized cycle snapshots with summaries, scores, metrics,
-  findings, experiments, alignment detail, and review status.
-- `sleep_cycle_decisions`: one document per `userId + reportId + findingId`.
-  Phone/watch clients should upsert `{ state, updatedAt, sourceDeviceId }` here,
-  with `updatedAt` as epoch milliseconds.
-- `sync_devices`: last-seen metadata for desktop, phone, and watch clients.
+The desktop generates a local cloud user id and one-time QR pairing secret.
+The QR query contains only public routing metadata; the pairing secret stays in
+the deep-link fragment and is never sent to Cloudflare routes.
 
 Conflict resolution is intentionally simple: newest `updatedAt` wins per
-finding. When the desktop pulls a newer accepted decision from phone/watch, it
-applies the same accepted-recommendation path as a local desktop review.
+finding. When the Mac receives a newer accepted decision from phone/watch, it
+applies the same accepted-recommendation path as a local desktop review and
+fans out the latest snapshot to connected devices.
 
-Cloud Sync does not upload transcripts, code, local repo paths, evidence file
-paths, patch snippets, or secrets.
+By default, no Harness Health data is stored on our servers. TURN may relay
+encrypted WebRTC packets for connectivity, but it does not receive plaintext
+reports. If encrypted fallback is enabled, Cloudflare stores only latest-snapshot
+ciphertext that paired devices decrypt locally.

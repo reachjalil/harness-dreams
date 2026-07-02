@@ -1,8 +1,8 @@
 {
-  "name": "@harness-dreams/desktop",
-  "productName": "Harness Dreams",
+  "name": "@harness-health/desktop",
+  "productName": "Harness Health",
   "version": "0.1.0",
-  "description": "Your harness health app. While your coding harness sleeps, Harness Dreams reflects on the day and wakes you with a health report.",
+  "description": "A local-first health app for your AI coding harness: live vitals, trends, reviews, habits, and recommendations across desktop, phone, and watch.",
   "main": ".vite/build/main.js",
   "private": true,
   "author": {
@@ -36,10 +36,16 @@
     "vite": "^5.4.21"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.3",
+    "@health-sdk/domain": "link:../../../health-sdk/packages/domain",
+    "@health-sdk/harness-desktop-ui": "link:../../../health-sdk/packages/harness-desktop-ui",
+    "@health-sdk/tokens": "link:../../../health-sdk/packages/tokens",
+    "@health-sdk/ui-react": "link:../../../health-sdk/packages/ui-react",
+    "@harness-health/core": "workspace:*",
+    "chokidar": "^5.0.0",
     "electron-squirrel-startup": "^1.0.1",
     "livekit-client": "^2.20.0",
     "lucide-react": "^1.21.0",
-    "mongodb": "^7.4.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

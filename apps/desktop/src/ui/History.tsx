@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import type { DreamReport } from "../shared/types";
+import type { HealthReport } from "../shared/types";
 import {
   AreaChart,
   CompareStrip,
@@ -13,13 +13,13 @@ import {
 } from "./components";
 import { Icon } from "./icons";
 
-/** Mean of a report's ring scores — the comparable health point per Sleep Cycle. */
-function composite(report: DreamReport): number {
+/** Mean of a report's ring scores — the comparable health point per Health Review. */
+function composite(report: HealthReport): number {
   const sum = report.rings.reduce((acc, ring) => acc + ring.score, 0);
   return Math.round(sum / Math.max(1, report.rings.length));
 }
 
-function ringScore(report: DreamReport, key: string): number {
+function ringScore(report: HealthReport, key: string): number {
   return report.rings.find((r) => r.key === key)?.score ?? 0;
 }
 
@@ -35,7 +35,7 @@ export default function History({
   selectedId,
   onSelect,
 }: {
-  reports: DreamReport[];
+  reports: HealthReport[];
   selectedId: string | null;
   onSelect: (id: string) => void;
 }): ReactElement {
@@ -90,13 +90,13 @@ export default function History({
     <>
       <PageHeader
         eyebrow="History"
-        title="Compare Sleep Cycles over time"
-        subtitle="Each Sleep Cycle becomes a comparable health point — see whether your changes are compounding."
+        title="Compare Reviews over time"
+        subtitle="Each Health Review becomes a comparable health point — see whether your changes are compounding."
       />
 
       {reports.length === 0 ? (
         <p className="empty">
-          No Sleep Cycles yet. Run a dream to start your history.
+          No Reviews yet. Run a review to start your history.
         </p>
       ) : (
         <div className="history">
@@ -112,12 +112,12 @@ export default function History({
               }
               sublabel={
                 alignmentDelta == null
-                  ? "First Sleep Cycle on record"
-                  : "vs. previous Sleep Cycle"
+                  ? "First Health Review on record"
+                  : "vs. previous Health Review"
               }
             />
             <SummaryCard
-              eyebrow="Dream score"
+              eyebrow="Health score"
               value={latestScore}
               trend={
                 scoreDelta == null
@@ -127,7 +127,7 @@ export default function History({
               sublabel="Mean of all rings"
             />
             <SummaryCard
-              eyebrow="Sleep Cycles recorded"
+              eyebrow="Reviews recorded"
               value={reports.length}
               sublabel={
                 latest ? `Latest ${shortDate(latest.timestamp)}` : undefined
@@ -139,7 +139,7 @@ export default function History({
           <div className="history-cols">
             <Section
               title="Trend"
-              hint="Dream score across recent Sleep Cycles. Tap a point to open it."
+              hint="Health score across recent Reviews. Tap a point to open it."
             >
               <AreaChart
                 values={scoreSeries}
@@ -162,7 +162,7 @@ export default function History({
             {latest ? (
               <Section
                 title="Latest vs. previous"
-                hint="What moved since the Sleep Cycle before."
+                hint="What moved since the Health Review before."
               >
                 {alignmentDelta != null ? (
                   <div className="history-delta-legend">
@@ -191,7 +191,7 @@ export default function History({
           </div>
 
           <Section
-            title="All Sleep Cycles"
+            title="All Reviews"
             hint="Newest first. Select one to open its report across the app."
           >
             <div className="history-list">

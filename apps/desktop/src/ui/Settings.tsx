@@ -12,7 +12,7 @@ import type {
   CloudSyncPairing,
   DiscoveredProject,
   GuidanceApplyMode,
-  RemRunnerProvider,
+  InsightRunnerProvider,
 } from "../shared/types";
 import {
   Button,
@@ -25,7 +25,7 @@ import {
 } from "./components";
 import { SETTINGS_TIP } from "./explainers";
 import { Icon } from "./icons";
-import type { HarnessDreams } from "./useHarnessDreams";
+import type { HarnessHealth } from "./useHarnessHealth";
 
 function syncTimeLabel(value: number | null | undefined): string {
   if (!value) return "Never";
@@ -37,10 +37,10 @@ function syncTimeLabel(value: number | null | undefined): string {
 
 export default function Settings({
   hd,
-  onRunSleepCycle,
+  onRunHealthReview,
 }: {
-  hd: HarnessDreams;
-  onRunSleepCycle: () => void;
+  hd: HarnessHealth;
+  onRunHealthReview: () => void;
 }): ReactElement {
   const { config, patch, actions } = hd;
   const [tested, setTested] = useState(false);
@@ -94,7 +94,8 @@ export default function Settings({
   const projectCount = visibleProjects.filter(
     (project) => project.enabled
   ).length;
-  const nightly = cfg.schedule.mode === "nightly";
+  const daily = cfg.schedule.mode === "daily";
+  const priceEntries = Object.keys(config.telemetry.priceTable).length;
 
   function toggleProject(projectPath: string, enabled: boolean): void {
     patch({
@@ -156,7 +157,7 @@ export default function Settings({
   function startCloudSync(): void {
     if (!config) return;
     if (!config.cloudSync.enabled) {
-      patch({ cloudSync: { enabled: true }, cloudSyncInterest: true });
+      patch({ cloudSync: { enabled: true }, companionSyncInterest: true });
       return;
     }
     void hd.cloudSync.syncNow();
@@ -165,7 +166,6 @@ export default function Settings({
   function pairingActionLabel(): string {
     if (pairingBusy) return "Creating...";
     if (pairingKind === "watch") return "Pair Apple Watch";
-    if (pairingKind === "ipad") return "Pair iPad";
     return "Pair iPhone";
   }
 
@@ -179,15 +179,13 @@ export default function Settings({
     <>
       <PageHeader
         eyebrow="Control center"
-        title="Settings"
-        subtitle="Schedule, privacy, connectors, and data."
+        title="Harness Health Settings"
+        subtitle="Realtime telemetry, reviews, privacy, companion sync, and data."
       />
       <div className="settings-status">
         <StatusChip
-          label={
-            nightly ? `Nightly · ${config.schedule.time}` : "Manual Sleep Cycle"
-          }
-          on={nightly}
+          label={daily ? `Daily · ${config.schedule.time}` : "Manual Review"}
+          on={daily}
         />
         <StatusChip
           label={config.privacyMode === "local" ? "Local-only" : "Cloud opt-in"}
@@ -214,8 +212,8 @@ export default function Settings({
         <StatusChip
           label={
             config.cloudSync.enabled
-              ? `Cloud Sync · ${cloudStatus?.state ?? "connecting"}`
-              : "Cloud Sync off"
+              ? `Private Sync · ${cloudStatus?.state ?? "connecting"}`
+              : "Private Sync off"
           }
           on={cloudConnected}
         />
@@ -226,13 +224,16 @@ export default function Settings({
       </div>
 
       <div className="settings-grid">
-        <SettingsGroup title="Demo Mode" icon={<Icon name="cycle" size={16} />}>
+        <SettingsGroup
+          title="Demo Mode"
+          icon={<Icon name="review" size={16} />}
+        >
           <div className="settings-row">
             <div className="settings-row-main">
               <div className="settings-row-label">Fictional product tour</div>
               <div className="settings-row-hint">
-                Swap in persisted sample projects and Sleep Cycles; no LLM, repo
-                writes, or pushes run while this is on.
+                Swap in persisted sample projects and health reviews; no LLM,
+                repo writes, or pushes run while this is on.
               </div>
             </div>
             <Toggle
@@ -259,9 +260,7 @@ export default function Settings({
         >
           <div className="settings-row">
             <div className="settings-row-main">
-              <div className="settings-row-label">
-                When the Sleep Cycle runs
-              </div>
+              <div className="settings-row-label">When Health Reviews run</div>
               <div className="settings-row-hint">
                 Idle nights only — never mid-task.
               </div>
@@ -271,17 +270,17 @@ export default function Settings({
               value={config.schedule.mode}
               onChange={(mode) => patch({ schedule: { mode } })}
               options={[
-                { value: "nightly", label: "Nightly" },
+                { value: "daily", label: "Daily" },
                 { value: "manual", label: "Manual" },
               ]}
             />
           </div>
-          {nightly ? (
+          {daily ? (
             <div className="settings-row">
               <div className="settings-row-main">
-                <div className="settings-row-label">Sleep Cycle time</div>
+                <div className="settings-row-label">Review time</div>
                 <div className="settings-row-hint">
-                  The overnight review kicks off at this hour.
+                  The periodic health review kicks off at this hour.
                 </div>
               </div>
               <Field label="">
@@ -299,12 +298,12 @@ export default function Settings({
               <div className="settings-row-main">
                 <div className="settings-row-label">Run on demand</div>
                 <div className="settings-row-hint">
-                  Start a Sleep Cycle anytime from the sidebar or menu bar.
+                  Start a Health Review anytime from the sidebar or menu bar.
                 </div>
               </div>
-              <Button variant="accent" onClick={onRunSleepCycle}>
-                <Icon name="dream" size={16} />
-                Run Sleep Cycle
+              <Button variant="accent" onClick={onRunHealthReview}>
+                <Icon name="healthReview" size={16} />
+                Run Health Review
               </Button>
             </div>
           )}
@@ -334,19 +333,19 @@ export default function Settings({
           </div>
           <div className="settings-row">
             <div className="settings-row-main">
-              <div className="settings-row-label">Background REM CLI</div>
+              <div className="settings-row-label">Background insight CLI</div>
               <div className="settings-row-hint">
                 {config.privacyMode === "cloud"
-                  ? "Runs the selected CLI locally for the REM pass."
+                  ? "Runs the selected CLI locally for the insight pass."
                   : "Runs the selected CLI locally; cloud sync is separate."}
               </div>
             </div>
-            <Segmented<RemRunnerProvider>
-              ariaLabel="REM runner"
-              value={config.remRunner.provider}
+            <Segmented<InsightRunnerProvider>
+              ariaLabel="Insight runner"
+              value={config.insightRunner.provider}
               onChange={(provider) =>
                 patch({
-                  remRunner: {
+                  insightRunner: {
                     provider,
                     model: provider === "codex" ? "gpt-5.5" : "opus",
                   },
@@ -368,14 +367,14 @@ export default function Settings({
             <Field label="">
               <input
                 value={
-                  config.remRunner.provider === "codex"
-                    ? config.remRunner.codexPath
-                    : config.remRunner.claudePath
+                  config.insightRunner.provider === "codex"
+                    ? config.insightRunner.codexPath
+                    : config.insightRunner.claudePath
                 }
                 onChange={(e) =>
                   patch({
-                    remRunner:
-                      config.remRunner.provider === "codex"
+                    insightRunner:
+                      config.insightRunner.provider === "codex"
                         ? { codexPath: e.target.value }
                         : { claudePath: e.target.value },
                   })
@@ -385,16 +384,16 @@ export default function Settings({
           </div>
           <div className="settings-row">
             <div className="settings-row-main">
-              <div className="settings-row-label">REM model</div>
+              <div className="settings-row-label">Insight model</div>
               <div className="settings-row-hint">
                 Passed to the CLI with its model flag.
               </div>
             </div>
             <Field label="">
               <input
-                value={config.remRunner.model}
+                value={config.insightRunner.model}
                 onChange={(e) =>
-                  patch({ remRunner: { model: e.target.value } })
+                  patch({ insightRunner: { model: e.target.value } })
                 }
               />
             </Field>
@@ -410,12 +409,12 @@ export default function Settings({
               <input
                 type="number"
                 min={1}
-                value={Math.round(config.remRunner.timeoutMs / 1000)}
+                value={Math.round(config.insightRunner.timeoutMs / 1000)}
                 onChange={(e) => {
                   const seconds = Number(e.target.value);
                   if (Number.isFinite(seconds) && seconds > 0) {
                     patch({
-                      remRunner: {
+                      insightRunner: {
                         timeoutMs: Math.round(seconds) * 1000,
                       },
                     });
@@ -472,7 +471,110 @@ export default function Settings({
         </SettingsGroup>
 
         <SettingsGroup
-          title="Cloud Sync"
+          title="Realtime Telemetry"
+          icon={<Icon name="data" size={16} />}
+        >
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Harness Health ingestion</div>
+              <div className="settings-row-hint">
+                Normalized metrics and source pointers are stored locally.
+              </div>
+            </div>
+            <Toggle
+              label="Realtime telemetry"
+              checked={config.telemetry.enabled}
+              onChange={(enabled) => patch({ telemetry: { enabled } })}
+            />
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">File watcher</div>
+              <div className="settings-row-hint">
+                Watches local Claude and Codex JSONL files for new rows.
+              </div>
+            </div>
+            <Toggle
+              label="File watcher"
+              checked={config.telemetry.watch}
+              disabled={!config.telemetry.enabled}
+              onChange={(watch) => patch({ telemetry: { watch } })}
+            />
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Retention window</div>
+              <div className="settings-row-hint">
+                Controls local metric history kept for trends and baselines.
+              </div>
+            </div>
+            <Field label="">
+              <input
+                type="number"
+                min={1}
+                max={365}
+                value={config.telemetry.retentionDays}
+                onChange={(e) => {
+                  const retentionDays = Number(e.target.value);
+                  if (Number.isFinite(retentionDays)) {
+                    patch({
+                      telemetry: {
+                        retentionDays: Math.round(retentionDays),
+                      },
+                    });
+                  }
+                }}
+              />
+            </Field>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Raw transcript retention</div>
+              <div className="settings-row-hint">
+                Off by default; realtime analytics do not need transcript
+                bodies.
+              </div>
+            </div>
+            <Toggle
+              label="Raw transcript retention"
+              checked={config.telemetry.rawTextRetention}
+              onChange={(rawTextRetention) =>
+                patch({ telemetry: { rawTextRetention } })
+              }
+            />
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Cost price table</div>
+              <div className="settings-row-hint">
+                {priceEntries} provider{" "}
+                {priceEntries === 1 ? "entry" : "entries"} configured; cost
+                stays zero until prices are supplied.
+              </div>
+            </div>
+            <code className="mono-chip">local JSON</code>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Ingest status</div>
+              <div className="settings-row-hint">
+                {hd.ingestStatus?.message ?? "Waiting for telemetry status."}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                void hd.telemetry.refresh();
+              }}
+            >
+              <Icon name="sync" size={16} />
+              Refresh
+            </Button>
+          </div>
+        </SettingsGroup>
+
+        <SettingsGroup
+          title="Private Device Sync"
           icon={<Icon name="cloudsync" size={16} />}
         >
           <div className="demo-callout">
@@ -482,16 +584,16 @@ export default function Settings({
                 : "Paid plan required"}
             </b>
             <span>
-              Cloud Sync remains a paid-plan feature. This local build can
-              bypass the paywall for demos while keeping the same desktop-owned
-              access model.
+              The paid plan is only required for the iPhone and Apple Watch
+              companion connection. This local build can bypass the paywall for
+              demos while keeping the same desktop-owned access model.
             </span>
           </div>
           <div className="settings-row">
             <div className="settings-row-main">
-              <div className="settings-row-label">Cloud Sync</div>
+              <div className="settings-row-label">Private Device Sync</div>
               <div className="settings-row-hint">
-                One action enables sync and starts the desktop connection.
+                One action starts the Mac-owned companion connection.
               </div>
             </div>
             <Button
@@ -500,14 +602,15 @@ export default function Settings({
               onClick={startCloudSync}
             >
               <Icon name="sync" size={16} />
-              {config.cloudSync.enabled ? "Sync now" : "Start sync"}
+              {config.cloudSync.enabled ? "Refresh peers" : "Start sync"}
             </Button>
           </div>
           <div className="settings-row">
             <div className="settings-row-main">
               <div className="settings-row-label">Dev paid-plan bypass</div>
               <div className="settings-row-hint">
-                On for this demo; production can require the paid entitlement.
+                On for this demo; production can require the paid entitlement
+                after the 2-week trial.
               </div>
             </div>
             <Toggle
@@ -520,34 +623,17 @@ export default function Settings({
           </div>
           <div className="settings-row">
             <div className="settings-row-main">
-              <div className="settings-row-label">Atlas URI</div>
+              <div className="settings-row-label">Signaling server</div>
               <div className="settings-row-hint">
-                Leave blank to use HARNESS_DREAMS_MONGODB_URI.
+                Used only while pairing or reconnecting WebRTC devices.
               </div>
             </div>
             <Field label="">
               <input
-                type="password"
-                value={config.cloudSync.atlasUri}
-                placeholder="mongodb+srv://..."
+                value={config.cloudSync.cloudApiBaseUrl}
+                placeholder="https://sync.example.com"
                 onChange={(e) =>
-                  patch({ cloudSync: { atlasUri: e.target.value } })
-                }
-              />
-            </Field>
-          </div>
-          <div className="settings-row">
-            <div className="settings-row-main">
-              <div className="settings-row-label">Database</div>
-              <div className="settings-row-hint">
-                Collections: sleep_cycles, sleep_cycle_decisions, sync_devices.
-              </div>
-            </div>
-            <Field label="">
-              <input
-                value={config.cloudSync.databaseName}
-                onChange={(e) =>
-                  patch({ cloudSync: { databaseName: e.target.value } })
+                  patch({ cloudSync: { cloudApiBaseUrl: e.target.value } })
                 }
               />
             </Field>
@@ -560,14 +646,26 @@ export default function Settings({
               </div>
             </div>
             <code className="mono-chip">
-              {shortId(config.cloudSync.userId)}
+              {shortId(config.cloudSync.cloudUserId)}
+            </code>
+          </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">Active connections</div>
+              <div className="settings-row-hint">
+                WebRTC peers connected to this Mac right now.
+              </div>
+            </div>
+            <code className="mono-chip">
+              {cloudStatus?.activeConnections ?? 0}
             </code>
           </div>
           <div className="settings-row">
             <div className="settings-row-main">
               <div className="settings-row-label">Device name</div>
               <div className="settings-row-hint">
-                Published to Atlas so conflicts show where a choice came from.
+                Published as metadata so conflicts show where a choice came
+                from.
               </div>
             </div>
             <Field label="">
@@ -581,29 +679,55 @@ export default function Settings({
           </div>
           <div className="settings-row">
             <div className="settings-row-main">
-              <div className="settings-row-label">Poll fallback</div>
+              <div className="settings-row-label">Connectivity</div>
               <div className="settings-row-hint">
-                Change streams apply changes immediately when Atlas allows them.
+                TURN may relay encrypted WebRTC packets when direct STUN fails.
               </div>
             </div>
-            <Field label="">
-              <input
-                type="number"
-                min={5}
-                value={Math.round(config.cloudSync.syncIntervalMs / 1000)}
-                onChange={(e) => {
-                  const seconds = Number(e.target.value);
-                  if (Number.isFinite(seconds) && seconds >= 5) {
-                    patch({
-                      cloudSync: {
-                        syncIntervalMs: Math.round(seconds) * 1000,
-                      },
-                    });
-                  }
-                }}
-              />
-            </Field>
+            <code className="mono-chip">
+              {(cloudStatus?.iceMode ?? "unknown").toUpperCase()}
+            </code>
           </div>
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <div className="settings-row-label">
+                Encrypted offline fallback
+              </div>
+              <div className="settings-row-hint">
+                Optional. Stores the latest redacted snapshot as ciphertext so
+                phone and watch can refresh when this Mac is offline.
+              </div>
+            </div>
+            <Toggle
+              label="Encrypted offline fallback"
+              checked={config.cloudSync.backupEnabled}
+              onChange={(backupEnabled) =>
+                patch({
+                  cloudSync: {
+                    enabled: config.cloudSync.enabled || backupEnabled,
+                    backupEnabled,
+                  },
+                  companionSyncInterest:
+                    backupEnabled || config.companionSyncInterest,
+                })
+              }
+            />
+          </div>
+          {config.cloudSync.backupEnabled ? (
+            <div className="settings-row">
+              <div className="settings-row-main">
+                <div className="settings-row-label">Fallback snapshot</div>
+                <div className="settings-row-hint">
+                  Last encrypted backup:{" "}
+                  {syncTimeLabel(cloudStatus?.lastBackedUpAt)} · revision{" "}
+                  {cloudStatus?.backupRevision ?? 0}
+                </div>
+              </div>
+              <code className="mono-chip">
+                {cloudStatus?.backupConfigured ? "ON" : "SETUP"}
+              </code>
+            </div>
+          ) : null}
           <div className="settings-row">
             <div className="settings-row-main">
               <div className="settings-row-label">Sync status</div>
@@ -618,7 +742,7 @@ export default function Settings({
               <div>
                 <div className="settings-row-label">Companion sync</div>
                 <div className="settings-row-hint">
-                  Pair an iPhone, iPad, or Apple Watch in one QR step.
+                  Pair an iPhone or Apple Watch in one QR step.
                 </div>
               </div>
             </div>
@@ -635,7 +759,6 @@ export default function Settings({
                 onChange={setPairingKind}
                 options={[
                   { value: "iphone", label: "iPhone" },
-                  { value: "ipad", label: "iPad" },
                   { value: "watch", label: "Watch" },
                 ]}
               />
@@ -664,7 +787,7 @@ export default function Settings({
                     {shortId(pairing.device.deviceId)}
                   </div>
                   <div className="pairing-url">
-                    Local dev: {pairing.devSyncBaseUrl}
+                    Signal: {pairing.cloudApiBaseUrl}
                   </div>
                   <div className="row">
                     <Button onClick={() => void copyPairing()}>
@@ -712,11 +835,11 @@ export default function Settings({
             )}
           </div>
           <div className="demo-callout">
-            <b>Cycle signal only</b>
+            <b>Direct by default</b>
             <span>
-              Sync carries report summaries, scores, findings, and action
-              states. Transcript files, code, and local project details stay on
-              this Mac.
+              Cloudflare routes encrypted signaling while devices connect. If
+              encrypted fallback is enabled, it stores only ciphertext for the
+              latest snapshot; your devices decrypt it locally.
             </span>
           </div>
         </SettingsGroup>
@@ -771,8 +894,8 @@ export default function Settings({
               <div className="settings-row-label">Analysis scope</div>
               <div className="settings-row-hint">
                 {config.demoMode
-                  ? "Demo cycles use fictional repos and do not read local transcripts."
-                  : "Sleep Cycles read local Claude and Codex data for enabled projects."}
+                  ? "Demo reviews use fictional repos and do not read local transcripts."
+                  : "Health Reviews read local Claude and Codex data for enabled projects."}
               </div>
             </div>
             <Button
@@ -846,7 +969,7 @@ export default function Settings({
             <div className="settings-row-main">
               <div className="settings-row-label">Morning notification</div>
               <div className="settings-row-hint">
-                A single nudge when a fresh Sleep Cycle is ready.
+                A single nudge when a fresh Health Review is ready.
               </div>
             </div>
             <Toggle
@@ -883,7 +1006,7 @@ export default function Settings({
             <div className="settings-row-main">
               <div className="settings-row-label">Reduce motion</div>
               <div className="settings-row-hint">
-                Calm the dreaming pulse and transitions.
+                Calm the review pulse and transitions.
               </div>
             </div>
             <Toggle
@@ -896,7 +1019,7 @@ export default function Settings({
             <div className="settings-row-main">
               <div className="settings-row-label">Launch at login</div>
               <div className="settings-row-hint">
-                Start Harness Dreams quietly in the menu bar.
+                Start Harness Health quietly in the menu bar.
               </div>
             </div>
             <Toggle
@@ -909,7 +1032,7 @@ export default function Settings({
             <div className="settings-row-main">
               <div className="settings-row-label">Show setup on launch</div>
               <div className="settings-row-hint">
-                Replay the welcome flow each time Harness Dreams starts.
+                Replay the welcome flow each time Harness Health starts.
               </div>
             </div>
             <Toggle
@@ -986,11 +1109,11 @@ export default function Settings({
         <SettingsGroup title="About" icon={<Icon name="about" size={16} />}>
           <div className="settings-row">
             <div className="settings-row-main">
-              <div className="settings-row-label">Harness Dreams v0.1.0</div>
+              <div className="settings-row-label">Harness Health v0.1.0</div>
               <div className="settings-row-hint">
                 Local-first · real local sessions ·{" "}
-                <a href="https://github.com/reachjalil/harness-dreams">
-                  github.com/reachjalil/harness-dreams
+                <a href="https://github.com/reachjalil/harness-health">
+                  github.com/reachjalil/harness-health
                 </a>
               </div>
             </div>
