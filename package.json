@@ -1,5 +1,5 @@
 {
-  "name": "harness-dreams",
+  "name": "harness-health",
   "private": true,
   "type": "module",
   "version": "0.1.0",
@@ -17,6 +17,10 @@
     "lint:fix": "biome format --write . && biome lint --write .",
     "format": "biome format --write .",
     "imports": "biome check --write --assist-enabled=true --only=assist/source/organizeImports .",
+    "harness:validate": "npx harnessc validate",
+    "harness:preview": "npx harnessc activate",
+    "harness:activate": "npx harnessc activate --yes",
+    "harness-health:scan": "tsx scripts/harness-health-scan.ts",
     "types": "pnpm -r --if-present run types",
     "changeset": "changeset",
     "version": "changeset version",

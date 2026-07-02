@@ -1,0 +1,33 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "harness-health-cloud",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-06-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SIGNAL_ROOM",
+        "class_name": "SignalRoom"
+      },
+      {
+        "name": "SNAPSHOT_BACKUP",
+        "class_name": "SnapshotBackupRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": ["SignalRoom"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["SnapshotBackupRoom"]
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "name": "@harness-dreams/core",
+  "name": "@harness-health/core",
   "version": "0.1.0",
   "type": "module",
   "main": "./src/index.ts",
@@ -10,6 +10,9 @@
   "scripts": {
     "check": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:",
