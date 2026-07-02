@@ -187,15 +187,6 @@ importers:
       '@harness-health/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@health-sdk/domain':
-        specifier: link:../../../health-sdk/packages/domain
-        version: link:../../../health-sdk/packages/domain
-      '@health-sdk/harness-native-ui':
-        specifier: link:../../../health-sdk/packages/harness-native-ui
-        version: link:../../../health-sdk/packages/harness-native-ui
-      '@health-sdk/ui-native':
-        specifier: link:../../../health-sdk/packages/ui-native
-        version: link:../../../health-sdk/packages/ui-native
       '@react-navigation/bottom-tabs':
         specifier: ^7.18.4
         version: 7.18.4(@react-navigation/native@7.3.5(react-native@0.85.3(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native-safe-area-context@5.7.0(react-native@0.85.3(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native-screens@4.25.2(react-native@0.85.3(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
