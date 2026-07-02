@@ -49,4 +49,6 @@ jobs:
         run: pnpm rebuild esbuild
 
       - name: Cloudflare Worker deploy dry run
+        env:
+          ESBUILD_BINARY_PATH: ${{ github.workspace }}/node_modules/esbuild/bin/esbuild
         run: pnpm --filter @harness-health/cloud exec wrangler deploy --dry-run
