@@ -1,0 +1,90 @@
+---
+import CTA from "../../components/CTA.astro";
+import Footer from "../../components/Footer.astro";
+import Nav from "../../components/Nav.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+
+const title = "Case Study: Shared Parser Helper - Harness Dreams";
+const description =
+  "A Harness Dreams case study showing how repeated parser work becomes a Browse pattern, quote, and coach card.";
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <article class="case-page">
+      <section class="page-hero">
+        <div class="container page-hero-grid">
+          <div>
+            <span class="eyebrow">Case study</span>
+            <h1>A duplicate-parser loop became visible.</h1>
+            <p class="lead">
+              Two repos quietly recreated the same markdown parsing logic.
+              Harness Dreams grouped the pattern, surfaced the repeated shape,
+              and preserved the agent thought that made the loop obvious.
+            </p>
+          </div>
+          <figure class="page-visual">
+            <img
+              src="/story-team-standup.png"
+              alt="Two developers reviewing coding workflow improvements at a shared office monitor."
+              loading="eager"
+              decoding="async"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container split-layout">
+          <div class="sticky-copy reveal">
+            <span class="mono">Outcome</span>
+            <h2 class="h2">2 repos, same shape.</h2>
+            <p class="lead">
+              The tracker turned isolated sessions into a cross-project pattern
+              without applying a refactor behind the user's back.
+            </p>
+          </div>
+          <div class="timeline-stack">
+            <article class="timeline-card reveal">
+              <span class="timeline-index">01</span>
+              <div>
+                <span class="mono">Signal</span>
+                <h3>The same parser shape appeared twice.</h3>
+                <p>
+                  Separate sessions rebuilt similar edge-case handling instead
+                  of reusing a shared utility.
+                </p>
+              </div>
+            </article>
+            <article class="timeline-card reveal" data-delay="2">
+              <span class="timeline-index">02</span>
+              <div>
+                <span class="mono">Quote</span>
+                <h3>The agent thought made the repetition memorable.</h3>
+                <p>
+                  The quote card captured the internal reasoning in plain view,
+                  redacted paths, and made the pattern easy to share.
+                </p>
+              </div>
+            </article>
+            <article class="timeline-card reveal" data-delay="3">
+              <span class="timeline-index">03</span>
+              <div>
+                <span class="mono">Coach</span>
+                <h3>The next move was a suggestion, not an edit.</h3>
+                <p>
+                  The card suggested extracting a helper or adding a note. The
+                  MVP never opens the branch; it keeps the evidence and the
+                  user's choice separate.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </article>
+    <CTA />
+  </main>
+  <Footer />
+</SiteLayout>

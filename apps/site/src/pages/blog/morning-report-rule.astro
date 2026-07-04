@@ -1,0 +1,72 @@
+---
+import Footer from "../../components/Footer.astro";
+import Nav from "../../components/Nav.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+
+const title = "Why the Morning Report Became a Tracker - Harness Dreams";
+const description =
+  "A design note on why Harness Dreams moved from a morning report ritual to a tracker-first MVP.";
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <article class="article-page">
+      <header class="article-hero">
+        <div class="container section-narrow">
+          <span class="eyebrow">Blog / Design note</span>
+          <h1>Why the morning report became a tracker.</h1>
+          <p class="lead">
+            The MVP no longer asks testers to read a ceremony. It gives them a
+            living Summary and lets advice appear only when the data earns it.
+          </p>
+        </div>
+      </header>
+
+      <div class="container article-grid">
+        <aside class="article-aside card">
+          <img
+            src="/story-daily-report.png"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            class="aside-image"
+          />
+          <span class="mono">Principle</span>
+          <strong>Open with the tracker.</strong>
+          <p>Advice supports the score. It does not replace the habit.</p>
+        </aside>
+
+        <div class="article-body">
+          <p>
+            Developers do not need another morning dashboard. They need a clear
+            state they can recognize throughout the day: score, Code Flow, counters,
+            trends, highlights, and the occasional grounded note.
+          </p>
+
+          <h2>Lead with the Dream Score</h2>
+          <p>
+            The Dream Score is the front door because it is quick, comparable,
+            and deterministic. A tester should know whether today is Lucid,
+            Dreaming, Restless, or Turbulent before reading a single card.
+          </p>
+
+          <h2>Keep evidence close</h2>
+          <p>
+            Every trend, highlight, quote, and coach card should open back to
+            visible evidence: the component, code-flow moment, metric detail, or
+            quote that caused it. Advice without an anchor is dashboard noise.
+          </p>
+
+          <h2>Make silence acceptable</h2>
+          <p>
+            A good day may have no advice. The app should be comfortable saying
+            “No notes. Great day.” That restraint is what lets the rare coach
+            card feel worth reading.
+          </p>
+        </div>
+      </div>
+    </article>
+  </main>
+  <Footer />
+</SiteLayout>

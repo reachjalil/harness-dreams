@@ -1,23 +1,40 @@
 ---
+import BrandMark from "./BrandMark.astro";
+
+interface Props {
+  /** "night" renders light text over a dark hero until the page scrolls. */
+  theme?: "light" | "night";
+}
+const { theme = "light" } = Astro.props as Props;
+const markMoon = theme === "night" ? "#ffffff" : "var(--night)";
+const markOrbit = theme === "night" ? "#ffffff" : "var(--night)";
+const markPlanet = theme === "night" ? "#ffffff" : "var(--night)";
+
 const repoUrl = "https://github.com/reachjalil/harness-health";
 const links = [
-  { href: "/start/", label: "Download" },
-  { href: "/#cloud-sync", label: "Sync" },
-  { href: "/review/", label: "Review" },
+  { href: "/start/", label: "Access" },
+  { href: "/#daily", label: "Product" },
+  { href: "/review/", label: "Score" },
   { href: "/case-studies/", label: "Case studies" },
   { href: "/docs/", label: "Docs" },
   { href: "/blog/", label: "Blog" },
-  { href: "/#privacy", label: "Privacy" },
+  { href: "/privacy/", label: "Privacy" },
 ];
 ---
 
-<header class="nav">
+<header class:list={["nav", { "nav-night": theme === "night" }]} data-nav>
   <div class="container nav-inner">
-    <a class="brand" href="/" aria-label="Harness Health home">
+    <a class="brand" href="/" aria-label="Harness Dreams home">
       <span class="logo" aria-hidden="true">
-        <img src="/logo.png" alt="" width="34" height="34" />
+        <BrandMark
+          size={28}
+          moon={markMoon}
+          orbit={markOrbit}
+          planet={markPlanet}
+          animated
+        />
       </span>
-      <span class="brand-name">Harness Health</span>
+      <span class="brand-name">Harness Dreams</span>
     </a>
 
     <nav class="nav-links" aria-label="Primary">
@@ -28,35 +45,31 @@ const links = [
       <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer noopener"
         >GitHub</a
       >
-      <a class="btn btn-primary nav-btn" href="/start/">Download for macOS</a>
+      <a class="btn btn-primary nav-btn" href="/start/">Request access</a>
     </div>
   </div>
 </header>
 
 <style>
   .nav {
-    position: fixed;
+    position: absolute;
     top: 0;
     inset-inline: 0;
     z-index: 80;
-    padding-block: clamp(0.65rem, 1.4vw, 0.95rem);
     pointer-events: none;
+    border-bottom: 1px solid transparent;
+    background: transparent;
+    transition:
+      background 0.4s ease,
+      border-color 0.4s ease,
+      box-shadow 0.4s ease,
+      backdrop-filter 0.4s ease;
   }
   .nav-inner {
-    width: min(calc(100% - 1.5rem), 88rem);
-    height: 3.45rem;
+    height: 4rem;
     display: flex;
     align-items: center;
     gap: clamp(0.85rem, 2vw, 1.35rem);
-    padding: 0.35rem 0.45rem 0.35rem 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.42);
-    border-radius: 999px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68)),
-      rgba(255, 255, 255, 0.72);
-    box-shadow: 0 20px 60px -36px rgba(11, 18, 28, 0.45);
-    backdrop-filter: blur(24px) saturate(145%);
-    -webkit-backdrop-filter: blur(24px) saturate(145%);
     pointer-events: auto;
   }
   .brand {
@@ -65,29 +78,30 @@ const links = [
     gap: 0.6rem;
     color: var(--ink);
     font-family: var(--font-display);
-    font-weight: 800;
+    font-weight: 600;
     font-size: 1.12rem;
-    letter-spacing: 0;
+    letter-spacing: -0.01em;
+    transition: color 0.35s ease;
   }
   .logo {
     display: grid;
     place-items: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.05rem;
+    height: 2.05rem;
     border-radius: 999px;
     overflow: hidden;
     background: var(--surface);
     border: 1px solid var(--line);
+    transition:
+      background 0.35s ease,
+      border-color 0.35s ease;
   }
-  .logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .logo :global(.brand-mark) {
     display: block;
   }
   .nav-links {
     display: none;
-    gap: clamp(0.9rem, 1.7vw, 1.35rem);
+    gap: clamp(0.9rem, 1.7vw, 1.4rem);
     margin-inline: auto;
   }
   .nav-links a {
@@ -108,24 +122,64 @@ const links = [
   .ghost {
     color: var(--muted);
     font-size: 0.92rem;
-    font-weight: 550;
+    font-weight: 500;
+    transition: color 0.15s ease;
   }
   .ghost:hover {
     color: var(--ink);
   }
   .nav-btn {
-    padding: 0.62rem 1.05rem;
+    padding: 0.58rem 1.05rem;
     font-size: 0.9rem;
+    font-weight: 560;
     background: var(--night);
     color: #fff;
     box-shadow: none;
+    transition:
+      background 0.35s ease,
+      color 0.35s ease,
+      box-shadow 0.18s ease,
+      transform 0.18s ease;
   }
 
   .nav-btn:hover {
     border-color: transparent;
-    background: #172335;
+    background: var(--night-2);
     color: #fff;
-    box-shadow: 0 14px 30px -20px rgba(11, 18, 28, 0.6);
+    box-shadow: 0 14px 30px -20px rgba(10, 17, 48, 0.6);
+  }
+
+  /* ---------- Scrolled: a subtle full-width glass bar (light pages) ---------- */
+
+  /* ---------- Night: light text throughout, dark glass on scroll ---------- */
+
+  .nav-night .brand {
+    color: #fff;
+  }
+
+  .nav-night .logo {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+
+  .nav-night .nav-links a,
+  .nav-night .ghost {
+    color: rgba(235, 239, 255, 0.72);
+  }
+
+  .nav-night .nav-links a:hover,
+  .nav-night .ghost:hover {
+    color: #fff;
+  }
+
+  .nav-night .nav-btn {
+    background: #fff;
+    color: var(--night);
+  }
+
+  .nav-night .nav-btn:hover {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--night);
   }
 
   @media (min-width: 880px) {

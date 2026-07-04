@@ -1,23 +1,23 @@
 ---
 const stages = [
   {
-    k: "Hypothesis",
-    t: "Medium effort is enough for UI work — and cheaper.",
+    k: "Trigger",
+    t: "A score component, trend, quote, or Code Flow marker crosses a deterministic threshold.",
     tone: "cool",
   },
   {
-    k: "Track",
-    t: "One tap. A reversible, clearly-marked improvement goes live for your next few UI sessions.",
+    k: "Anchor",
+    t: "The card links back to the exact metric or moment, so the suggestion has receipts.",
     tone: "cool",
   },
   {
-    k: "Measure",
-    t: "The next review compares the work against the rest — re-asks, accept rate, tokens.",
+    k: "Suggest",
+    t: "The coach offers one concrete habit or copyable snippet. It never applies the change.",
     tone: "warm",
   },
   {
-    k: "Reflect",
-    t: "Improved, inconclusive, or regressed — with the numbers. Adopt it or revert it in one click.",
+    k: "Quiet",
+    t: "Dismissed cards stay gone unless the underlying signal worsens materially.",
     tone: "warm",
   },
 ];
@@ -27,17 +27,17 @@ const stages = [
   <div class="container">
     <div class="exp-grid">
       <div class="exp-copy reveal">
-        <span class="eyebrow">Suggested improvements</span>
-        <h2 class="h2">Don't guess. <span class="grad-warm">Track what helps.</span></h2>
+        <span class="eyebrow">Ambient coach</span>
+        <h2 class="h2">Advice earns its spot.</h2>
         <p class="lead">
-          Most "tips" for working with AI agents are folklore. Harness Health
-          reframes them as suggested improvements on your own real work — with
-          a hypothesis, a measurement, and an honest reflection next morning.
+          The MVP caps advice at three cards and every card must point to
+          visible evidence. Trends and highlights do the teaching first; the
+          coach only phrases what the tracker already found.
         </p>
         <p class="kicker">
-          And it's honest about uncertainty: many personal improvements come back
-          <b>inconclusive</b>, and we say so, instead of manufacturing false
-          confidence. The ones that win get baked into your config for good.
+          No experiments engine, no automatic config edits, no branches. If
+          testers ask for "apply this for me," that is the signal to bring the
+          parked patch machinery back later.
         </p>
       </div>
 
@@ -63,7 +63,7 @@ const stages = [
     border-block: 1px solid var(--line);
     background: radial-gradient(
       80% 90% at 80% 10%,
-      rgba(232, 154, 124, 0.07),
+      rgba(122, 90, 240, 0.07),
       transparent 60%
     );
   }

@@ -1,0 +1,76 @@
+---
+import Footer from "../../components/Footer.astro";
+import Nav from "../../components/Nav.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+
+const title = "Local-First Telemetry for Agent Workflows - Harness Dreams";
+const description =
+  "An architecture note on why Harness Dreams keeps sensitive agent telemetry local by default.";
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <article class="article-page">
+      <header class="article-hero">
+        <div class="container section-narrow">
+          <span class="eyebrow">Blog / Architecture note</span>
+          <h1>Local-first telemetry for agent workflows.</h1>
+          <p class="lead">
+            Agent sessions contain code, secrets, file paths, business context,
+            and every correction you made. The default place for that data is
+            the machine where it was created.
+          </p>
+        </div>
+      </header>
+
+      <div class="container article-grid">
+        <aside class="article-aside card">
+          <img
+            src="/story-overnight-report.png"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            class="aside-image"
+          />
+          <span class="mono">Architecture</span>
+          <strong>Useful before cloud.</strong>
+          <p>The local engine should produce value before any server exists.</p>
+        </aside>
+
+        <div class="article-body">
+          <p>
+            The product starts with deterministic signals: sessions, tool
+            results, validation attempts, accepted changes, and repeated
+            corrections. Those signals can be scored locally without turning
+            private transcripts into a remote dependency or asking an LLM to
+            invent a number.
+          </p>
+
+          <h2>Local metrics come first</h2>
+          <p>
+            The Dream Score is strongest when it is computed from observable
+            behavior. Re-ask rate, hedges, tool success, cache reuse, context
+            pressure, focus blocks, and breaks do not require a cloud model to
+            be useful.
+          </p>
+
+          <h2>LLMs should write words, not scores</h2>
+          <p>
+            Some captions and advice can benefit from model phrasing. The
+            trigger and the numbers still come from deterministic local logic,
+            and a runner-off mode should look intentional, not broken.
+          </p>
+
+          <h2>Sharing should be explicit</h2>
+          <p>
+            The MVP tests the brag loop with exported share cards, not accounts
+            or live sharing. A card is a previewed image with selected data, not
+            a background upload of raw work.
+          </p>
+        </div>
+      </div>
+    </article>
+  </main>
+  <Footer />
+</SiteLayout>

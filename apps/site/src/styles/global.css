@@ -1,54 +1,57 @@
 /* ============================================================
-   Harness Health — clean health-product identity
-   White, spacious, system typography, Apple Health-inspired
-   communication surfaces, rings, and calm motion.
+   Harness Dreams — "night review" editorial identity
+   A dreamy blue-violet night sky over clean white surfaces.
+   Editorial serif display with cool small caps, system sans
+   for body and UI, calm motion.
    ============================================================ */
 
 :root {
   color-scheme: light;
 
   /* Brand palette */
-  --ink: #0d1b2a; /* Ink Navy   */
-  --night: #0b121c;
-  --night-2: #101c2a;
-  --slate: #39424e; /* Slate      */
-  --dusk: #4a6cf7; /* Dusk Blue  */
+  --ink: #16203c; /* Ink Navy — text on paper */
+  --night: #0d0734; /* blue-violet sky at the zenith */
+  --night-2: #28166d; /* purple sky mid-band */
+  --night-3: #5738b8; /* violet glow near the horizon */
+  --slate: #434d66; /* Slate — secondary text */
+  --dusk: #3a5bd0; /* Dusk Blue — links & rings */
   --teal: #a7dad3; /* Pale Teal  */
-  --teal-deep: #3aab9c; /* legible teal on light */
-  --cream: #f4f6f8;
+  --teal-deep: #2f9c8d; /* legible teal on light */
+  --cream: #f7f9ff;
   --bone: #ffffff;
-  --ceramic: #edf2f7;
-  --gold: #4a6cf7;
-  --cloud: #f4f6f8; /* Cloud      */
-  --mist: #d6dce3; /* Mist Gray  */
+  --ceramic: #eef3fb;
+  --gold: #5966c8; /* cool small caps */
+  --gold-bright: #f8fbff; /* moonlight */
+  --cloud: #f7f9ff; /* cool cloud surface */
+  --mist: #dfe6f5; /* cool mist border */
   --apricot: #8aa2ff; /* cool third-ring accent */
   --apricot-2: #7a5af0;
   --violet: #a78bfa; /* the app's "purple" glow */
-  --iris: #7a5af0; /* deeper violet, legible on light */
+  --iris: #6d55d6; /* deeper violet, legible on light */
 
   /* Surfaces */
-  --bg: #ffffff;
-  --bg-soft: #ffffff;
+  --bg: #fbfcff;
+  --bg-soft: #f6f8fd;
   --surface: #ffffff;
-  --surface-2: #edf2f7;
-  --line: rgba(13, 27, 42, 0.11);
-  --line-soft: rgba(13, 27, 42, 0.08);
+  --surface-2: #f3f6fb;
+  --line: rgba(22, 32, 60, 0.13);
+  --line-soft: rgba(22, 32, 60, 0.08);
 
   /* Text */
   --text: var(--ink);
-  --muted: #5a6470;
-  --faint: #98a1ad;
+  --muted: #5c657c;
+  --faint: #99a0b2;
 
   /* Accents (names kept so components inherit) */
   --accent: var(--dusk);
-  --accent-2: #7a5af0; /* violet, for gradient pairing */
-  --warm: var(--apricot);
-  --warm-2: var(--apricot-2);
+  --accent-2: #6d55d6; /* violet, for gradient pairing */
+  --warm: var(--gold);
+  --warm-2: #7f8bf5;
 
-  /* Semantic (findings) */
+  /* Semantic signals */
   --good: var(--teal-deep);
-  --warn: #7a5af0;
-  --bad: #e06a5a;
+  --warn: #6d55d6;
+  --bad: #d96553;
 
   /* Type */
   --font-display:
@@ -64,8 +67,8 @@
   /* Scale */
   --radius: 14px;
   --radius-lg: 22px;
-  --shadow: 0 30px 60px -30px rgba(13, 27, 42, 0.28);
-  --shadow-soft: 0 14px 34px -18px rgba(13, 27, 42, 0.16);
+  --shadow: 0 30px 60px -30px rgba(10, 17, 48, 0.25);
+  --shadow-soft: 0 14px 34px -20px rgba(10, 17, 48, 0.14);
 
   font-family: var(--font-sans);
   font-synthesis: none;
@@ -80,7 +83,7 @@
 
 html {
   min-width: 320px;
-  background: #ffffff;
+  background: var(--bg);
   color: var(--text);
   scroll-behavior: smooth;
 }
@@ -94,7 +97,7 @@ html {
 body {
   margin: 0;
   min-height: 100svh;
-  background: #ffffff;
+  background: var(--bg);
   color: var(--text);
   font-size: 16px;
   line-height: 1.55;
@@ -102,7 +105,7 @@ body {
 }
 
 ::selection {
-  background: var(--dusk);
+  background: var(--night-2);
   color: #fff;
 }
 
@@ -129,11 +132,11 @@ svg {
 .container {
   width: min(100%, 90rem);
   margin-inline: auto;
-  padding-inline: clamp(1.25rem, 4vw, 2rem);
+  padding-inline: clamp(1.25rem, 5vw, 2.5rem);
 }
 
 .section {
-  padding-block: clamp(4.5rem, 10vw, 8rem);
+  padding-block: clamp(5.5rem, 12vw, 10.5rem);
   position: relative;
 }
 
@@ -156,7 +159,7 @@ svg {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--dusk);
+  color: var(--gold);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 600;
@@ -164,24 +167,40 @@ svg {
   text-transform: uppercase;
 }
 
+/* Centered editorial eyebrow with a short rule beneath */
+.eyebrow-rule {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  text-align: center;
+}
+
+.eyebrow-rule::after {
+  content: "";
+  width: 2rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
 h1,
 .h2,
 .cta-title,
 .serif {
   font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: 0;
+  font-weight: 600;
+  letter-spacing: -0.018em;
 }
 
 .grad {
-  background: linear-gradient(100deg, var(--dusk), var(--accent-2));
+  background: linear-gradient(100deg, var(--night-2), var(--night-3));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .grad-warm {
-  background: linear-gradient(100deg, var(--apricot-2), var(--apricot));
+  background: linear-gradient(100deg, var(--warm-2), var(--gold-bright));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -226,7 +245,7 @@ h1,
   height: 7px;
   border-radius: 50%;
   background: var(--dusk);
-  box-shadow: 0 0 0 0 rgba(74, 108, 247, 0.55);
+  box-shadow: 0 0 0 0 rgba(58, 91, 208, 0.55);
   animation: pulse 2.4s ease-out infinite;
 }
 
@@ -279,22 +298,43 @@ h1,
 }
 
 .btn:focus-visible {
-  outline: 3px solid rgba(74, 108, 247, 0.4);
+  outline: 3px solid rgba(58, 91, 208, 0.4);
   outline-offset: 3px;
 }
 
 .btn-primary {
   border-color: transparent;
-  background: linear-gradient(100deg, var(--night), #24364c);
+  background: var(--night);
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 14px 32px -16px rgba(11, 18, 28, 0.7);
+  box-shadow: 0 14px 32px -16px rgba(10, 17, 48, 0.65);
 }
 
 .btn-primary:hover {
   border-color: transparent;
-  background: linear-gradient(100deg, #111d2c, #31435a);
-  box-shadow: 0 18px 40px -18px rgba(11, 18, 28, 0.78);
+  background: var(--night-2);
+  box-shadow: 0 18px 40px -18px rgba(10, 17, 48, 0.72);
+}
+
+/* Small chip inside a button, e.g. "Free" on the download pill */
+.btn-chip {
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.68rem;
+  font-weight: 640;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Apple-mark glyph used inside download buttons */
+.btn .apple-mark {
+  width: 0.95em;
+  height: 0.95em;
+  margin-top: -0.14em;
+  flex: none;
+  fill: currentColor;
 }
 
 /* ---------- Cards ---------- */
@@ -314,11 +354,11 @@ h1,
   padding-block: clamp(7rem, 12vw, 9.5rem) clamp(4.5rem, 9vw, 7rem);
   background:
     radial-gradient(
-      circle at 82% 18%,
-      rgba(167, 218, 211, 0.22),
-      transparent 34%
+      circle at 82% 12%,
+      rgba(122, 90, 240, 0.14),
+      transparent 36%
     ),
-    linear-gradient(180deg, #ffffff, var(--cloud));
+    linear-gradient(180deg, var(--bg), var(--cloud));
   color: var(--ink);
 }
 
@@ -330,7 +370,7 @@ h1,
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(13, 27, 42, 0.14),
+    rgba(22, 32, 60, 0.14),
     transparent
   );
 }
@@ -344,9 +384,9 @@ h1,
 .article-hero h1 {
   font-family: var(--font-display);
   font-size: clamp(2.6rem, 7vw, 5rem);
-  font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1.03;
+  font-weight: 540;
+  letter-spacing: -0.026em;
+  line-height: 1.04;
   margin-top: 0.75rem;
 }
 
@@ -360,10 +400,10 @@ h1,
   background:
     radial-gradient(
       circle at 74% 44%,
-      rgba(167, 218, 211, 0.22),
+      rgba(122, 90, 240, 0.13),
       transparent 36%
     ),
-    linear-gradient(180deg, #ffffff, var(--cloud));
+    linear-gradient(180deg, var(--bg), var(--cloud));
 }
 
 .review-orb {
@@ -379,14 +419,14 @@ h1,
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 18px solid rgba(13, 27, 42, 0.06);
+  border: 18px solid rgba(22, 32, 60, 0.06);
   border-top-color: var(--teal);
   border-right-color: var(--dusk);
-  border-bottom-color: var(--apricot);
+  border-bottom-color: var(--gold-bright);
   transform: rotate(-22deg);
   box-shadow:
-    inset 0 0 0 1px rgba(13, 27, 42, 0.06),
-    0 26px 70px -34px rgba(0, 0, 0, 0.75);
+    inset 0 0 0 1px rgba(22, 32, 60, 0.06),
+    0 26px 70px -34px rgba(10, 17, 48, 0.6);
 }
 
 .review-orb-core {
@@ -420,15 +460,15 @@ h1,
 
 .resource-hub {
   background:
-    linear-gradient(180deg, transparent, rgba(214, 220, 227, 0.3)), var(--bg);
+    linear-gradient(180deg, transparent, rgba(222, 215, 199, 0.28)), var(--bg);
 }
 
 .hub-head {
   text-align: center;
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
   justify-items: center;
-  margin-bottom: clamp(2rem, 5vw, 3.4rem);
+  margin-bottom: clamp(2.5rem, 6vw, 4.4rem);
 }
 
 .resource-grid,
@@ -442,15 +482,9 @@ h1,
 .doc-card,
 .action-tile,
 .timeline-card {
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.82),
-      rgba(255, 255, 255, 0.58)
-    ),
-    var(--surface);
+  background: var(--surface);
   box-shadow: var(--shadow-soft);
 }
 
@@ -471,7 +505,7 @@ h1,
 .resource-card:hover,
 .doc-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(74, 108, 247, 0.26);
+  border-color: rgba(162, 128, 59, 0.4);
   box-shadow: var(--shadow);
 }
 
@@ -480,8 +514,9 @@ h1,
 .doc-card h2 {
   font-family: var(--font-display);
   font-size: clamp(1.45rem, 3vw, 1.9rem);
-  font-weight: 800;
-  line-height: 1.12;
+  font-weight: 620;
+  letter-spacing: -0.014em;
+  line-height: 1.14;
   overflow-wrap: anywhere;
 }
 
@@ -503,7 +538,13 @@ h1,
   display: grid;
   place-items: center;
   padding-block: clamp(3.5rem, 7vw, 5.6rem);
-  background: linear-gradient(180deg, #0a4fa4 0%, #087ab5 100%);
+  background:
+    radial-gradient(
+      110% 70% at 50% 108%,
+      rgba(83, 118, 199, 0.5),
+      transparent 62%
+    ),
+    linear-gradient(180deg, var(--night) 0%, var(--night-2) 100%);
   color: #fff;
   overflow: hidden;
   isolation: isolate;
@@ -582,18 +623,18 @@ h1,
   min-height: 32svh;
   display: grid;
   place-items: center;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(240, 243, 255, 0.66);
   font-family: var(--font-display);
   font-size: clamp(1.8rem, 3.8vw, 3rem);
-  font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1.12;
+  font-weight: 520;
+  letter-spacing: -0.02em;
+  line-height: 1.16;
   text-wrap: balance;
 }
 
 .statement.in,
 .reveal.in.statement {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(244, 246, 255, 0.94);
 }
 
 @keyframes insight-wave-a {
@@ -648,51 +689,56 @@ h1,
 
 .apple-story {
   overflow: hidden;
-  padding-block: clamp(5rem, 10vw, 8rem);
+  padding-block: clamp(6rem, 12vw, 10.5rem);
 }
 
 .apple-story-white {
-  background: linear-gradient(180deg, #ffffff 0%, #ffffff 54%, #f5fbfa 100%);
+  background: linear-gradient(
+    180deg,
+    var(--bg) 0%,
+    var(--bg) 54%,
+    var(--bg-soft) 100%
+  );
 }
 
 .story-gallery {
   background:
     radial-gradient(
       circle at 22% 18%,
-      rgba(167, 218, 211, 0.22),
-      transparent 28%
+      rgba(122, 90, 240, 0.13),
+      transparent 30%
     ),
-    linear-gradient(180deg, #ffffff 0%, #f4fbfa 100%);
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
 }
 
 .apple-copy {
   width: min(100% - clamp(2rem, 8vw, 8rem), 62rem);
   margin-inline: auto;
   display: grid;
-  gap: clamp(1rem, 2vw, 1.5rem);
+  gap: clamp(1.1rem, 2.4vw, 1.8rem);
 }
 
 .apple-copy h2 {
-  max-width: 12.75ch;
-  color: #1d1d1f;
+  max-width: 13ch;
+  color: var(--ink);
   font-family: var(--font-display);
   font-size: clamp(2.35rem, 4.9vw, 4.35rem);
-  font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1;
+  font-weight: 540;
+  letter-spacing: -0.026em;
+  line-height: 1.02;
 }
 
 .apple-copy p {
   max-width: 43rem;
-  color: #1d1d1f;
+  color: var(--slate);
   font-size: clamp(1.03rem, 1.65vw, 1.28rem);
-  font-weight: 700;
-  line-height: 1.28;
+  font-weight: 430;
+  line-height: 1.46;
 }
 
 .apple-copy strong {
-  color: var(--teal-deep);
-  font-weight: inherit;
+  color: var(--dusk);
+  font-weight: 560;
 }
 
 .health-glyph {
@@ -762,7 +808,7 @@ h1,
 .health-glyph::before {
   width: 0.52rem;
   height: 0.52rem;
-  background: #1d1d1f;
+  background: var(--ink);
 }
 
 .optimization-slider {
@@ -846,7 +892,8 @@ h1,
   overflow: hidden;
   min-height: 21rem;
   border-radius: 32px;
-  background: #fff;
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
   box-shadow: var(--shadow-soft);
 }
 
@@ -869,10 +916,10 @@ h1,
   background:
     radial-gradient(
       circle at 50% 42%,
-      rgba(167, 218, 211, 0.14),
+      rgba(122, 90, 240, 0.13),
       transparent 62%
     ),
-    rgba(255, 255, 255, 0.82);
+    rgba(255, 254, 251, 0.85);
 }
 
 .desktop-rings {
@@ -883,7 +930,7 @@ h1,
 }
 
 .desktop-rings .ring-track {
-  stroke: rgba(13, 27, 42, 0.07);
+  stroke: rgba(22, 32, 60, 0.08);
 }
 
 .desktop-rings .ring-arc {
@@ -920,7 +967,7 @@ html:not([data-js]) .desktop-rings .ring-arc {
   z-index: 2;
   top: calc(50% - 0.88rem);
   transform: translateY(-50%);
-  color: #1d1d1f;
+  color: var(--ink);
   font-size: clamp(3rem, 6vw, 4.1rem);
   font-weight: 300;
   letter-spacing: 0;
@@ -953,35 +1000,31 @@ html:not([data-js]) .desktop-rings .ring-arc {
   background:
     radial-gradient(
       circle at 52% 54%,
-      rgba(167, 218, 211, 0.3),
+      rgba(167, 218, 211, 0.26),
       transparent 32%
     ),
-    #ffffff;
+    var(--surface);
 }
 
 .optimization-card:nth-child(2) .optimization-visual {
   background:
-    radial-gradient(
-      circle at 44% 54%,
-      rgba(74, 108, 247, 0.16),
-      transparent 34%
-    ),
-    #ffffff;
+    radial-gradient(circle at 44% 54%, rgba(58, 91, 208, 0.13), transparent 34%),
+    var(--surface);
 }
 
 .optimization-card:nth-child(3) .optimization-visual {
   background:
     radial-gradient(
       circle at 54% 54%,
-      rgba(122, 90, 240, 0.15),
+      rgba(109, 85, 214, 0.12),
       transparent 36%
     ),
-    #ffffff;
+    var(--surface);
 }
 
 .optimization-visual > strong {
   position: absolute;
-  color: #1d1d1f;
+  color: var(--ink);
   font-size: clamp(3.5rem, 8vw, 5.6rem);
   font-weight: 300;
   letter-spacing: 0;
@@ -1060,7 +1103,7 @@ html:not([data-js]) .desktop-rings .ring-arc {
 .graph-tile strong,
 .pulse-tile strong {
   order: 1;
-  color: #1d1d1f;
+  color: var(--ink);
   font-size: clamp(3.2rem, 6vw, 4.8rem);
   font-weight: 300;
   line-height: 1;
@@ -1109,18 +1152,18 @@ html:not([data-js]) .desktop-rings .ring-arc {
 
 .optimization-copy span {
   display: inline-block;
-  color: var(--teal-deep);
+  color: var(--gold);
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: 680;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 0.5rem;
 }
 
 .health-caption span {
-  color: var(--teal-deep);
+  color: var(--gold);
   font-size: clamp(0.68rem, 1vw, 0.78rem);
-  font-weight: 800;
+  font-weight: 680;
   letter-spacing: 0.11em;
   line-height: 1.1;
   text-transform: uppercase;
@@ -1128,10 +1171,10 @@ html:not([data-js]) .desktop-rings .ring-arc {
 
 .optimization-copy h3,
 .health-caption h3 {
-  color: #1d1d1f;
+  color: var(--ink);
   font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: 0;
+  font-weight: 560;
+  letter-spacing: -0.012em;
 }
 
 .optimization-copy h3 {
@@ -1146,16 +1189,51 @@ html:not([data-js]) .desktop-rings .ring-arc {
 }
 
 .optimization-copy p {
-  color: #63686f;
+  color: var(--muted);
   font-size: clamp(1rem, 1.7vw, 1.12rem);
-  font-weight: 650;
-  line-height: 1.26;
+  font-weight: 430;
+  line-height: 1.44;
   margin-top: 0.2rem;
+}
+
+@media (max-width: 700px) {
+  .apple-story {
+    padding-block: clamp(4.5rem, 14vw, 6.5rem);
+  }
+
+  .apple-copy {
+    width: 100%;
+    padding-inline: clamp(1.25rem, 6vw, 1.75rem);
+  }
+
+  .optimization-slider {
+    display: flex;
+    gap: 0.9rem;
+    margin-top: clamp(2rem, 8vw, 3rem);
+    padding-inline: clamp(1.25rem, 6vw, 1.75rem);
+    scroll-padding-inline: clamp(1.25rem, 6vw, 1.75rem);
+  }
+
+  .optimization-card {
+    flex: 0 0 min(84vw, 23rem);
+    min-height: auto;
+    grid-template-rows: minmax(15rem, auto) auto;
+    gap: 0.9rem;
+  }
+
+  .optimization-visual {
+    min-height: 16rem;
+    border-radius: 24px;
+  }
+
+  .optimization-copy {
+    padding-inline: 0.25rem;
+  }
 }
 
 .health-caption p {
   max-width: 34ch;
-  color: #63686f;
+  color: var(--muted);
   font-size: clamp(0.92rem, 1.15vw, 1rem);
   font-weight: 560;
   line-height: 1.34;
@@ -1210,12 +1288,8 @@ html:not([data-js]) .desktop-rings .ring-arc {
 
 .laptop-visual {
   background:
-    radial-gradient(
-      circle at 50% 34%,
-      rgba(74, 108, 247, 0.17),
-      transparent 34%
-    ),
-    linear-gradient(180deg, #ffffff 0%, #f4fbfb 100%);
+    radial-gradient(circle at 50% 34%, rgba(58, 91, 208, 0.14), transparent 34%),
+    linear-gradient(180deg, var(--surface) 0%, var(--bg-soft) 100%);
 }
 
 .laptop-shell {
@@ -1325,10 +1399,10 @@ html:not([data-js]) .desktop-rings .ring-arc {
   background:
     radial-gradient(
       circle at 50% 50%,
-      rgba(167, 218, 211, 0.36),
+      rgba(167, 218, 211, 0.3),
       transparent 42%
     ),
-    linear-gradient(180deg, #ffffff, #f7fbfb);
+    linear-gradient(180deg, var(--surface), var(--bg-soft));
 }
 
 .abstract-rings .desktop-score {
@@ -1350,14 +1424,14 @@ html:not([data-js]) .desktop-rings .ring-arc {
   background:
     radial-gradient(
       circle at 48% 38%,
-      rgba(122, 90, 240, 0.16),
+      rgba(109, 85, 214, 0.13),
       transparent 38%
     ),
-    linear-gradient(180deg, #ffffff, #f7f8ff);
+    linear-gradient(180deg, var(--surface), var(--bg-soft));
 }
 
 .abstract-pulse strong {
-  color: #1d1d1f;
+  color: var(--ink);
   font-size: clamp(3.5rem, 7vw, 5.4rem);
   font-weight: 300;
   line-height: 1;
@@ -1393,12 +1467,12 @@ html:not([data-js]) .desktop-rings .ring-arc {
   right: clamp(1rem, 3vw, 1.5rem);
   bottom: clamp(1rem, 3vw, 1.5rem);
   max-width: 17rem;
-  border: 1px solid rgba(13, 27, 42, 0.08);
+  border: 1px solid rgba(22, 32, 60, 0.08);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 254, 251, 0.88);
   backdrop-filter: blur(18px);
-  box-shadow: 0 18px 40px -24px rgba(13, 27, 42, 0.3);
-  color: #1d1d1f;
+  box-shadow: 0 18px 40px -24px rgba(10, 17, 48, 0.3);
+  color: var(--ink);
   font-size: 0.95rem;
   font-weight: 800;
   padding: 0.8rem 1rem;
@@ -1414,16 +1488,16 @@ html:not([data-js]) .desktop-rings .ring-arc {
   background:
     radial-gradient(
       circle at 50% 42%,
-      rgba(167, 218, 211, 0.45),
+      rgba(167, 218, 211, 0.36),
       transparent 34%
     ),
-    linear-gradient(180deg, #ffffff, #f4fbfb);
+    linear-gradient(180deg, var(--surface), var(--bg-soft));
 }
 
 .metric-tile > strong {
   z-index: 1;
   margin-top: 2.2rem;
-  color: #1d1d1f;
+  color: var(--ink);
   font-size: 6rem;
   font-weight: 300;
   letter-spacing: 0;
@@ -1504,8 +1578,8 @@ html:not([data-js]) .desktop-rings .ring-arc {
   place-items: center;
   border: 0;
   border-radius: 999px;
-  background: rgba(13, 27, 42, 0.08);
-  color: rgba(13, 27, 42, 0.68);
+  background: rgba(22, 32, 60, 0.08);
+  color: rgba(22, 32, 60, 0.68);
   cursor: pointer;
   transition:
     background 180ms ease,
@@ -1515,8 +1589,8 @@ html:not([data-js]) .desktop-rings .ring-arc {
 }
 
 .carousel-button:hover {
-  background: rgba(13, 27, 42, 0.14);
-  color: #1d1d1f;
+  background: rgba(22, 32, 60, 0.14);
+  color: var(--ink);
   transform: translateY(-1px);
 }
 
@@ -1599,7 +1673,7 @@ html:not([data-js]) .desktop-rings .ring-arc {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 30px;
-  background: #fff;
+  background: var(--surface);
   box-shadow: var(--shadow-soft);
 }
 
@@ -1608,6 +1682,195 @@ html:not([data-js]) .desktop-rings .ring-arc {
   aspect-ratio: 16 / 10;
   object-fit: cover;
   filter: saturate(0.86) brightness(1.04) hue-rotate(-4deg);
+}
+
+.tracker-visual {
+  display: grid;
+  min-height: clamp(28rem, 48vw, 37rem);
+  padding: clamp(1rem, 3vw, 1.45rem);
+  background:
+    radial-gradient(circle at 22% 16%, rgba(122, 90, 240, 0.16), transparent 34%),
+    radial-gradient(circle at 82% 78%, rgba(58, 171, 156, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 247, 255, 0.94));
+}
+
+.tracker-frame {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  gap: clamp(1rem, 2.5vw, 1.35rem);
+  width: 100%;
+  min-height: 100%;
+  border: 1px solid rgba(22, 32, 60, 0.1);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(250, 252, 255, 0.88));
+  box-shadow: 0 24px 70px -44px rgba(10, 17, 48, 0.48);
+  padding: clamp(1rem, 3vw, 1.35rem);
+}
+
+.tracker-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-width: 0;
+  color: var(--slate);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tracker-topbar span {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 999px;
+  background: rgba(22, 32, 60, 0.14);
+}
+
+.tracker-topbar span:nth-child(2) {
+  background: rgba(74, 108, 247, 0.34);
+}
+
+.tracker-topbar span:nth-child(3) {
+  background: rgba(58, 171, 156, 0.34);
+}
+
+.tracker-topbar strong {
+  margin-left: auto;
+  color: var(--slate);
+}
+
+.tracker-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(1rem, 3vw, 1.35rem);
+  align-items: center;
+}
+
+.tracker-score {
+  position: relative;
+  display: grid;
+  place-items: center;
+  place-content: center;
+  gap: 0.18rem;
+  width: clamp(8.6rem, 17vw, 11rem);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: conic-gradient(
+    from -96deg,
+    var(--dusk) 0 var(--score),
+    rgba(74, 108, 247, 0.11) var(--score) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(22, 32, 60, 0.07);
+}
+
+.tracker-score::before {
+  content: "";
+  position: absolute;
+  inset: 0.82rem;
+  border-radius: inherit;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px rgba(22, 32, 60, 0.08);
+}
+
+.tracker-score span,
+.tracker-score small {
+  position: relative;
+  z-index: 1;
+}
+
+.tracker-score span {
+  color: var(--ink);
+  font-size: clamp(2.8rem, 5.6vw, 4rem);
+  font-weight: 300;
+  line-height: 0.95;
+}
+
+.tracker-score small {
+  color: var(--muted);
+  font-size: clamp(0.56rem, 1vw, 0.64rem);
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.tracker-note {
+  display: grid;
+  gap: 0.42rem;
+  min-width: 0;
+}
+
+.tracker-note span,
+.tracker-rows span {
+  color: var(--dusk);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tracker-note strong {
+  max-width: 13ch;
+  color: var(--ink);
+  font-size: clamp(1.7rem, 3.4vw, 2.45rem);
+  font-weight: 560;
+  letter-spacing: -0.018em;
+  line-height: 1.02;
+}
+
+.tracker-note p {
+  max-width: 34ch;
+  color: var(--muted);
+  font-size: clamp(0.94rem, 1.4vw, 1.05rem);
+  font-weight: 650;
+  line-height: 1.32;
+}
+
+.tracker-flow {
+  display: flex;
+  align-items: stretch;
+  gap: 0.34rem;
+  height: clamp(5.7rem, 10vw, 7rem);
+  border: 1px solid rgba(22, 32, 60, 0.08);
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(22, 32, 60, 0.055) 0 1px,
+      transparent 1px 14.2%
+    ),
+    rgba(255, 255, 255, 0.64);
+  padding: 0.62rem;
+}
+
+.tracker-flow span {
+  flex: var(--w) 1 0;
+  min-width: 0.8rem;
+  border-radius: 12px;
+  background: var(--tone);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.tracker-rows {
+  display: grid;
+  gap: 0.66rem;
+}
+
+.tracker-rows > div {
+  display: grid;
+  gap: 0.22rem;
+  border: 1px solid rgba(22, 32, 60, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.68);
+  padding: 0.78rem 0.9rem;
+}
+
+.tracker-rows strong {
+  color: var(--ink);
+  font-size: clamp(0.92rem, 1.4vw, 1.05rem);
+  font-weight: 760;
+  line-height: 1.2;
 }
 
 .split-layout {
@@ -1649,7 +1912,8 @@ html:not([data-js]) .desktop-rings .ring-arc {
 .timeline-card h3 {
   font-family: var(--font-display);
   font-size: 1.35rem;
-  font-weight: 800;
+  font-weight: 620;
+  letter-spacing: -0.012em;
   margin-top: 0.25rem;
 }
 
@@ -1662,10 +1926,10 @@ html:not([data-js]) .desktop-rings .ring-arc {
   background:
     radial-gradient(
       circle at 86% 20%,
-      rgba(167, 218, 211, 0.2),
+      rgba(122, 90, 240, 0.14),
       transparent 34%
     ),
-    linear-gradient(180deg, #ffffff, var(--cloud));
+    linear-gradient(180deg, var(--bg), var(--cloud));
   color: var(--ink);
 }
 
@@ -1687,12 +1951,8 @@ html:not([data-js]) .desktop-rings .ring-arc {
 
 .docs-hero {
   background:
-    radial-gradient(
-      circle at 78% 18%,
-      rgba(74, 108, 247, 0.12),
-      transparent 38%
-    ),
-    linear-gradient(180deg, #ffffff, var(--cloud));
+    radial-gradient(circle at 78% 18%, rgba(58, 91, 208, 0.1), transparent 38%),
+    linear-gradient(180deg, var(--bg), var(--cloud));
 }
 
 .doc-grid {
@@ -1708,10 +1968,10 @@ html:not([data-js]) .desktop-rings .ring-arc {
   background:
     radial-gradient(
       circle at 76% 20%,
-      rgba(167, 218, 211, 0.18),
+      rgba(122, 90, 240, 0.13),
       transparent 34%
     ),
-    linear-gradient(180deg, #ffffff, var(--cloud));
+    linear-gradient(180deg, var(--bg), var(--cloud));
   color: var(--ink);
 }
 
@@ -1809,6 +2069,101 @@ html:not([data-js]) .desktop-rings .ring-arc {
   }
   html[data-js] .reveal[data-delay="3"] {
     transition-delay: 0.24s;
+  }
+}
+
+/* ---------- Night-sky starscape (hero, interludes, CTA) ---------- */
+
+.starscape,
+.starscape::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+}
+
+.starscape {
+  background-image:
+    radial-gradient(
+      1.6px 1.6px at 12px 34px,
+      rgba(255, 255, 255, 0.85),
+      transparent 52%
+    ),
+    radial-gradient(
+      1.2px 1.2px at 84px 8px,
+      rgba(255, 255, 255, 0.5),
+      transparent 52%
+    ),
+    radial-gradient(
+      2px 2px at 146px 62px,
+      rgba(226, 233, 255, 0.75),
+      transparent 52%
+    ),
+    radial-gradient(
+      1.2px 1.2px at 210px 118px,
+      rgba(255, 255, 255, 0.6),
+      transparent 52%
+    ),
+    radial-gradient(
+      1.6px 1.6px at 55px 156px,
+      rgba(255, 255, 255, 0.72),
+      transparent 52%
+    ),
+    radial-gradient(
+      1.2px 1.2px at 180px 200px,
+      rgba(200, 214, 255, 0.55),
+      transparent 52%
+    );
+  background-size: 240px 240px;
+  animation: twinkle 5.2s ease-in-out infinite alternate;
+}
+
+.starscape::after {
+  content: "";
+  background-image:
+    radial-gradient(
+      2.2px 2.2px at 30px 90px,
+      rgba(255, 255, 255, 0.9),
+      transparent 52%
+    ),
+    radial-gradient(
+      1.3px 1.3px at 132px 22px,
+      rgba(200, 214, 255, 0.65),
+      transparent 52%
+    ),
+    radial-gradient(
+      1.7px 1.7px at 250px 150px,
+      rgba(255, 255, 255, 0.65),
+      transparent 52%
+    ),
+    radial-gradient(
+      1.3px 1.3px at 310px 60px,
+      rgba(226, 233, 255, 0.6),
+      transparent 52%
+    ),
+    radial-gradient(
+      1.5px 1.5px at 76px 240px,
+      rgba(255, 255, 255, 0.55),
+      transparent 52%
+    );
+  background-size: 340px 300px;
+  animation: twinkle 7.4s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starscape,
+  .starscape::after {
+    animation: none;
+    opacity: 0.8;
   }
 }
 

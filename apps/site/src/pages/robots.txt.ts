@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 
-const SITE_URL = "https://harnesshealth.com";
+const SITE_URL = "https://harnessdreams.com";
 
 export const GET: APIRoute = ({ site }) => {
   const origin = site?.toString().replace(/\/$/, "") ?? SITE_URL;

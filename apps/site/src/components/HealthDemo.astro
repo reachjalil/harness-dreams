@@ -1,8 +1,10 @@
 ---
+import BrandMark from "./BrandMark.astro";
+
 /**
- * Interactive hero demo — the Harness Health app in its quiet review treatment.
- * Shows a summary on load (rings + scores animate in); pressing "Run Health Review"
- * plays the staged review sequence, then reveals a fresh report. Sample data,
+ * Interactive product demo — the Harness Dreams app in its tracker treatment.
+ * Shows a summary on load (rings + scores animate in); pressing "Refresh tracker"
+ * plays a staged recompute sequence, then reveals updated sample data.
  * 100% client-side. Degrades to a static summary without JS.
  */
 const rings = [
@@ -26,7 +28,7 @@ const rings = [
     key: "alignment",
     label: "Alignment",
     hint: "Fewer corrections",
-    color: "#f0b07a",
+    color: "#8aa2ff",
     score: 83,
     delta: 2,
   },
@@ -36,11 +38,11 @@ const composite = Math.round(
 );
 const radii = [61, 48, 35];
 const stages = [
-  "Replaying the day's sessions",
-  "Computing vitals · session replay",
-  "Finding patterns · Insight",
-  "Drafting findings & improvements",
-  "Assembling your report",
+  "Reading local session events",
+  "Computing Dream Score components",
+  "Updating Code Flow stages",
+  "Finding trends, highlights, and quotes",
+  "Refreshing Summary",
 ];
 ---
 
@@ -53,9 +55,14 @@ const stages = [
         <i style="background:#28c840"></i>
       </span>
       <span class="brandchip" aria-hidden="true">
-        <img src="/logo.png" alt="" width="20" height="20" />
+        <BrandMark
+          size={18}
+          moon="#ffffff"
+          orbit="rgba(255, 255, 255, 0.82)"
+          planet="#ffffff"
+        />
       </span>
-      <span class="win-title mono">Harness Health</span>
+      <span class="win-title mono">Harness Dreams</span>
       <span class="live-pill mono"><i></i>Live</span>
     </div>
 
@@ -64,10 +71,10 @@ const stages = [
       <div class="view" data-view="report">
         <div class="row-head">
           <div>
-            <div class="ser date">Last night · 14 sessions</div>
+            <div class="ser date">Today so far · 14 sessions</div>
             <div class="meta">Claude Code · 5 projects</div>
           </div>
-          <button class="mini primary" type="button" data-review>Run Health Review</button>
+          <button class="mini primary" type="button" data-review>Refresh tracker</button>
         </div>
 
         <div class="t-grid">
@@ -107,7 +114,7 @@ const stages = [
             </svg>
             <div class="ring-c">
               <div class="ser num" data-composite={composite}>{composite}</div>
-              <div class="cap">Review score</div>
+              <div class="cap">Dream Score</div>
             </div>
           </div>
 
@@ -162,7 +169,7 @@ const stages = [
     </div>
   </div>
 
-  <p class="cap-foot">Live demo — press <b>Run Health Review</b> · sample data</p>
+  <p class="cap-foot">Live demo — press <b>Refresh tracker</b> · sample data</p>
 </div>
 
 <style>
@@ -175,7 +182,7 @@ const stages = [
     --acc: #4a6cf7;
     --vio: #a78bfa;
     --good: #5bb5a6;
-    --warn: #f0b07a;
+    --warn: #8aa2ff;
     --line: rgba(255, 255, 255, 0.08);
     --line-2: rgba(255, 255, 255, 0.16);
     width: min(100%, 25rem);
@@ -228,10 +235,7 @@ const stages = [
     place-items: center;
     margin-left: 0.2rem;
   }
-  .brandchip img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .brandchip :global(.brand-mark) {
     display: block;
   }
   .win-title {

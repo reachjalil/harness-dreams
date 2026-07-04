@@ -1,0 +1,253 @@
+---
+import Footer from "../components/Footer.astro";
+import Nav from "../components/Nav.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
+
+const title = "Privacy Policy - Harness Dreams";
+const description =
+  "Privacy policy for Harness Dreams, covering the local-first macOS tester app, local telemetry processing, share cards, and the waitlist website.";
+const repoUrl = "https://github.com/reachjalil/harness-health";
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <section class="page-hero policy-hero">
+      <div class="container page-hero-grid">
+        <div>
+          <span class="eyebrow">Privacy Policy</span>
+          <h1>Harness Dreams is local-first by design.</h1>
+          <p class="lead">
+            This policy explains what the website and local macOS tester app
+            collect, how local session telemetry is processed, how share cards
+            work, and what choices you have.
+          </p>
+          <p class="policy-date">Effective date: July 3, 2026</p>
+        </div>
+        <aside class="policy-summary card" aria-label="Privacy summary">
+          <span class="mono">Short version</span>
+          <ul>
+            <li>Raw transcripts, code, secrets, and Dream Score history stay on your Mac.</li>
+            <li>Waitlist sign-up collects your email address and basic request metadata.</li>
+            <li>The tester MVP has no cloud sync, mobile companion, payment, or account surface.</li>
+            <li>Share cards are explicit exports from a preview, not automatic sharing.</li>
+            <li>We do not sell personal information or share it for cross-context behavioral ads.</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <article class="section policy-body">
+      <div class="container section-narrow">
+        <h2>Scope</h2>
+        <p>
+          This Privacy Policy applies to the Harness Dreams marketing site, the
+          waitlist form, and the local macOS tester app. Some repository names,
+          package names, or
+          repositories, package scopes, or domains may still use historical
+          project names while the product moves to Harness Dreams.
+        </p>
+
+        <h2>Information the website collects</h2>
+        <p>
+          If you join the waitlist, the site sends your email address, a hidden
+          spam-prevention field, and a source label to the waitlist API. The
+          site is served through Cloudflare, which may process standard request
+          metadata such as IP address, user agent, timestamps, URLs requested,
+          and security signals needed to operate, protect, and debug the site.
+        </p>
+        <p>
+          In local development or if the backend is not configured, the waitlist
+          form may store a note only in your browser's local storage. That local
+          note is not sent to us unless you submit it to a configured endpoint.
+        </p>
+
+        <h2>Information the local app processes</h2>
+        <p>
+          Harness Dreams is built to track AI coding harness activity on your
+          machine. Depending on what you enable, the local app may read or
+          generate session transcripts, prompts, agent thinking blocks, tool
+          calls, file paths, project metadata, model and token usage, Codex
+          token estimates, Dream Scores, code-flow stages, trends, highlights,
+          quotes, hidden quote choices, share-card previews, advice dismissals,
+          and app settings.
+        </p>
+        <p>
+          By default, that app data is processed and stored locally. Raw
+          transcripts, source code, secrets, credentials, and private repo
+          contents are not sent to Harness Dreams servers simply because you run
+          the local app.
+        </p>
+
+        <h2>Optional local runner text</h2>
+        <p>
+          The MVP score, trends, highlights, and quote ranking are deterministic
+          local computations. If you enable local runner features, a local
+          Claude or Codex CLI may phrase quote captions or advice cards from
+          already-selected evidence. That runner is for words only; it does not
+          write scores, change formulas, or apply project changes.
+        </p>
+
+        <h2>Share cards</h2>
+        <p>
+          Share cards are created only when you choose to render one. A card can
+          include a Dream Score, band, mini code-Code Flow graph, one stat, one quote,
+          date, and Harness Dreams wordmark. Quotes are redacted again at display
+          time. Exporting or sending the resulting PNG is your action, outside
+          the app's control.
+        </p>
+
+        <h2>Features not in the tester MVP</h2>
+        <p>
+          The tester MVP does not include accounts, cloud sync, iPhone or Apple
+          Watch companion apps, encrypted backup, payments, live sharing, or
+          server-side leaderboards. Those parked features would require updated
+          product surfaces and may require an updated policy before launch.
+        </p>
+
+        <h2>How information is used</h2>
+        <p>We use information for these purposes:</p>
+        <ul>
+          <li>Operate the site, waitlist, and local tester app.</li>
+          <li>Generate local Dream Scores, code-Code Flow graphs, trends, highlights, quotes, advice cards, and share-card previews.</li>
+          <li>Respond to sign-ups, support requests, bug reports, and security issues.</li>
+          <li>Protect the service from abuse, spam, fraud, and operational failures.</li>
+          <li>Improve product reliability, privacy protections, and documentation.</li>
+        </ul>
+
+        <h2>How information is shared</h2>
+        <p>
+          We do not sell personal information. We do not share personal
+          information for cross-context behavioral advertising. We may share
+          information with service providers that help operate the site,
+          waitlist API, security, analytics if enabled, or support tooling.
+          Those providers are allowed to process information only for the
+          service purposes we authorize.
+        </p>
+        <p>
+          We may disclose information if required by law, to protect rights and
+          safety, to investigate abuse, or as part of a merger, acquisition, or
+          similar transaction involving the project or service.
+        </p>
+
+        <h2>Retention</h2>
+        <p>
+          Local app data stays on your device until you delete it through the
+          app, remove the application data, or change retention settings.
+          Hidden quotes, dismissed advice cards, and share-card export history
+          are local app data. Waitlist email addresses are kept until you ask to
+          be removed or until the waitlist is no longer needed.
+        </p>
+
+        <h2>Your choices and rights</h2>
+        <p>
+          You can choose not to join the waitlist, not to enable local runner
+          captions/advice, not to export share cards, and not to include private
+          projects in tracking. You can delete local app data from your machine.
+          You can ask to
+          access, correct, export, or delete personal information we control,
+          subject to identity verification and applicable law.
+        </p>
+        <p>
+          Privacy rights vary by location. California residents and residents of
+          other jurisdictions may have rights to know, access, delete, correct,
+          opt out of certain sharing, limit use of sensitive personal
+          information, or appeal a decision. Harness Dreams does not knowingly
+          sell or share personal information for behavioral advertising.
+        </p>
+
+        <h2>Security</h2>
+        <p>
+          The product is designed around data minimization, local-first storage,
+          secret redaction, explicit share-card previews, and advice-only cards.
+          No security program can guarantee perfect protection, but the intended
+          posture is to collect less, keep sensitive work local by default, and
+          make cloud use explicit.
+        </p>
+
+        <h2>Children</h2>
+        <p>
+          Harness Dreams is intended for developers and is not directed to
+          children under 13. We do not knowingly collect personal information
+          from children under 13.
+        </p>
+
+        <h2>Changes</h2>
+        <p>
+          We may update this policy as the product, parked sync/mobile/payment
+          features, or legal requirements change. Material changes should be
+          posted on this page with a new effective date.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          Until a dedicated privacy email is published, contact the project
+          through the public GitHub repository:
+          <a href={repoUrl} target="_blank" rel="noreferrer noopener">
+            {repoUrl}
+          </a>.
+          Do not include secrets, private transcripts, or sensitive code in a
+          public issue.
+        </p>
+      </div>
+    </article>
+  </main>
+  <Footer />
+</SiteLayout>
+
+<style>
+  .policy-hero {
+    background:
+      radial-gradient(70% 80% at 88% 8%, rgba(167, 218, 211, 0.2), transparent 56%),
+      linear-gradient(180deg, var(--bg), var(--bg-soft));
+  }
+
+  .policy-date {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-top: 0.9rem;
+  }
+
+  .policy-summary {
+    padding: clamp(1.2rem, 3vw, 1.8rem);
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .policy-summary ul,
+  .policy-body ul {
+    margin: 0;
+    padding-left: 1.15rem;
+    color: var(--muted);
+  }
+
+  .policy-summary li,
+  .policy-body li {
+    margin-block: 0.45rem;
+  }
+
+  .policy-body {
+    padding-top: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .policy-body h2 {
+    margin-top: 2rem;
+    margin-bottom: 0.65rem;
+    font-size: clamp(1.3rem, 2.4vw, 1.75rem);
+    line-height: 1.15;
+    color: var(--ink);
+  }
+
+  .policy-body h2:first-child {
+    margin-top: 0;
+  }
+
+  .policy-body p {
+    color: var(--muted);
+    margin-bottom: 0.9rem;
+  }
+
+  .policy-body a {
+    font-weight: 700;
+  }
+</style>

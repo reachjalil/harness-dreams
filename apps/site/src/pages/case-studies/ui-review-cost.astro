@@ -1,0 +1,91 @@
+---
+import CTA from "../../components/CTA.astro";
+import Footer from "../../components/Footer.astro";
+import Nav from "../../components/Nav.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+
+const title = "Case Study: UI Review Cost - Harness Dreams";
+const description =
+  "A Harness Dreams case study showing how token counters and Efficiency explain bounded UI iteration.";
+---
+
+<SiteLayout title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <article class="case-page">
+      <section class="page-hero">
+        <div class="container page-hero-grid">
+          <div>
+            <span class="eyebrow">Case study</span>
+            <h1>UI work got cheaper without losing review quality.</h1>
+            <p class="lead">
+              Token counters showed that bounded visual iteration was consuming
+              heavyweight context. The Dream Score stayed honest: volume was
+              braggable, while Efficiency measured waste.
+            </p>
+          </div>
+          <figure class="page-visual">
+            <img
+              src="/story-agent-health.png"
+              alt="A developer reviewing health-style coding agent metrics on a desktop display."
+              loading="eager"
+              decoding="async"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container split-layout">
+          <div class="sticky-copy reveal">
+            <span class="mono">Outcome</span>
+            <h2 class="h2">12% lower token spend.</h2>
+            <p class="lead">
+              The tracker separated volume from quality, then made the repeated
+              context pattern visible in Browse.
+            </p>
+          </div>
+          <div class="timeline-stack">
+            <article class="timeline-card reveal">
+              <span class="timeline-index">01</span>
+              <div>
+                <span class="mono">Signal</span>
+                <h3>High token use clustered around screenshot iteration.</h3>
+                <p>
+                  Sessions with small CSS changes were consuming the same model
+                  profile as architectural edits.
+                </p>
+              </div>
+            </article>
+            <article class="timeline-card reveal" data-delay="2">
+              <span class="timeline-index">02</span>
+              <div>
+                <span class="mono">Browse</span>
+                <h3>Volume & Usage showed where context was going.</h3>
+                <p>
+                  Tokens by project, model mix, and cache reuse made the UI
+                  loop explainable without pretending cost was part of the
+                  Dream Score.
+                </p>
+              </div>
+            </article>
+            <article class="timeline-card reveal" data-delay="3">
+              <span class="timeline-index">03</span>
+              <div>
+                <span class="mono">Coach</span>
+                <h3>The suggestion stayed advice-only.</h3>
+                <p>
+                  The coach card suggested a lighter profile for bounded visual
+                  passes. The user copied it if useful; the app kept tracking
+                  Efficiency and corrections.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </article>
+    <CTA />
+  </main>
+  <Footer />
+</SiteLayout>

@@ -4,13 +4,15 @@ import "../styles/global.css";
 interface Props {
   title: string;
   description: string;
+  /** Browser-chrome tint; night pages pass the sky color. */
+  themeColor?: string;
 }
 
-const { title, description } = Astro.props as Props;
-const site = Astro.site ?? new URL("https://harnesshealth.com");
+const { title, description, themeColor = "#fbfcff" } = Astro.props as Props;
+const site = Astro.site ?? new URL("https://harnessdreams.com");
 const canonicalUrl = new URL(Astro.url.pathname, site);
 const ogImage = new URL("/og.svg", site);
-const siteName = "Harness Health";
+const siteName = "Harness Dreams";
 ---
 
 <!doctype html>
@@ -22,9 +24,9 @@ const siteName = "Harness Health";
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl.toString()} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content={themeColor} />
     <meta name="color-scheme" content="light" />
-    <meta name="author" content="Harness Health" />
+    <meta name="author" content="Harness Dreams" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={siteName} />

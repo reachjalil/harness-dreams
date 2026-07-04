@@ -1,28 +1,28 @@
 ---
 const faqs = [
   {
-    q: "Which harnesses does it support?",
-    a: "Claude Code first — it keeps a rich, local telemetry trail we can read directly. Codex and Cursor connectors follow. Everything normalizes into one model, so cross-tool comparisons work as soon as you connect a second harness.",
+    q: "Which coding agents does it support?",
+    a: "The private preview focuses on Claude Code and Codex on macOS. Claude Code provides real usage fields; Codex gets honest estimated tokens so its days never show fake zeros.",
   },
   {
     q: "Does my code leave my machine?",
-    a: "Not by default. Ingestion, storage, and your core metrics are fully local and work offline. Deeper model-powered analysis is opt-in and only ever sees small, secret-scrubbed excerpts — never whole transcripts. A no-cloud mode is a first-class option.",
+    a: "No. Transcripts are read on your Mac, scores are computed on your Mac, and share cards are exported only after you preview them. There is no cloud sync surface in this build.",
   },
   {
-    q: "How does it actually change my harness's behavior?",
-    a: "Through the safest levers first: reversible, clearly-marked edits to your AGENTS.md and memory, plus gentle nudges you opt into. Every change is shown as a diff you approve, with review history and one-click undo. Nothing is ever applied silently.",
+    q: "Does it change my agent setup?",
+    a: "Not in the preview. Coach cards can suggest an instruction, workflow habit, or snippet to copy, but the app does not edit AGENTS.md, memory, branches, or PRs.",
   },
   {
-    q: "Is this just another dashboard I'll ignore?",
-    a: "It's built to be the opposite. The morning report is a ~90-second ritual with a few high-confidence findings — not a wall of charts. Quiet nights are allowed: if nothing notable happened, it says so instead of inventing insight.",
+    q: "Is this another analytics dashboard?",
+    a: "No. It is built around a daily workflow: one Dream Score, pinned cards, a code-flow timeline, deterministic trends, a few highlights, quotes worth saving, and at most three advice cards.",
   },
   {
     q: "What will it cost?",
-    a: "Local Mac use is free. The paid plan is only for connecting the local desktop app to iPhone and Apple Watch, with a 2-week trial before billing.",
+    a: "The private preview is not a paid public launch. The current path is a source or self-signed macOS build while the product proves the desktop workflow.",
   },
   {
     q: "What platform does it run on?",
-    a: "A native macOS menu-bar app — it lives in your top toolbar, runs quietly in the background, and surfaces your report each morning. Other platforms may come later.",
+    a: "macOS first. Mobile, watch, cloud sync, payments, and additional agent connectors wait until the desktop workflow is proven.",
   },
 ];
 ---
@@ -31,7 +31,7 @@ const faqs = [
   <div class="container">
     <div class="head section-narrow reveal">
       <span class="eyebrow">Questions</span>
-      <h2 class="h2">Good questions, honest answers.</h2>
+      <h2 class="h2">Questions builders usually ask first.</h2>
     </div>
 
     <div class="faq-list section-narrow">

@@ -4,43 +4,43 @@ import Footer from "../components/Footer.astro";
 import Nav from "../components/Nav.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
 
-const title = "Health Review — Harness Health";
+const title = "Dream Score & Code Flow — Harness Dreams";
 const description =
-  "Follow the Harness Health review loop from session replay to vitals, Insight pattern-finding, suggested improvements, and morning review.";
+  "A tour of the Harness Dreams tracker: Dream Score, code-Code Flow graph, pinned metrics, trends, highlights, quotes, and ambient advice.";
 
 const stages = [
   {
-    label: "Observe",
-    title: "Replay the day",
-    text: "Harness Health collects session transcripts, tool calls, corrections, accepted changes, and repo context without asking you to tag anything manually.",
+    label: "Score",
+    title: "A deterministic Dream Score",
+    text: "Alignment, effectiveness, efficiency, and rhythm combine into one comparable number. LLMs never write or override the score.",
   },
   {
-    label: "Vitals",
-    title: "Score the harness",
-    text: "Tokens per accepted change, cost, re-ask rate, cache hits, and tool success are compared against your recent baseline.",
+    label: "Code Flow",
+    title: "Sleep stages for your coding day",
+    text: "Five-minute buckets become Deep Focus, Rapid Exchange, Agent Running, Light Touch, or Rest, with annotations for switches and spikes.",
   },
   {
-    label: "Insight",
-    title: "Find the pattern",
-    text: "The engine looks for repeated friction, new wins, repo-specific misses, and behaviors worth turning into durable guidance.",
+    label: "Browse",
+    title: "Every metric has a detail page",
+    text: "Dream Score, Code Flow, Alignment, Effectiveness, Efficiency, Rhythm, Volume, and Quotes are grouped like Health categories.",
   },
   {
-    label: "Improve",
-    title: "Draft the next move",
-    text: "Findings become small, testable improvements: memory updates, AGENTS.md hints, workflow nudges, or experiments.",
+    label: "Quote",
+    title: "The funny and revealing moments survive",
+    text: "Top user quotes and agent thoughts are selected deterministically, redacted at display time, and ready for share cards.",
   },
   {
-    label: "Review",
-    title: "Start tomorrow with one useful thing",
-    text: "The morning report starts with the highest-signal insight and lets you accept, snooze, or track the recommendation.",
+    label: "Coach",
+    title: "Advice stays small and anchored",
+    text: "At most three coach cards appear, each tied to a visible score component, trend, quote, or code-flow moment. Nothing is applied.",
   },
 ];
 
 const actions = [
-  "Pause or resume a running review from the menu bar.",
-  "Open the latest report when a morning notification lands.",
-  "Accept a suggested improvement when the evidence is strong.",
-  "Snooze low-confidence ideas without losing the underlying trend.",
+  "Show the exact inputs behind the Dream Score components.",
+  "Open any past day as a frozen Summary with final score and graph.",
+  "Export a previewed share card with score, Code Flow, one stat, and one quote.",
+  "Dismiss or snooze coach cards without changing local project config.",
 ];
 ---
 
@@ -50,22 +50,61 @@ const actions = [
     <section class="page-hero review-page">
       <div class="container page-hero-grid">
         <div>
-          <span class="eyebrow">Health Review</span>
-          <h1>A calm loop for making your harness better overnight.</h1>
+          <span class="eyebrow">Product tour</span>
+          <h1>The Dream Score is the front door.</h1>
           <p class="lead">
-            The app treats agent work like a recovery loop: observe what
-            happened, score the health of the workflow, find the signal, and
-            wake you with one useful next action.
+            The MVP is not a report ceremony. It is a living tracker: one score
+            you can compare, one graph that makes the day recognizable, and a
+            few grounded notes when the data has something useful to say.
           </p>
         </div>
 
-        <figure class="page-visual">
-          <img
-            src="/story-watch-sf.png"
-            alt="A woman developer walking in downtown San Francisco and checking her watch as the harness review completes."
-            loading="eager"
-            decoding="async"
-          />
+        <figure
+          class="page-visual tracker-visual"
+          aria-label="Harness Dreams tracker mock showing Dream Score, Code Flow, quotes, and local status."
+        >
+          <div class="tracker-frame">
+            <div class="tracker-topbar">
+              <span></span>
+              <span></span>
+              <span></span>
+              <strong>Summary</strong>
+            </div>
+            <div class="tracker-summary">
+              <div class="tracker-score" style="--score: 84%">
+                <span>84</span>
+                <small>Dream Score</small>
+              </div>
+              <div class="tracker-note">
+                <span>Today</span>
+                <strong>Focused, with one retry loop.</strong>
+                <p>Deep Focus carried the morning. Alignment dipped after a repeated parser request.</p>
+              </div>
+            </div>
+            <div class="tracker-flow" aria-hidden="true">
+              <span style="--w: 14%; --tone: var(--dusk)"></span>
+              <span style="--w: 10%; --tone: var(--teal-deep)"></span>
+              <span style="--w: 18%; --tone: var(--dusk)"></span>
+              <span style="--w: 8%; --tone: var(--iris)"></span>
+              <span style="--w: 12%; --tone: rgba(74, 108, 247, 0.2)"></span>
+              <span style="--w: 17%; --tone: var(--dusk)"></span>
+              <span style="--w: 9%; --tone: var(--teal-deep)"></span>
+            </div>
+            <div class="tracker-rows">
+              <div>
+                <span>Quote pinned</span>
+                <strong>"This finally explains the loop."</strong>
+              </div>
+              <div>
+                <span>Coach</span>
+                <strong>2 advice cards, no project writes</strong>
+              </div>
+              <div>
+                <span>Storage</span>
+                <strong>Local-only on this Mac</strong>
+              </div>
+            </div>
+          </div>
         </figure>
       </div>
     </section>
@@ -74,11 +113,11 @@ const actions = [
       <div class="container split-layout">
         <div class="sticky-copy reveal">
           <span class="eyebrow">Like a health app for agents</span>
-          <h2 class="h2">A readable state, not a wall of telemetry.</h2>
+          <h2 class="h2">Familiar surfaces, agent-native metrics.</h2>
           <p class="lead">
-            The interface borrows the calm cadence of modern wellness apps:
-            a single headline, clear readiness cues, longitudinal vitals, and
-            gentle guidance instead of dashboard noise.
+            Summary, Browse, History, Sharing, and Profile give the product a
+            shape testers already understand. The metrics are new; the shell
+            should feel obvious.
           </p>
         </div>
 
@@ -102,12 +141,12 @@ const actions = [
     <section class="section night-band">
       <div class="container">
         <div class="section-narrow reveal">
-          <span class="eyebrow">Interactive progress</span>
-          <h2 class="h2">The review shows what is happening while it runs.</h2>
+          <span class="eyebrow">Tracker contract</span>
+          <h2 class="h2">The score explains what happened. The coach suggests what to try.</h2>
           <p class="lead">
-            During a review, progress is not a spinner. You can see the active
-            phase, pause the run, and understand whether the engine is replaying
-            sessions, computing vitals, finding patterns, or drafting actions.
+            Numbers are pure local math. Trends and highlights are deterministic
+            comparisons. The coach may use local runner wording, but the trigger
+            and evidence are always visible first.
           </p>
         </div>
         <div class="action-grid">

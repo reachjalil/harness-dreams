@@ -1,14 +1,16 @@
 ---
+import BrandMark from "./BrandMark.astro";
+
 const repoUrl = "https://github.com/reachjalil/harness-health";
 const year = new Date().getFullYear();
 const nav = [
-  { href: "/start/", label: "Download for macOS" },
-  { href: "/review/", label: "Health Review" },
-  { href: "/#cloud-sync", label: "Private Device Sync" },
+  { href: "/start/", label: "Request access" },
+  { href: "/review/", label: "Score tour" },
+  { href: "/#tester-mvp", label: "Preview scope" },
   { href: "/case-studies/", label: "Case studies" },
   { href: "/docs/", label: "Docs" },
   { href: "/blog/", label: "Blog" },
-  { href: "/#privacy", label: "Privacy" },
+  { href: "/privacy/", label: "Privacy" },
   { href: "/#waitlist", label: "Waitlist" },
 ];
 ---
@@ -17,17 +19,22 @@ const nav = [
   <div class="container footer-inner">
     <div class="f-brand">
       <div class="f-id">
-        <span class="f-logo" aria-hidden="true"
-          ><img src="/logo.png" alt="" width="32" height="32" /></span
-        >
-        <span class="f-name">Harness Health</span>
+        <span class="f-logo" aria-hidden="true">
+          <BrandMark
+            size={24}
+            moon="var(--night)"
+            orbit="var(--dusk)"
+            planet="var(--dusk)"
+          />
+        </span>
+        <span class="f-name">Harness Dreams</span>
       </div>
-      <p class="f-tag">Quiet intelligence, working while you rest.</p>
+      <p class="f-tag">AI coding intelligence for builders.</p>
       <p class="f-sub">
-        The health app for your AI coding harnesses. While your harness rests,
-        it reviews patterns and turns them into healthier habits.
+        Dream Score, Code Flow, trends, highlights, quotes, and grounded next
+        steps for Claude Code and Codex sessions on your Mac.
       </p>
-      <span class="mono f-domain">harnesshealth.com</span>
+      <span class="mono f-domain">Local-first macOS app</span>
     </div>
 
     <nav class="f-nav" aria-label="Footer">
@@ -37,8 +44,8 @@ const nav = [
   </div>
 
   <div class="container footer-base">
-    <span>© {year} Harness Health</span>
-    <span class="mono">Built for healthier agent habits.</span>
+    <span>© {year} Harness Dreams</span>
+    <span class="mono">Built for better agent workflows.</span>
   </div>
 </footer>
 
@@ -52,7 +59,11 @@ const nav = [
   .footer-inner {
     display: grid;
     gap: 2rem;
+    align-items: start;
     padding-bottom: 2.5rem;
+  }
+  .f-brand {
+    max-width: 28rem;
   }
   .f-id {
     display: inline-flex;
@@ -70,10 +81,7 @@ const nav = [
     background: var(--surface);
     border: 1px solid var(--line);
   }
-  .f-logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .f-logo :global(.brand-mark) {
     display: block;
   }
   .f-name {
@@ -104,10 +112,12 @@ const nav = [
     grid-template-columns: 1fr 1fr;
     gap: 0.7rem 1.5rem;
     align-content: start;
+    width: min(100%, 24rem);
   }
   .f-nav a {
     color: var(--muted);
     font-size: 0.95rem;
+    line-height: 1.25;
   }
   .f-nav a:hover {
     color: var(--ink);
@@ -126,11 +136,24 @@ const nav = [
 
   @media (min-width: 760px) {
     .footer-inner {
-      grid-template-columns: 1.4fr 1fr;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 3rem;
     }
+    .f-brand {
+      justify-self: start;
+    }
     .f-nav {
-      justify-items: end;
+      justify-self: end;
+      justify-items: start;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .f-nav {
+      grid-template-columns: 1fr;
+    }
+    .footer-base {
+      justify-content: flex-start;
     }
   }
 </style>

@@ -1,6 +1,6 @@
 # @harness-health/site
 
-Marketing site for [harnesshealth.com](https://harnesshealth.com). Astro
+Marketing site for [harnessdreams.com](https://harnessdreams.com). Astro
 (static) served by a Cloudflare Worker that also hosts the waitlist API.
 
 ## Develop

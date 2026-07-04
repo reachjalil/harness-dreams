@@ -1,28 +1,28 @@
 ---
 import Rings from "./Rings.astro";
 /**
- * Hero product shot: the actual Harness Health macOS menu-bar app, rendered in
+ * Hero product shot: the actual Harness Dreams macOS menu-bar app, rendered in
  * its "night" treatment (the same palette/cards as apps/desktop). Sample data,
  * framed as a preview. Sitting dark-on-light ties the site to the app.
  */
 ---
 
-<div class="appwin" aria-label="The Harness Health app">
+<div class="appwin" aria-label="The Harness Dreams app">
   <div class="titlebar">
     <span class="lights" aria-hidden="true">
       <i style="background:#ff5f57"></i>
       <i style="background:#febc2e"></i>
       <i style="background:#28c840"></i>
     </span>
-    <span class="win-title mono">Harness Health</span>
+    <span class="win-title mono">Harness Dreams</span>
     <span class="preview-pill mono">Preview</span>
   </div>
 
   <div class="appbody">
     <div class="hero-head">
       <div>
-        <div class="eyebrow-app">Good morning</div>
-        <div class="meta">Last night's review · 3 projects · 14 sessions</div>
+        <div class="eyebrow-app">Summary</div>
+        <div class="meta">Today so far · 3 projects · 14 sessions</div>
       </div>
     </div>
 
@@ -33,7 +33,7 @@ import Rings from "./Rings.astro";
         alignment={91}
         size={118}
         track="rgba(255,255,255,0.08)"
-        colors={["#4a6cf7", "#a7dad3", "#f0b07a"]}
+        colors={["#4a6cf7", "#a7dad3", "#8aa2ff"]}
       />
       <ul class="legend">
         <li>
@@ -45,26 +45,26 @@ import Rings from "./Rings.astro";
           Effectiveness <b>74</b><span class="delta up">re-asks ↓</span>
         </li>
         <li>
-          <span class="swatch" style="background:#f0b07a"></span>
+          <span class="swatch" style="background:#8aa2ff"></span>
           Alignment <b>91</b><span class="delta flat">steady</span>
         </li>
       </ul>
     </div>
 
     <p class="digest">
-      Solid night. Tokens-per-change dropped <b>12%</b> vs your 2-week median,
-      mostly in <span class="repo">agent-fleet</span>.
+      Dreaming day. Deep Focus is up <b>42 min</b> vs last week, mostly in
+      <span class="repo">agent-fleet</span>.
     </p>
 
     <div class="finding win">
       <span class="fi" aria-hidden="true">✓</span>
       <div class="fbody">
         <div class="ftitle">
-          The <code>verify</code> skill correlates with 18% fewer re-asks.
+          Trend: Alignment is up over the past 2 active weeks.
         </div>
         <div class="factions">
-          <button class="mini primary" type="button">Accept</button>
-          <button class="mini" type="button">Snooze</button>
+          <button class="mini primary" type="button">Open trend</button>
+          <button class="mini" type="button">Dismiss</button>
           <span class="evi mono">6 sessions</span>
         </div>
       </div>
@@ -74,11 +74,11 @@ import Rings from "./Rings.astro";
       <span class="fi warm" aria-hidden="true">+</span>
       <div class="fbody">
         <div class="ftitle">
-          Suggested improvement: try <b>medium</b> effort for UI tasks.
+          Coach: UI sessions keep running near the context ceiling.
         </div>
         <div class="factions">
-          <button class="mini warm" type="button">Track</button>
-          <span class="evi mono">Reflect next report</span>
+          <button class="mini warm" type="button">See evidence</button>
+          <span class="evi mono">Advice only</span>
         </div>
       </div>
     </div>
@@ -232,7 +232,7 @@ import Rings from "./Rings.astro";
     background: var(--panel-2);
   }
   .finding.exp {
-    border-left-color: #f0b07a;
+    border-left-color: #8aa2ff;
   }
   .fi {
     width: 20px;
@@ -290,9 +290,9 @@ import Rings from "./Rings.astro";
     color: #fff;
   }
   .mini.warm {
-    background: #f0b07a;
+    background: #8aa2ff;
     border-color: transparent;
-    color: #3a1c0e;
+    color: #071039;
   }
   .evi {
     color: var(--fnt);

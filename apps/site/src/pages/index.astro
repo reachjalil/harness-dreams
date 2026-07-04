@@ -2,26 +2,32 @@
 import CloudSync from "../components/CloudSync.astro";
 import CTA from "../components/CTA.astro";
 import DailyOptimization from "../components/DailyOptimization.astro";
+import FAQ from "../components/FAQ.astro";
 import Footer from "../components/Footer.astro";
 import Hero from "../components/Hero.astro";
 import InsightStatements from "../components/InsightStatements.astro";
+import Nav from "../components/Nav.astro";
+import Privacy from "../components/Privacy.astro";
 import ResourceHub from "../components/ResourceHub.astro";
 import StoryGallery from "../components/StoryGallery.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
 
-const title = "Harness Health — Your Harness Health App";
+const title = "Harness Dreams - AI Coding Intelligence for Builders";
 const description =
-  "A health app for your AI coding harnesses. While your harness rests, Harness Health reviews the day, finds what to fix, and turns repeated patterns into healthier habits. Local-first for macOS, with optional iPhone and Apple Watch connection and a 2-week trial.";
+  "Harness Dreams turns Claude Code and Codex activity into local AI coding intelligence: one Dream Score, code-flow timelines, trends, highlights, quotes, and grounded next steps.";
 ---
 
-<SiteLayout title={title} description={description}>
+<SiteLayout title={title} description={description} themeColor="#0b0d34">
+  <Nav theme="night" />
   <main id="main">
     <Hero />
-    <InsightStatements />
     <DailyOptimization />
     <StoryGallery />
+    <InsightStatements />
     <CloudSync />
     <ResourceHub />
+    <Privacy />
+    <FAQ />
     <CTA />
   </main>
   <Footer />

@@ -3,114 +3,132 @@ import Footer from "../components/Footer.astro";
 import Nav from "../components/Nav.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
 
-const title = "Download for macOS - Harness Health";
+const title = "Request Early Access - Harness Dreams";
 const description =
-  "Set up Harness Health on macOS. The signed app is being prepared with Apple notarization; optional iPhone and Apple Watch companion connection includes a 2-week trial.";
-const repoUrl = "https://github.com/reachjalil/harness-health";
+  "Request early access to the Harness Dreams private preview for Claude Code and Codex on macOS.";
 ---
 
-<SiteLayout title={title} description={description}>
-  <Nav />
+<SiteLayout title={title} description={description} themeColor="#0b0d34">
+  <Nav theme="night" />
   <main id="main">
-    <section class="setup-hero">
-      <div class="setup-waves" aria-hidden="true">
+    <section class="access-hero">
+      <div class="access-sky" aria-hidden="true">
+        <div class="starscape"></div>
         <span></span>
         <span></span>
       </div>
 
-      <div class="container setup-hero-grid">
-        <div class="setup-intro">
-          <span class="eyebrow">macOS developer preview</span>
-          <h1>Set up Harness Health locally.</h1>
+      <div class="container access-grid">
+        <div class="access-copy">
+          <span class="eyebrow">Private preview</span>
+          <h1>Request early access.</h1>
           <p class="lead">
-            The signed macOS download is in progress. For now, clone the repo,
-            install dependencies, and launch the Electron app from source.
+            Harness Dreams is running a private macOS preview for people using
+            Claude Code and Codex in real work. Share your email and we will be
+            in touch with next steps.
           </p>
-          <div class="start-actions">
-            <a class="btn btn-primary setup-primary" href={repoUrl} target="_blank" rel="noreferrer noopener">
-              View GitHub
-            </a>
-            <a class="btn setup-secondary" href="#status">Signing status</a>
-          </div>
-          <p class="setup-note">
-            We are preparing Developer ID signing and Apple notarization so the
-            first normal download opens cleanly through macOS Gatekeeper.
+          <p class="access-note">
+            We are bringing testers in carefully through TestFlight so we can
+            learn from real agent sessions, tune the Health signals, and keep
+            the preview experience sharp.
           </p>
-          <a class="setup-sync-note" href="/#cloud-sync">
-            Add iPhone and Apple Watch connection with a 2-week trial.
-          </a>
         </div>
 
-        <aside class="setup-panel" aria-label="Local setup steps">
+        <aside class="access-panel" aria-label="Request early access">
           <div class="panel-head">
-            <span class="mono">Run from source</span>
-            <span class="download-pill">Download coming soon</span>
+            <span class="mono">Early access</span>
+            <span class="preview-pill">TestFlight</span>
           </div>
 
-          <div class="prereqs" aria-label="Requirements">
-            <span>macOS</span>
-            <span>Node 22.12+</span>
-            <span>Corepack</span>
-          </div>
+          <h2>Join the private preview</h2>
+          <p>
+            Leave your email and we will follow up if your workflow is a fit for
+            the current TestFlight cohort.
+          </p>
 
-          <ol class="command-steps">
-            <li>
+          <form class="access-form" id="early-access-form" novalidate>
+            <label for="access-email">Email address</label>
+            <div class="field-row">
+              <input
+                id="access-email"
+                name="email"
+                type="email"
+                inputmode="email"
+                autocomplete="email"
+                placeholder="you@company.com"
+                required
+              />
+              <button class="btn btn-primary" type="submit">
+                Request access
+              </button>
+            </div>
+            <div class="hp" aria-hidden="true">
+              <label for="access-company">Company</label>
+              <input
+                id="access-company"
+                name="company"
+                type="text"
+                tabindex="-1"
+                autocomplete="off"
+              />
+            </div>
+          </form>
+
+          <p class="form-note" id="access-form-note" role="status" aria-live="polite">
+            Private preview only. We will email you with TestFlight details when
+            a spot opens.
+          </p>
+
+          <div class="preview-steps" aria-label="Preview process">
+            <div>
               <span class="step-index mono">01</span>
-              <div>
-                <h2>Clone the repository</h2>
-                <pre><code>git clone https://github.com/reachjalil/harness-health.git
-cd harness-health</code></pre>
-              </div>
-            </li>
-            <li>
+              <strong>Request access</strong>
+              <p>Tell us where to reach you.</p>
+            </div>
+            <div>
               <span class="step-index mono">02</span>
-              <div>
-                <h2>Install dependencies</h2>
-                <pre><code>corepack enable
-pnpm install</code></pre>
-              </div>
-            </li>
-            <li>
+              <strong>We review fit</strong>
+              <p>We prioritize active Claude Code and Codex users.</p>
+            </div>
+            <div>
               <span class="step-index mono">03</span>
-              <div>
-                <h2>Launch the app</h2>
-                <pre><code>pnpm --filter @harness-health/desktop start</code></pre>
-              </div>
-            </li>
-          </ol>
+              <strong>TestFlight invite</strong>
+              <p>Selected testers get the macOS preview path.</p>
+            </div>
+          </div>
         </aside>
       </div>
     </section>
 
-    <section class="section status-section" id="status">
+    <section class="section status-section" id="preview">
       <div class="container status-grid">
         <article class="info-block reveal">
-          <span class="mono">Signed app</span>
-          <h2>We are getting the app ready for Apple signing.</h2>
+          <span class="mono">What we need</span>
+          <h2>Real AI coding sessions.</h2>
           <p>
-            Harness Health is a local-first menu-bar app, so the install path
-            should feel standard: signed with Developer ID, notarized by Apple,
-            and accepted by Gatekeeper.
+            The preview is most useful for people with active Claude Code or
+            Codex history, including smooth days, stuck loops, and moments where
+            the agent workflow clearly changed.
           </p>
         </article>
 
         <article class="info-block reveal" data-delay="1">
-          <span class="mono">Current path</span>
-          <h2>The source setup is the preview path.</h2>
+          <span class="mono">What you get</span>
+          <h2>A private macOS build.</h2>
           <p>
-            Use macOS, Node.js 22.12 or newer, and Corepack. The commands above
-            start the desktop app in development mode while the signed download
-            and updater are being finished.
+            Testers receive guided access to the Harness Dreams preview and help
+            shape the Dream Score, session timelines, quotes, and health signals
+            before a public release.
           </p>
         </article>
 
         <article class="info-block reveal" data-delay="2">
-          <span class="mono">Companion connection</span>
-          <h2>iPhone and Apple Watch mirror the report, not your code.</h2>
+          <span class="mono">What stays true</span>
+          <h2>Local-first and careful.</h2>
           <p>
-            The companion iPhone and Apple Watch apps mirror the health signal:
-            scores, findings, and goals. Transcripts, code, and secrets stay on
-            the Mac.
+            The product is still being tested. We are inviting people gradually,
+            learning from feedback, and keeping the preview focused on the
+            desktop agent workflow.
           </p>
         </article>
       </div>
@@ -120,7 +138,7 @@ pnpm install</code></pre>
 </SiteLayout>
 
 <style>
-  .setup-hero {
+  .access-hero {
     position: relative;
     min-height: 100svh;
     display: grid;
@@ -129,13 +147,23 @@ pnpm install</code></pre>
     isolation: isolate;
     padding-block: clamp(7rem, 10vw, 8.5rem) clamp(3rem, 6vw, 4.5rem);
     background:
-      linear-gradient(180deg, rgba(0, 0, 0, 0.04), transparent 38%),
-      linear-gradient(150deg, #084c9a 0%, #0c82c2 100%);
+      radial-gradient(
+        110% 60% at 50% 112%,
+        rgba(214, 222, 255, 0.36),
+        transparent 62%
+      ),
+      linear-gradient(
+        160deg,
+        #07092a 0%,
+        var(--night) 30%,
+        var(--night-2) 70%,
+        var(--night-3) 100%
+      );
     color: #fff;
   }
 
-  .setup-hero::before,
-  .setup-hero::after {
+  .access-hero::before,
+  .access-hero::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -143,17 +171,25 @@ pnpm install</code></pre>
     pointer-events: none;
   }
 
-  .setup-hero::before {
-    background: linear-gradient(150deg, #075f57 0%, #169f91 100%);
-    opacity: 0.34;
-  }
-
-  .setup-hero::after {
-    background: radial-gradient(circle at 76% 24%, rgba(255, 255, 255, 0.18), transparent 34%);
+  .access-hero::before {
+    background: radial-gradient(
+      55% 65% at 82% 6%,
+      rgba(122, 90, 240, 0.4),
+      transparent 68%
+    );
     opacity: 0.8;
   }
 
-  .setup-waves {
+  .access-hero::after {
+    background: radial-gradient(
+      circle at 76% 24%,
+      rgba(255, 255, 255, 0.18),
+      transparent 34%
+    );
+    opacity: 0.8;
+  }
+
+  .access-sky {
     position: absolute;
     inset: 0;
     z-index: 1;
@@ -161,7 +197,7 @@ pnpm install</code></pre>
     pointer-events: none;
   }
 
-  .setup-waves span {
+  .access-sky span {
     position: absolute;
     left: -18vw;
     width: 136vw;
@@ -170,22 +206,26 @@ pnpm install</code></pre>
     filter: blur(7px);
     mix-blend-mode: screen;
     background:
-      radial-gradient(ellipse at 22% 48%, rgba(255, 255, 255, 0.24), transparent 38%),
+      radial-gradient(
+        ellipse at 22% 48%,
+        rgba(255, 255, 255, 0.24),
+        transparent 38%
+      ),
       linear-gradient(92deg, transparent, rgba(255, 255, 255, 0.16), transparent);
   }
 
-  .setup-waves span:first-child {
+  .access-sky span:first-of-type {
     top: 12vh;
     transform: rotate(-8deg);
   }
 
-  .setup-waves span:last-child {
+  .access-sky span:last-of-type {
     top: 48vh;
     opacity: 0.7;
     transform: rotate(-12deg);
   }
 
-  .setup-hero-grid {
+  .access-grid {
     position: relative;
     z-index: 2;
     display: grid;
@@ -193,102 +233,55 @@ pnpm install</code></pre>
     align-items: center;
   }
 
-  .setup-intro {
+  .access-copy {
     display: grid;
     gap: 1rem;
   }
 
-  .setup-intro .eyebrow {
-    color: #a9e0ff;
+  .access-copy .eyebrow {
+    color: var(--gold-bright);
   }
 
-  .setup-intro h1 {
-    max-width: 12ch;
+  .access-copy h1 {
+    max-width: 11ch;
     color: #fff;
     font-family: var(--font-display);
     font-size: clamp(2.7rem, 5.4vw, 4.75rem);
-    font-weight: 800;
-    letter-spacing: 0;
-    line-height: 1;
+    font-weight: 540;
+    letter-spacing: -0.026em;
+    line-height: 1.02;
   }
 
-  .setup-intro .lead {
-    max-width: 34rem;
-    color: rgba(255, 255, 255, 0.82);
+  .access-copy .lead {
+    max-width: 38rem;
+    color: rgba(255, 255, 255, 0.84);
     font-size: clamp(1.02rem, 1.45vw, 1.18rem);
     font-weight: 650;
-    line-height: 1.38;
+    line-height: 1.42;
   }
 
-  .start-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 0.2rem;
-  }
-
-  .setup-primary {
-    background: #fff;
-    color: #0f3c91;
-    box-shadow: 0 18px 50px -28px rgba(0, 0, 0, 0.5);
-  }
-
-  .setup-primary:hover {
-    border-color: rgba(255, 255, 255, 0.72);
-    background: rgba(255, 255, 255, 0.92);
-    color: #0f3c91;
-  }
-
-  .setup-secondary {
-    border-color: rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-  }
-
-  .setup-secondary:hover {
-    border-color: rgba(255, 255, 255, 0.42);
-    background: rgba(255, 255, 255, 0.16);
-    color: #fff;
-  }
-
-  .setup-note {
-    max-width: 34rem;
-    color: rgba(255, 255, 255, 0.68);
+  .access-note {
+    max-width: 36rem;
+    color: rgba(255, 255, 255, 0.66);
     font-size: 0.98rem;
     font-weight: 600;
     line-height: 1.45;
   }
 
-  .setup-sync-note {
-    display: inline-flex;
-    width: fit-content;
-    max-width: 34rem;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 999px;
-    padding: 0.58rem 0.82rem;
-    background: rgba(255, 255, 255, 0.09);
-    color: rgba(255, 255, 255, 0.82);
-    font-size: 0.9rem;
-    font-weight: 750;
-    line-height: 1.3;
-  }
-
-  .setup-sync-note:hover {
-    border-color: rgba(255, 255, 255, 0.34);
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
-  }
-
-  .setup-panel {
+  .access-panel {
     border: 1px solid rgba(255, 255, 255, 0.24);
     border-radius: 28px;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07)),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.17),
+        rgba(255, 255, 255, 0.07)
+      ),
       rgba(255, 255, 255, 0.08);
     box-shadow: 0 26px 80px -48px rgba(0, 0, 0, 0.58);
     backdrop-filter: blur(24px) saturate(130%);
     -webkit-backdrop-filter: blur(24px) saturate(130%);
-    padding: clamp(1rem, 2.3vw, 1.45rem);
+    padding: clamp(1.25rem, 2.8vw, 1.8rem);
   }
 
   .panel-head {
@@ -297,10 +290,14 @@ pnpm install</code></pre>
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    margin-bottom: 0.85rem;
+    margin-bottom: 1rem;
   }
 
-  .download-pill {
+  .panel-head .mono {
+    color: rgba(255, 255, 255, 0.94);
+  }
+
+  .preview-pill {
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 999px;
     padding: 0.38rem 0.72rem;
@@ -310,79 +307,129 @@ pnpm install</code></pre>
     font-size: 0.82rem;
   }
 
-  .prereqs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .prereqs span {
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 999px;
-    padding: 0.32rem 0.58rem;
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.76);
-    font-size: 0.76rem;
-    font-weight: 750;
-  }
-
-  .command-steps {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.7rem;
-  }
-
-  .command-steps li {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.78rem;
-    align-items: start;
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-    padding-top: 0.7rem;
-  }
-
-  .command-steps li:first-child {
-    border-top: 0;
-    padding-top: 0;
-  }
-
-  .step-index {
-    color: #a9e0ff;
-    padding-top: 0.25rem;
-  }
-
-  .command-steps h2 {
-    margin: 0 0 0.38rem;
+  .access-panel h2 {
     color: #fff;
     font-family: var(--font-display);
-    font-size: clamp(0.98rem, 1.65vw, 1.12rem);
-    font-weight: 800;
+    font-size: clamp(1.55rem, 3vw, 2.15rem);
+    font-weight: 600;
+    letter-spacing: -0.014em;
     line-height: 1.1;
   }
 
-  pre {
-    margin: 0;
-    overflow-x: auto;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    background: rgba(4, 22, 42, 0.58);
-    color: #eef7ff;
-    padding: 0.68rem 0.8rem;
+  .access-panel > p {
+    margin-top: 0.65rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
   }
 
-  code {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    line-height: 1.58;
+  .access-form {
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 1.25rem;
+  }
+
+  .access-form label {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.86rem;
+    font-weight: 750;
+  }
+
+  .field-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  input[type="email"] {
+    flex: 1 1 15rem;
+    min-width: 0;
+    padding: 0.82rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.98rem;
+  }
+
+  input[type="email"]::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  input[type="email"]:focus-visible {
+    outline: 3px solid rgba(122, 90, 240, 0.5);
+    outline-offset: 1px;
+    border-color: rgba(255, 255, 255, 0.42);
+  }
+
+  .field-row button {
+    flex: 0 0 auto;
+    background: #fff;
+    color: var(--night);
+    box-shadow: 0 16px 40px -20px rgba(2, 5, 18, 0.8);
+  }
+
+  .field-row button:hover {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--night);
+  }
+
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .form-note {
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.86rem;
+  }
+
+  .form-note.ok {
+    color: var(--teal);
+  }
+
+  .form-note.err {
+    color: #ff9b8b;
+  }
+
+  .preview-steps {
+    display: grid;
+    gap: 0.8rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .preview-steps div {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.75rem;
+    align-items: start;
+  }
+
+  .step-index {
+    grid-row: span 2;
+    color: var(--gold-bright);
+    padding-top: 0.1rem;
+  }
+
+  .preview-steps strong {
+    color: #fff;
+    font-size: 0.98rem;
+  }
+
+  .preview-steps p {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.88rem;
+    line-height: 1.4;
   }
 
   .status-section {
     background:
-      linear-gradient(180deg, #ffffff, rgba(167, 218, 211, 0.12)),
-      var(--bg);
+      linear-gradient(180deg, var(--bg), rgba(222, 215, 199, 0.24)), var(--bg);
   }
 
   .status-grid {
@@ -391,9 +438,9 @@ pnpm install</code></pre>
   }
 
   .info-block {
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-soft);
     border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.82);
+    background: var(--surface);
     box-shadow: var(--shadow-soft);
     padding: clamp(1.3rem, 3vw, 1.8rem);
   }
@@ -402,8 +449,9 @@ pnpm install</code></pre>
     margin-top: 0.65rem;
     font-family: var(--font-display);
     font-size: clamp(1.35rem, 3vw, 1.85rem);
-    font-weight: 800;
-    line-height: 1.12;
+    font-weight: 600;
+    letter-spacing: -0.014em;
+    line-height: 1.14;
   }
 
   .info-block p {
@@ -412,8 +460,8 @@ pnpm install</code></pre>
   }
 
   @media (min-width: 900px) {
-    .setup-hero-grid {
-      grid-template-columns: minmax(0, 0.82fr) minmax(26rem, 1fr);
+    .access-grid {
+      grid-template-columns: minmax(0, 0.86fr) minmax(25rem, 0.9fr);
     }
 
     .status-grid {
@@ -422,18 +470,69 @@ pnpm install</code></pre>
   }
 
   @media (max-width: 700px) {
-    .setup-sync-note {
-      border-radius: 16px;
-    }
-  }
-
-  @media (max-width: 700px) {
-    .setup-hero {
+    .access-hero {
       min-height: auto;
     }
 
-    .setup-intro h1 {
-      max-width: 11ch;
+    .access-copy h1 {
+      max-width: 10ch;
+    }
+
+    .field-row button {
+      width: 100%;
     }
   }
 </style>
+
+<script>
+  const FORM_ENDPOINT = "/api/waitlist";
+
+  const form = document.getElementById(
+    "early-access-form",
+  ) as HTMLFormElement | null;
+  const note = document.getElementById("access-form-note");
+  const input = document.getElementById("access-email") as HTMLInputElement | null;
+  const honeypot = document.getElementById(
+    "access-company",
+  ) as HTMLInputElement | null;
+
+  function setNote(msg: string, kind: "" | "ok" | "err") {
+    if (!note) return;
+    note.textContent = msg;
+    note.classList.remove("ok", "err");
+    if (kind) note.classList.add(kind);
+  }
+
+  const valid = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = input?.value.trim() ?? "";
+
+    if (!valid(email)) {
+      setNote("Please enter a valid email address.", "err");
+      input?.focus();
+      return;
+    }
+
+    try {
+      const response = await fetch(FORM_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          company: honeypot?.value ?? "",
+          src: "early-access",
+        }),
+      });
+      if (!response.ok) throw new Error("bad status");
+      form.reset();
+      setNote(
+        "You're on the private preview list. We will be in touch with TestFlight details.",
+        "ok",
+      );
+    } catch {
+      setNote("Something went wrong. Please try again in a moment.", "err");
+    }
+  });
+</script>

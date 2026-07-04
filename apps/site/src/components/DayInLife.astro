@@ -3,26 +3,26 @@ const moments = [
   {
     time: "11:40 PM",
     tone: "cool",
-    label: "Rest",
-    text: "You close the laptop after a long day across three repos. The menu-bar icon dims and slips into a review.",
+    label: "Wrap",
+    text: "You close the laptop after a long day across three repos. The menu-bar score finalizes and the day becomes a History entry.",
   },
   {
     time: "Overnight",
     tone: "cool",
-    label: "Review",
-    text: "It computes your vitals and rolls them into your 30-day trend. Then it reads the day: you re-asked the model to run tests four times in one repo, your tokens dropped on days you used the verify skill, and two projects quietly reimplemented the same parser.",
+    label: "Compute",
+    text: "It computes the Dream Score, rolls metrics into trends, updates Code Flow, and ranks the quotes and agent thoughts already sitting in local transcripts.",
   },
   {
     time: "8:15 AM",
     tone: "warm",
-    label: "Reflect",
-    text: "You open a Health Report. A green Efficiency ring. Three findings — one win, one fix you accept as a one-line AGENTS.md diff, one you snooze. Two suggested improvements — you track both. Ninety seconds, then you start coding.",
+    label: "Glance",
+    text: "You open Summary. One score, a recognizable Code Flow graph, a few highlights, one quote that makes you laugh, and maybe a coach card with evidence attached.",
   },
   {
     time: "Tomorrow",
     tone: "warm",
-    label: "Compound",
-    text: "The next review tells you whether medium effort on UI made you ask for fewer follow-ups — or more. The loop tightens. Your harness is measurably better than it was yesterday.",
+    label: "Compare",
+    text: "Tomorrow's score uses the same formula. If Alignment improves or Rhythm slips, you can explain why instead of guessing from memory.",
   },
 ];
 ---
@@ -31,10 +31,10 @@ const moments = [
   <div class="container">
     <div class="head section-narrow reveal">
       <span class="eyebrow">A day in the life</span>
-      <h2 class="h2">The ninety-second morning ritual.</h2>
+      <h2 class="h2">A tracker that fills itself.</h2>
       <p class="lead">
-        This is the heartbeat of the product — a calm, daily moment that turns
-        yesterday's exhaust into tomorrow's edge.
+        This is the heartbeat of the MVP — a local Health-style record that is
+        already populated when you open it.
       </p>
     </div>
 
@@ -132,7 +132,7 @@ const moments = [
     color: var(--accent);
   }
   .tag.warm {
-    background: rgba(232, 154, 124, 0.14);
+    background: rgba(122, 90, 240, 0.14);
     color: var(--warm);
   }
   .content p {

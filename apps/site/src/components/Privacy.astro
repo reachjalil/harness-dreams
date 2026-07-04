@@ -1,20 +1,20 @@
 ---
 const guarantees = [
   {
-    title: "Local-first by default",
-    body: "Ingestion, storage, and your core metrics run entirely on-device. The app works offline.",
+    title: "Local compute",
+    body: "Ingestion, storage, Dream Score math, trends, highlights, and share-card previews run on your Mac.",
   },
   {
-    title: "Cloud is opt-in and redacted",
-    body: "Deeper analysis with a model is your choice — and only ever sees small, secret-scrubbed excerpts, never whole transcripts.",
+    title: "Deterministic scoring",
+    body: "Optional local runner text may phrase captions or advice, but it cannot change scores, formulas, or source data.",
   },
   {
-    title: "Secrets never leave. Ever.",
-    body: "API keys, .env files, and credentials are scanned out before anything is sent, and never written to your config.",
+    title: "Explicit exports",
+    body: "Share cards render only after preview. They include the fields you choose, with quote redaction applied again.",
   },
   {
-    title: "Nothing changes without consent",
-    body: "Every edit to your AGENTS.md, skills, or memory is shown as a diff you approve, with review history and one-click undo.",
+    title: "No automatic writes",
+    body: "Coach cards may suggest a snippet to copy. The preview build does not patch config, open branches, or apply changes.",
   },
 ];
 ---
@@ -24,13 +24,13 @@ const guarantees = [
     <div class="privacy card reveal">
       <div class="p-copy">
         <span class="eyebrow">Privacy &amp; trust</span>
-        <h2 class="h2">Your code never leaves your machine.</h2>
+        <h2 class="h2">Your agent history stays on your Mac.</h2>
         <p class="lead">
-          Harness Health reads the most sensitive thing you have — full
-          transcripts of your work. So privacy isn't a feature here. It's the
-          whole license to operate.
+          Agent transcripts include code, paths, secrets, business context, and
+          every correction you made. Harness Dreams is designed to deliver
+          useful signal before any server is required.
         </p>
-        <a class="btn" href="/start/">Download for macOS</a>
+        <a class="btn" href="/privacy/">Read the privacy policy</a>
       </div>
 
       <ul class="g-list">
